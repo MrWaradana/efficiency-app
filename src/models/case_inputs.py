@@ -15,9 +15,9 @@ class Case_inputs(db.Model, BaseModel, metaclass=MetaBaseModel):
 
     # ? Default Columns
     id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    cases_id = db.Column(UUID(as_uuid=True), db.ForeignKey("cases.id"), unique=True)
+    cases_id = db.Column(UUID(as_uuid=True), db.ForeignKey("cases.id"))
     variables_id = db.Column(
-        UUID(as_uuid=True), db.ForeignKey("variables.id"), unique=True
+        UUID(as_uuid=True), db.ForeignKey("variables.id")
     )
     data = db.Column(db.String(300), nullable=False)
     created_at = db.Column(db.DateTime, nullable=False, server_default=db.func.now())
@@ -27,6 +27,8 @@ class Case_inputs(db.Model, BaseModel, metaclass=MetaBaseModel):
     cases = db.relationship("Cases", back_populates="case_inputs", lazy=True)
     variables = db.relationship("Variables", back_populates="case_inputs", lazy=True)
 
-    def __init__(self, data):
+    def __init__(self, cases_id, variables_id, data):
         """Create a new case_inputs"""
+        self.cases_id = cases_id
+        self.variables_id = variables_id
         self.data = data

@@ -16,3 +16,4 @@ flask-cors
 Flask-Seeder
 pandas
 openpyxl
+digital-twin-migration @ git+https://github.com/Cizz22/digital-twin-migration

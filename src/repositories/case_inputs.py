@@ -13,9 +13,9 @@ class CaseInputsRepository:
         return Case_inputs.query.filter_by(**kwargs)
 
     @staticmethod
-    def create(data):
+    def create(cases_id, variables_id, data):
         """Create a new case_input"""
-        case_input = Case_inputs(data)
+        case_input = Case_inputs(cases_id, variables_id, data)
         return case_input.save()
 
     @staticmethod

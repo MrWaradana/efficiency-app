@@ -12,9 +12,9 @@ class CaseOutputsRepository:
         return Case_outputs.query.filter_by(**kwargs)
 
     @staticmethod
-    def create(data):
+    def create(cases_id, variables_id, data):
         """Create a new case_output"""
-        case_output = Case_outputs(data)
+        case_output = Case_outputs(cases_id, variables_id, data)
         return case_output.save()
 
     @staticmethod
