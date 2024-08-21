@@ -10,17 +10,18 @@ SQLALCHEMY_TRACK_MODIFICATIONS = False
 SECRET_KEY = os.getenv("APPLICATION_SECRET_KEY")
 IMAGE_URL = "/mnt/static/image/"
 
-WINDOWS_EFFICIENCY_APP_API = "http://localhost:3001/excels"
+WINDOWS_EFFICIENCY_APP_API = "https://m20vpzqk-3001.asse.devtunnels.ms/excels"
 
 DB_CONTAINER = os.getenv("APPLICATION_DB_CONTAINER", "103.175.217.118")
 POSTGRES = {
     # "user": os.getenv("APPLICATION_POSTGRES_USER", "aimo"),
-    "user": os.getenv("APPLICATION_POSTGRES_USER", "postgres"),
-    "pw": os.getenv("APPLICATION_POSTGRES_PW", "pass123"),
+    "user": "postgres",
+    "pw": "postgres",
+    # "pw": os.getenv("APPLICATION_POSTGRES_PW", "pass123"),
     # "pw": os.getenv("APPLICATION_POSTGRES_PW", "aimo!@#"),
-    "host": os.getenv("APPLICATION_POSTGRES_HOST", DB_CONTAINER),
-    "port": os.getenv("APPLICATION_POSTGRES_PORT", 5433),
-    "db": os.getenv("APPLICATION_POSTGRES_DB", "postgres"),
+    "host": "192.168.1.51",
+    "port": 5432,
+    "db": "digital_twin",
 }
 DB_URI = "postgresql+psycopg2://%(user)s:%(pw)s@%(host)s:%(port)s/%(db)s" % POSTGRES
 

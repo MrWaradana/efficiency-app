@@ -14,8 +14,8 @@ from config import WINDOWS_EFFICIENCY_APP_API
 class ExcelsResource(Resource):
     """Excels"""
 
-    @token_required
-    def get(self, user_id: str) -> Response:
+    # @token_required
+    def get(self) -> Response:
         """
         Get excels from source and create new ones if they don't exist.
 
@@ -26,13 +26,21 @@ class ExcelsResource(Resource):
             Response: The response containing the excels.
         """
         existing_excel_names: Set[str] = {
-            excel.name for excel in ExcelsRepository.get_by().all()}
-        new_excel_names: Set[str] = set(
-            fetch_data_from_api(WINDOWS_EFFICIENCY_APP_API)) - existing_excel_names
-        [ExcelsRepository.create(name, user_id) for name in new_excel_names]
+            excel.excel_filename for excel in ExcelsRepository.get_by().all()
+        }
+        new_excel_names: Set[str] = (
+            set(fetch_data_from_api(WINDOWS_EFFICIENCY_APP_API)["data"]["excels"])
+            - existing_excel_names
+        )
+        [
+            ExcelsRepository.create(name, "24d28102-4d6a-4628-9a70-665bcd50a0f0")
+            for name in new_excel_names
+        ]
 
         # Get all excels
-        excels: List[Excels] = ExcelsRepository.get_by().all()
+        excels = [excel.excel_filename for excel in ExcelsRepository.get_by().all()]
+
+        print(excels)
 
         return response(200, True, "Excels retrieved successfully", excels)
 

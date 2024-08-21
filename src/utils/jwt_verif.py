@@ -4,7 +4,7 @@ from flask import request, jsonify, make_response
 import jwt
 from flask import current_app
 import requests
-from repositories import UserRepository
+# from repositories import UserRepository
 
 AUTH_SERVICE_API = 'http://localhost:5000'
 RESOURCE_ID = 1
@@ -35,7 +35,7 @@ def token_required(f):
     return decorator
 
 
-def admin_required(f):
+# def admin_required(f):
     @wraps(f)
     def decorator(*args, **kwargs):
         token = None

@@ -63,12 +63,9 @@ def main():
         is_db_ok = "Something wrong with database"
 
     return response(
-        {
-            "message": "Welcome to the Fasion Campus API",
-            "documentation": "https://intip.in/urbanAPI",
-            "database": is_db_ok,
-        },
-        200,
+        message=is_db_ok,
+        status="ok",
+        status_code=200
     )
 
 
