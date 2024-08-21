@@ -12,12 +12,10 @@ class CasesRepository:
         return Cases.query.filter_by(**kwargs)
 
     @staticmethod
-    def create():
+    def create(name):
         """Create a new case"""
-        case_count = Cases.query.count()
-        new_case_name = f"Case {case_count + 1}"
-        case = Cases(new_case_name)
-        return case.add()
+        case = Cases(name)
+        return case.save()
 
     @staticmethod
     def get_by_id(id):

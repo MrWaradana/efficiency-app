@@ -10,6 +10,8 @@ SQLALCHEMY_TRACK_MODIFICATIONS = False
 SECRET_KEY = os.getenv("APPLICATION_SECRET_KEY")
 IMAGE_URL = "/mnt/static/image/"
 
+WINDOWS_EFFICIENCY_APP_API = "http://localhost:3001/excels"
+
 DB_CONTAINER = os.getenv("APPLICATION_DB_CONTAINER", "103.175.217.118")
 POSTGRES = {
     # "user": os.getenv("APPLICATION_POSTGRES_USER", "aimo"),

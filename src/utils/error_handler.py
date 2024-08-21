@@ -3,14 +3,15 @@ from sqlalchemy.exc import SQLAlchemyError
 from flask import current_app
 from utils import response
 
+from digital_twin_migration.models import db
+
 
 def handle_exception(e):
     if isinstance(e, HTTPException):
-        return response({"message": e.description}, e.code)
+        return response(e.code, False, e.description)
 
     if isinstance(e, SQLAlchemyError):
-        error = str(e)
-        return response({"message": error}, 500)
+        db.session.rollback()
+        return response(500, False, str(e))
 
-    return response({"message": str(e)}, 500) if current_app.debug else response({"message": "Internal Server Error"}, 500)
-
+    return response(500, False, str(e)) if current_app.debug else response(500, False, "Internal server error")
