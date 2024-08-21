@@ -13,8 +13,8 @@ from utils.util import fetch_data_from_api
 class VariablesResource(Resource):
     """Variable resource"""
 
-    @token_required
-    def get(self, user_id: str, excel_id: str) -> Response:
+    # @token_required
+    def get(self, excel_id: str) -> Response:
         """Retrieve all variable from API based on EXCEL NAME"""
         excel = ExcelsRepository.get_by(id=excel_id).first()
         existing_variable_names = {
@@ -30,7 +30,7 @@ class VariablesResource(Resource):
                     variable=variable.variabel,
                     satuan=variable.satuan,
                     variable_type=variable.type,
-                    user_id=user_id
+                    user_id="24d28102-4d6a-4628-9a70-665bcd50a0f0"
                 )
                 for variable in source_variables if variable.variabel not in existing_variable_names
             ]

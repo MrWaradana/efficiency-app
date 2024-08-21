@@ -79,4 +79,4 @@ for blueprint in vars(routes).values():
         server.register_blueprint(blueprint, url_prefix=config.APPLICATION_ROOT)
 
 if __name__ == "__main__":
-    server.run(host="127.0.0.1", port="3001")
+    server.run(host="127.0.0.1", port="3003")

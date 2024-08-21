@@ -38,17 +38,15 @@ class ExcelsResource(Resource):
         ]
 
         # Get all excels
-        excels = [excel.excel_filename for excel in ExcelsRepository.get_by().all()]
-
-        print(excels)
+        excels = [excel.json for excel in ExcelsRepository.get_by().all()]
 
         return response(200, True, "Excels retrieved successfully", excels)
 
 
 class ExcelResource(Resource):
 
-    @token_required
-    def get(self, user_id: str, excel_id: str) -> Response:
+    # @token_required
+    def get(self, excel_id: str) -> Response:
         """
         Get a specific excel by id
 
