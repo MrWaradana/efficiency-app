@@ -42,6 +42,7 @@ class VariablesRepository:
         variable_type: str,
         user_id: UUID,
         short_name: str = None,
+        category: str = None
     ) -> Variables:
         """Create a new variable
 
@@ -57,6 +58,7 @@ class VariablesRepository:
             Variables: The newly created variable model.
         """
         variable = Variables(
+            category=category,
             excels_id=excels_id,
             input_name=variable,
             short_name=short_name,

@@ -1,30 +1,30 @@
 import logging
 import os
+from dotenv import load_dotenv
 
+load_dotenv()
 # DEBUG = os.getenv("ENVIRONEMENT") == "DEV"
 DEBUG = True
-APPLICATION_ROOT = os.getenv("APPLICATION_APPLICATION_ROOT", "/api/")
+APPLICATION_ROOT = os.getenv("APPLICATION_APPLICATION_ROOT", "/")
 HOST = os.getenv("APPLICATION_HOST")
 PORT = int(os.getenv("APPLICATION_PORT", "3000"))
 SQLALCHEMY_TRACK_MODIFICATIONS = False
 SECRET_KEY = os.getenv("APPLICATION_SECRET_KEY")
 IMAGE_URL = "/mnt/static/image/"
 
-WINDOWS_EFFICIENCY_APP_API = "https://m20vpzqk-3001.asse.devtunnels.ms/excels"
 
-DB_CONTAINER = os.getenv("APPLICATION_DB_CONTAINER", "103.175.217.118")
+WINDOWS_EFFICIENCY_APP_API = os.getenv("WINDOWS_EFFICIENCY_APP_API")
+AUTH_SERVICE_API = os.getenv("AUTH_SERVICE_API")
+
 POSTGRES = {
-    # "user": os.getenv("APPLICATION_POSTGRES_USER", "aimo"),
-    "user": "postgres",
-    "pw": "postgres",
-    # "pw": os.getenv("APPLICATION_POSTGRES_PW", "pass123"),
-    # "pw": os.getenv("APPLICATION_POSTGRES_PW", "aimo!@#"),
-    "host": "192.168.1.51",
-    "port": 5432,
-    "db": "digital_twin",
+    "user": os.getenv("APPLICATION_POSTGRES_USER"),
+    "pw": os.getenv("APPLICATION_POSTGRES_PASSWORD"),
+    "host": os.getenv("APPLICATION_POSTGRES_HOST"),
+    "port": os.getenv("APPLICATION_POSTGRES_PORT"),
+    "db": os.getenv("APPLICATION_POSTGRES_DB"),
 }
-DB_URI = "postgresql+psycopg2://%(user)s:%(pw)s@%(host)s:%(port)s/%(db)s" % POSTGRES
 
+DB_URI = "postgresql+psycopg2://%(user)s:%(pw)s@%(host)s:%(port)s/%(db)s" % POSTGRES
 
 logging.basicConfig(
     filename=os.getenv("SERVICE_LOG", "server.log"),

@@ -58,9 +58,10 @@ server.cli.add_command(mainSeeder)
 def main():
     is_db_ok = "It's Working"
     try:
-        db.session.execute(text("SELECT 1")).all()
-    except Exception:
-        is_db_ok = "Something wrong with database"
+        # Test database connection
+        db.engine.connect().execute(text("SELECT 1"))
+    except Exception as e:
+        is_db_ok = str(e)
 
     return response(
         message=is_db_ok,
@@ -79,4 +80,4 @@ for blueprint in vars(routes).values():
         server.register_blueprint(blueprint, url_prefix=config.APPLICATION_ROOT)
 
 if __name__ == "__main__":
-    server.run(host="127.0.0.1", port="3003")
+    server.run(host=config.HOST, port=config.PORT, debug=config.DEBUG)

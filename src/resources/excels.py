@@ -14,8 +14,8 @@ from config import WINDOWS_EFFICIENCY_APP_API
 class ExcelsResource(Resource):
     """Excels"""
 
-    # @token_required
-    def get(self) -> Response:
+    @token_required
+    def get(self, user_id) -> Response:
         """
         Get excels from source and create new ones if they don't exist.
 
@@ -33,7 +33,7 @@ class ExcelsResource(Resource):
             - existing_excel_names
         )
         [
-            ExcelsRepository.create(name, "24d28102-4d6a-4628-9a70-665bcd50a0f0")
+            ExcelsRepository.create(name, user_id)
             for name in new_excel_names
         ]
 
@@ -45,8 +45,8 @@ class ExcelsResource(Resource):
 
 class ExcelResource(Resource):
 
-    # @token_required
-    def get(self, excel_id: str) -> Response:
+    @token_required
+    def get(self, excel_id: str, user_id: str) -> Response:
         """
         Get a specific excel by id
 
@@ -62,9 +62,10 @@ class ExcelResource(Resource):
         if not excel:
             return response(404, False, "Excel not found")
 
-        return response(200, True, "Excel retrieved successfully", excel)
+        return response(200, True, "Excel retrieved successfully", excel.json)
 
-    def delete(self, user_id: str, excel_id: str) -> Response:
+    @token_required
+    def delete(self, excel_id: str, user_id: str) -> Response:
         """
         Delete a specific excel by id
 

@@ -9,47 +9,36 @@ class CasesResource(Resource):
     """Cases"""
 
     @token_required
-    def get(self):
+    def get(self, user_id):
         """Retrieve all masterdata"""
-        cases = CasesRepository.get_by().all()
+        cases = [case.json for case in CasesRepository.get_by().all()]
 
         return response(200, True, "Cases retrieved successfully", cases)
 
     @token_required
     @parse_params(Argument("name", location="json", required=True))
-    def post(self):
+    def post(self, name, user_id):
         """Create a new case"""
-        case = CasesRepository.create()
+        case = CasesRepository.create(name)
 
-        return response(201, True, "Case created successfully", case)
-
-        # res = {
-        #     "data": [
-        #         {
-        #             "id": case.id,
-        #             "name": case.name
-        #         }
-        #         for case in cases
-        #     ]
-        # }
-
-        # return response(res, 200)
+        return response(201, True, "Case created successfully", case.json)
 
 
 class CaseResource(Resource):
     """Case"""
 
     @token_required
-    def get(self, case_id):
+    def get(self, case_id, user_id):
         """Retrieve a specific case by id"""
         case = CasesRepository.get_by_id(case_id)
 
         if not case:
             return response(404, False, "Case not found")
 
-        return response(200, True, "Case retrieved successfully", case)
+        return response(200, True, "Case retrieved successfully", case.json)
 
-    def delete(self, case_id):
+    @token_required
+    def delete(self, case_id, user_id):
         """Delete a specific case by id"""
         case = CasesRepository.get_by_id(case_id)
 
@@ -60,13 +49,15 @@ class CaseResource(Resource):
 
         return response(200, True, "Case deleted successfully")
 
-    # def put(self, case_id, **kwargs):
-    #     """Update a specific case by id"""
-    #     case = CasesRepository.get_by_id(case_id)
+    @token_required
+    @parse_params(Argument("name", location="json", required=False, default=None))
+    def put(self, case_id, name, user_id):
+        """Update a specific case by id"""
+        case = CasesRepository.get_by_id(case_id)
 
-    #     if not case:
-    #         return response(404, False, "Case not found")
+        if not case:
+            return response(404, False, "Case not found")
 
-    #     CasesRepository.update(case_id, **kwargs)
+        CasesRepository.update(case_id, name=name)
 
-    #     return response(200, True, "Case updated successfully")
+        return response(200, True, "Case updated successfully")

@@ -7,6 +7,7 @@ from utils import parse_params, response
 from repositories import VariablesRepository
 from utils.jwt_verif import token_required
 from config import WINDOWS_EFFICIENCY_APP_API
+from digital_twin_migration.models import Variables, db
 from utils.util import fetch_data_from_api
 
 
@@ -14,62 +15,51 @@ class VariablesResource(Resource):
     """Variable resource"""
 
     # @token_required
+    @parse_params(
+        Argument("excel_id", location="args", required=True,
+                 type=str, help="Excel Id is required"),
+    )
     def get(self, excel_id: str) -> Response:
         """Retrieve all variable from API based on EXCEL NAME"""
         excel = ExcelsRepository.get_by(id=excel_id).first()
-        existing_variable_names = {
-            var.input_name for var in VariablesRepository.get_by(excels_id=excel_id).all()}
+
+        existing_variables = {
+            f"{var.category}: {var.input_name}" for var in VariablesRepository.get_by(excel_id=excel_id).all()
+        }
 
         if excel:
             source_variables = fetch_data_from_api(
                 f"{WINDOWS_EFFICIENCY_APP_API}/{excel.excel_filename}")
 
-            [
-                VariablesRepository.create(
-                    excels_id=excel_id,
-                    variable=variable.variabel,
-                    satuan=variable.satuan,
-                    variable_type=variable.type,
-                    user_id="24d28102-4d6a-4628-9a70-665bcd50a0f0"
-                )
-                for variable in source_variables if variable.variabel not in existing_variable_names
+            if not source_variables:
+                return response(404, False, "Get VARIABLES failed")
+
+            variable_records = [Variables(
+                excel_id=excel_id,
+                input_name=variable["variabel"],
+                satuan=variable["unit"],
+                in_out=variable["type"],
+                created_by="24d28102-4d6a-4628-9a70-665bcd50a0f0",
+                category=variable["category"],
+                short_name=None
+            )
+                for variable in source_variables["data"] if f"{variable['category']}: {variable['variabel']}" not in existing_variables
             ]
+        else:
+            return response(404, False, "Excel not found")
 
-        variables = VariablesRepository.get_by(excels_id=excel_id).all()
+        try:
+            db.session.add_all(variable_records)
+            db.session.commit()
+        except Exception as e:
+            db.session.rollback()
+            return response(500, False, "Failed to insert variables")
 
-        # Outuput example
-        # [
-        #     {
-        #         "type": "in",
-        #         "unit": "bar",
-        #         "variabel": "Site: Ambient pressure"
-        #     },
-        #     {
-        #         "type": "in",
-        #         "unit": "m",
-        #         "variabel": "Site: Altitude"
-        #     }]
+        response_data = {
+            "data": [var.json for var in variable_records]
+        }
 
-        # res = {
-        #     "data": [
-        #         {
-        #             "id": variable.id,
-        #             "excels_id": variable.excels_id,
-        #             "variable": variable.variable,
-        #             "data_location": variable.data_location,
-        #             "units": {
-        #                 "id": variable.units.id,
-        #                 "name": variable.units.unit,
-        #                 # Add any other unit fields you need here
-        #             },
-        #             "base_case": variable.base_case,
-        #             "variable_type": variable.variable_type,
-        #         }
-        #         for variable in variables
-        #     ]
-        # }
-
-        return response(200, True, "Variables retrieved successfully", variables)
+        return response(200, True, "Variables retrieved successfully", response_data)
 
 
 class VariableResource(Resource):
@@ -81,7 +71,7 @@ class VariableResource(Resource):
         if not variable:
             return response(404, False, "Variable not found")
 
-        return response(200, True, "Variable retrieved successfully", variable)
+        return response(200, True, "Variable retrieved successfully", variable.json)
 
     @token_required
     def delete(self, user_id: str, variable_id: str) -> Response:
