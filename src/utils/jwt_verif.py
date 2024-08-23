@@ -4,10 +4,11 @@ from flask import request, jsonify, make_response
 import jwt
 from flask import current_app
 import requests
+
+from utils import response
 # from repositories import UserRepository
 
-AUTH_SERVICE_API = 'http://localhost:5000'
-RESOURCE_ID = 1
+import config
 
 
 def token_required(f):
@@ -17,25 +18,30 @@ def token_required(f):
         if 'Authorization' in request.headers:
             token = request.headers['Authorization'].split(' ')[1]
         if not token:
-            return make_response(jsonify({'message': 'a valid token is missing'}), 401)
+            return response(401, False, 'a valid token is missing')
         try:
-            # Verify token using api /verify-token
-            payload = requests.get(AUTH_SERVICE_API + '/verify-token?resource=' + str(RESOURCE_ID),
-                                   headers={'Authorization': 'Bearer ' + token}).json()
+            # Verify token using api /verify-token with resource(not yet)
+            # payload = requests.get(AUTH_SERVICE_API + '/verify-token?resource=' + str(RESOURCE_ID),
+            #                        headers={'Authorization': 'Bearer ' + token}).json()
+            payload = requests.get(config.AUTH_SERVICE_API + '/verify-token',
+                                   headers={'Authorization': 'Bearer ' + token})
 
-            if not payload.status:
-                return make_response(jsonify({'message': 'token is invalid'}), 401)
+            if not payload.ok:
+                return response(401, False, 'token is invalid')
+            
+            user_id = payload.json()['data']['user_id']
+            kwargs.update(user_id=user_id)
 
-            kwargs.update(user_id=payload.data.user_id)
-
-        except:
-            return make_response(jsonify({'message': 'token is invalid'}), 401)
+        except Exception as e:
+            return response(500, False, str(e))
 
         return f(*args, **kwargs)
     return decorator
 
 
 # def admin_required(f):
+
+
     @wraps(f)
     def decorator(*args, **kwargs):
         token = None
@@ -57,4 +63,3 @@ def token_required(f):
 
         return f(*args, **kwargs)
     return decorator
-

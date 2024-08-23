@@ -1,5 +1,6 @@
 """ Defines the Cases repository """
 
+from datetime import datetime
 from typing import Optional
 from uuid import UUID
 from digital_twin_migration.models import EfficiencyTransaction, db
@@ -23,12 +24,32 @@ class TransactionRepository:
         return EfficiencyTransaction.query.filter_by(**kwargs)
 
     @staticmethod
+    def get_query(start_date, end_date, **kwargs):
+        res = EfficiencyTransaction.query
+        for key, value in kwargs.items():
+            if value:
+                if isinstance(value, str):
+                    res = res.filter(getattr(EfficiencyTransaction,
+                                     key).ilike("%{}%".format(value)))
+                else:
+                    res = res.filter_by(**{key: value})
+
+        if start_date and end_date:
+            res = res.filter(EfficiencyTransaction.periode.between(start_date, end_date))
+        elif start_date:
+            res = res.filter(EfficiencyTransaction.periode >= start_date)
+        elif end_date:
+            res = res.filter(EfficiencyTransaction.periode <= end_date)
+
+        res = res.order_by(EfficiencyTransaction.created_at.desc())
+    
+        return res
+
+    @staticmethod
     def create(
         periode: str,
         jenis_parameter: str,
         excel_id: str,
-        variable_id: str,
-        nilai: float,
         created_by: str,
     ) -> EfficiencyTransaction:
         """
@@ -42,15 +63,17 @@ class TransactionRepository:
         :param created_by: The user who created the case (UUID)
         :return: The newly created case (EfficiencyTransaction)
         """
+
+        # Change periode to date
+        periode = datetime.strptime(periode, "%Y-%m-%d").date()
+
         inputs = EfficiencyTransaction(
             periode=periode,
             jenis_parameter=jenis_parameter,
             excel_id=excel_id,
-            variable_id=variable_id,
-            nilai=nilai,
             created_by=created_by,
         )
-        return inputs.save()
+        return inputs.add()
 
     @staticmethod
     def bulk_create(inputs: list[EfficiencyTransaction]):
