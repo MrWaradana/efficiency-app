@@ -85,11 +85,7 @@ class TransactionsResource(Resource):
             created_by=user_id
         )
         
-        transaction_parent.commit()
-
-        raise Exception("test debug")
         
-
         for key, value in inputs.items():
             variable_input = variable_mappings.get(key)
 
