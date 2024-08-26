@@ -1,6 +1,6 @@
 """ Defines the Cases repository """
 
-from digital_twin_migration.models import Cases
+from digital_twin_migration.models.efficiency_app import Cases
 
 
 class CasesRepository:
