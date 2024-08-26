@@ -3,7 +3,8 @@
 from datetime import datetime
 from typing import Optional
 from uuid import UUID
-from digital_twin_migration.models import EfficiencyTransaction, db
+from digital_twin_migration.models.efficiency_app import EfficiencyTransaction
+from digital_twin_migration.models import db
 from sqlalchemy.orm.query import Query
 
 

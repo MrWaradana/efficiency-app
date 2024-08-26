@@ -7,7 +7,8 @@ from utils import parse_params, response
 from repositories import VariablesRepository
 from utils.jwt_verif import token_required
 from config import WINDOWS_EFFICIENCY_APP_API
-from digital_twin_migration.models import Variables, db
+from digital_twin_migration.models import db
+from digital_twin_migration.models.efficiency_app import Variables
 from utils.util import fetch_data_from_api
 
 

@@ -2,7 +2,7 @@
 
 from typing import Optional
 from uuid import UUID
-from digital_twin_migration.models import Excels
+from digital_twin_migration.models.efficiency_app import Excels
 from sqlalchemy.orm.query import Query
 
 

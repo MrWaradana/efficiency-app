@@ -2,7 +2,8 @@
 
 from typing import List
 from uuid import UUID
-from digital_twin_migration.models import Variables, db
+from digital_twin_migration.models.efficiency_app import Variables
+from digital_twin_migration.models import db
 from sqlalchemy.orm import joinedload
 from sqlalchemy.orm.query import Query
 

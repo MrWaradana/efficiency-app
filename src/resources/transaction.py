@@ -7,7 +7,8 @@ from config import WINDOWS_EFFICIENCY_APP_API
 from utils import parse_params, response, get_key_by_value
 from repositories import VariablesRepository, TransactionRepository
 from sqlalchemy.exc import SQLAlchemyError
-from digital_twin_migration.models import db, EfficiencyTransactionDetail
+from digital_twin_migration.models import db
+from digital_twin_migration.models.efficiency_app import EfficiencyTransactionDetail
 
 from utils.jwt_verif import token_required
 
@@ -83,6 +84,11 @@ class TransactionsResource(Resource):
             excel_id=excel_id,
             created_by=user_id
         )
+        
+        transaction_parent.commit()
+
+        raise Exception("test debug")
+        
 
         for key, value in inputs.items():
             variable_input = variable_mappings.get(key)
