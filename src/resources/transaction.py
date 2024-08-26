@@ -25,29 +25,41 @@ class TransactionsResource(Resource):
     )
     def get(self, user_id, page, size, all, start_date, end_date):
         """Retrieve all Transactions"""
+
+        # Parse start and end dates if provided
         start_date = datetime.strptime(start_date, "%Y-%m-%d").date() if start_date else None
         end_date = datetime.strptime(end_date, "%Y-%m-%d").date() if end_date else None
 
+        # Build the query based on the date range
         query = TransactionRepository.get_query(start_date=start_date, end_date=end_date)
+
+        # Get the total count of records
         count = query.count()
 
         if all:
-            query = query.all()
+            # Retrieve all transactions without pagination
+            transactions = query.all()
+            transaction_data = [transaction.json for transaction in transactions]
 
-            return response(200, True, "Transactions retrieved successfully", {"transactions": [transaction.json for transaction in query], "count": count})
+            return response(200, True, "Transactions retrieved successfully", {
+                "transactions": transaction_data,
+                "count": count
+            })
 
-        query = query.paginate(page=page, per_page=size)
-        transactions = [transaction.json for transaction in query]
+        # Apply pagination
+        paginated_query = query.paginate(page=page, per_page=size)
+        transactions = [transaction.json for transaction in paginated_query.items]
 
-        return response(200, True, 'Transactions retrieved successfully.',
-                        {"current_page": query.page,
-                         "total_pages": query.pages,
-                         "page_size": query.per_page,
-                         "total_items": query.total,
-                         "has_next_page": query.has_next,
-                         "has_previous_page": query.has_prev,
-                         "transactions": transactions,
-                         })
+        # Construct response
+        return response(200, True, 'Transactions retrieved successfully.', {
+            "current_page": paginated_query.page,
+            "total_pages": paginated_query.pages,
+            "page_size": paginated_query.per_page,
+            "total_items": paginated_query.total,
+            "has_next_page": paginated_query.has_next,
+            "has_previous_page": paginated_query.has_prev,
+            "transactions": transactions,
+        })
 
     @parse_params(Argument("periode", location="json", required=True, type=str),
                   Argument("jenis_parameter", location="json", required=True, type=str),
@@ -57,8 +69,11 @@ class TransactionsResource(Resource):
     @token_required
     def post(self, periode, jenis_parameter, excel_id, inputs, user_id):
         """Create a new Transaction"""
-        variable_mappings = {var.id: {"name": var.input_name, "category": var.category}
-                             for var in VariablesRepository.get_by(excel_id=excel_id).all()}
+        # Get variable mappings
+        variables = VariablesRepository.get_by(excel_id=excel_id).all()
+        variable_mappings = {var.id: {"name": var.input_name,
+                                      "category": var.category} for var in variables}
+
         input_data = {}
         transaction_records = []
 
@@ -71,17 +86,17 @@ class TransactionsResource(Resource):
 
         for key, value in inputs.items():
             variable_input = variable_mappings.get(key)
-            variable_string = f"{variable_input['category']}: {variable_input['name']}" if variable_input["category"] else variable_input["name"]
-            input_data[variable_string] = value
 
-            transaction_records.append(EfficiencyTransactionDetail(
-                variable_id=key,
-                nilai=value,
-                efficiency_transaction_id=transaction_parent.id,
-                created_by=user_id
-            ))
+            if variable_input:
+                variable_string = f"{variable_input['category']}: {variable_input['name']}" if variable_input["category"] else variable_input["name"]
+                input_data[variable_string] = value
 
-        # TransactionRepository.bulk_create(transaction_records)
+                transaction_records.append(EfficiencyTransactionDetail(
+                    variable_id=key,
+                    nilai=value,
+                    efficiency_transaction_id=transaction_parent.id,
+                    created_by=user_id
+                ))
 
         # Send data to API
         try:
@@ -97,16 +112,16 @@ class TransactionsResource(Resource):
         for variable_title, input_value in outputs.items():
             variable_id = get_key_by_value(variable_mappings, variable_title)
 
-            transaction_records.append(EfficiencyTransactionDetail(
-                variable_id=variable_id,
-                efficiency_transaction_id=transaction_parent.id,
-                nilai=input_value,
-                created_by=user_id
-            ))
+            if variable_id:
+                transaction_records.append(EfficiencyTransactionDetail(
+                    variable_id=variable_id,
+                    efficiency_transaction_id=transaction_parent.id,
+                    nilai=input_value,
+                    created_by=user_id
+                ))
 
         try:
             transaction_parent.commit()
-
             db.session.bulk_save_objects(transaction_records)
             db.session.commit()
         except SQLAlchemyError as e:
@@ -137,17 +152,85 @@ class TransactionResource(Resource):
         return response(200, True, "Transaction deleted successfully")
 
     @parse_params(
-        Argument("periode", location="json", type=str, default=None),
-        Argument("jenis_parameter", location="json", type=str, default=None),
+        Argument("inputs", location="json", required=True, type=dict),
     )
-    def put(self, transaction_id, periode, jenis_parameter):
+    @token_required
+    def put(self, transaction_id, inputs, user_id):
 
+        # Fetch the transaction and its details by ID
         transaction = TransactionRepository.get_by_id(transaction_id)
 
         if not transaction:
             return response(404, False, "Transaction not found")
 
-        TransactionRepository.update(transaction_id, periode=periode,
-                                     jenis_parameter=jenis_parameter)
+         # Get variables mapping
+        variables = VariablesRepository.get_by(excel_id=transaction.excel_id).all()
+        variable_mappings = {var.id: {"name": var.input_name,
+                                      "category": var.category} for var in variables}
+
+        # Gather existing transaction details in bulk to minimize repeated queries
+        existing_details = {detail.variable_id: detail for detail in transaction.efficiency_transaction_details.filter(
+            EfficiencyTransactionDetail.variable_id.in_(inputs.keys())).all()}
+
+        input_data = {}
+        transaction_records = []
+
+        for key, value in inputs.items():
+            variable_input = variable_mappings.get(key)
+
+            if variable_input:
+                variable_string = f"{variable_input['category']}: {variable_input['name']}" if variable_input["category"] else variable_input["name"]
+                input_data[variable_string] = value
+
+                transaction_data = existing_details.get(key)
+
+                if transaction_data:
+                    transaction_data.nilai = value
+                    transaction_data.updated_by = user_id
+                    transaction_data.updated_at = datetime.now()
+                else:
+                    transaction_records.append(EfficiencyTransactionDetail(
+                        variable_id=key,
+                        nilai=value,
+                        efficiency_transaction_id=transaction_id,
+                        created_by=user_id
+                    ))
+
+        # Send data to API
+        try:
+            res = requests.post(WINDOWS_EFFICIENCY_APP_API, json=input_data)
+            res.raise_for_status()  # Raises an error for HTTP codes 4xx/5xx
+        except requests.exceptions.RequestException as e:
+            # Handle error, e.g., logging or retry mechanism
+            print(f"API request failed: {e}")
+            return response(500, False, "Failed to create transaction")
+
+        outputs = res.json()
+        for variable_title, input_value in outputs.items():
+            variable_id = get_key_by_value(variable_mappings, variable_title)
+
+            if variable_id:
+                transaction_data = existing_details.get(variable_id)
+
+                if transaction_data:
+                    transaction_data.nilai = input_value
+                    transaction_data.updated_by = user_id
+                    transaction_data.updated_at = datetime.now()
+                else:
+                    transaction_records.append(EfficiencyTransactionDetail(
+                        variable_id=variable_id,
+                        efficiency_transaction_id=transaction_id,
+                        nilai=input_value,
+                        created_by=user_id
+                    ))
+
+        try:
+            if transaction_records:
+                db.session.bulk_save_objects(transaction_records)
+
+            db.session.commit()
+        except SQLAlchemyError as e:
+            db.session.rollback()
+            return response(500, False, "Failed to create transaction")
 
         return response(200, True, "Transaction updated successfully")
