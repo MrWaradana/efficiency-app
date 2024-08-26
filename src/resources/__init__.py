@@ -4,3 +4,4 @@ from .cases import CasesResource
 from .excels import ExcelsResource, ExcelResource
 from .variables import VariablesResource
 from .transaction import TransactionResource, TransactionsResource
+from .transaction_data import TransactionDataResource, TransactionDataDetailResource
