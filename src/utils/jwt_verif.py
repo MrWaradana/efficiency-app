@@ -8,7 +8,7 @@ import requests
 from utils import response
 # from repositories import UserRepository
 
-import config
+from config import config
 
 
 def token_required(f):

@@ -3,12 +3,11 @@ from uuid import UUID
 from flask import Response
 from flask_restful import Resource
 from flask_restful.reqparse import Argument
-from models.excels import Excels
 from utils import parse_params, response
 from repositories import ExcelsRepository
 from utils.jwt_verif import token_required
 from utils.util import fetch_data_from_api
-from config import WINDOWS_EFFICIENCY_APP_API
+from config import config
 
 
 class ExcelsResource(Resource):
@@ -29,7 +28,7 @@ class ExcelsResource(Resource):
             excel.excel_filename for excel in ExcelsRepository.get_by().all()
         }
         new_excel_names: Set[str] = (
-            set(fetch_data_from_api(WINDOWS_EFFICIENCY_APP_API)["data"]["excels"])
+            set(fetch_data_from_api(config.WINDOWS_EFFICIENCY_APP_API)["data"]["excels"])
             - existing_excel_names
         )
         [

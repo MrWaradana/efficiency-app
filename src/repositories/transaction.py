@@ -1,6 +1,6 @@
 """ Defines the Cases repository """
 
-from datetime import datetime
+from datetime import date
 from typing import Optional
 from uuid import UUID
 from digital_twin_migration.models.efficiency_app import EfficiencyTransaction
@@ -48,7 +48,7 @@ class TransactionRepository:
 
     @staticmethod
     def create(
-        periode: str,
+        periode: date,
         jenis_parameter: str,
         excel_id: str,
         created_by: str,
@@ -66,8 +66,6 @@ class TransactionRepository:
         """
 
         # Change periode to date
-        periode = datetime.strptime(periode, "%Y-%m-%d").date()
-
         inputs = EfficiencyTransaction(
             periode=periode,
             jenis_parameter=jenis_parameter,
