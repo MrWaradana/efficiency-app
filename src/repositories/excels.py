@@ -33,7 +33,7 @@ class ExcelsRepository:
         Returns:
             Excels: The newly created excel.
         """
-        excel = Excel(excel_filename=name, description=description, user_id=user_id)
+        excel = Excel(excel_filename=name, description=description, created_by=user_id)
         return excel.save()
 
     @staticmethod
