@@ -2,7 +2,7 @@
 
 from typing import Optional
 from uuid import UUID
-from digital_twin_migration.models.efficiency_app import Excels
+from digital_twin_migration.models.efficiency_app import Excel
 from sqlalchemy.orm.query import Query
 
 
@@ -20,10 +20,10 @@ class ExcelsRepository:
         Returns:
             Excels: A query object that can be used to retrieve the filtered results.
         """
-        return Excels.query.filter_by(**kwargs)
+        return Excel.query.filter_by(**kwargs)
 
     @staticmethod
-    def create(name: str, user_id: UUID, description: str = None, ) -> Excels:
+    def create(name: str, user_id: UUID, description: str = None, ) -> Excel:
         """Create a new excel
 
         Args:
@@ -33,11 +33,11 @@ class ExcelsRepository:
         Returns:
             Excels: The newly created excel.
         """
-        excel = Excels(name, description, user_id)
+        excel = Excel(name, description, user_id)
         return excel.save()
 
     @staticmethod
-    def get_by_id(id: UUID) -> Optional[Excels]:
+    def get_by_id(id: UUID) -> Optional[Excel]:
         """Query a excel by id
 
         Args:
@@ -46,7 +46,7 @@ class ExcelsRepository:
         Returns:
             Excels: The excel with the corresponding id or None if no excel is found.
         """
-        return Excels.query.filter_by(id=id).one_or_none()
+        return Excel.query.filter_by(id=id).one_or_none()
 
     @staticmethod
     def delete(id: str) -> None :
@@ -58,14 +58,14 @@ class ExcelsRepository:
         Returns:
             None
         """
-        excel = Excels.query.get(id)
+        excel = Excel.query.get(id)
         if excel:
             excel.delete()
 
         return
 
     @staticmethod
-    def update(id: UUID, **columns: dict) -> Excels:
+    def update(id: UUID, **columns: dict) -> Excel:
         """Update excel information
 
         Args:

@@ -8,7 +8,7 @@ from sqlalchemy import text
 
 from utils import handle_exception, response
 
-import config
+from config import config
 import routes
 
 # from models import db
@@ -21,14 +21,9 @@ server = Flask(__name__)
 
 """Server Configuration"""
 server.debug = config.DEBUG
-# server.config["SQLALCHEMY_DATABASE_URI"] = config.DB_URI
-server.config["SQLALCHEMY_DATABASE_URI"] = (
-    # "postgresql+psycopg2://aimo:aimo%21%40%23@localhost:5432/ircfa"
-    config.DB_URI
-)
+server.config["SQLALCHEMY_DATABASE_URI"] = (config.DB_URI)
 server.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = config.SQLALCHEMY_TRACK_MODIFICATIONS
 server.config["SECRET_KEY"] = config.SECRET_KEY
-server.config["IMAGE_URL"] = config.IMAGE_URL
 
 
 """Database Configuration"""

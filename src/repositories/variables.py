@@ -1,8 +1,8 @@
-""" Defines the Variables repository """
+""" Defines the Variable repository """
 
 from typing import List
 from uuid import UUID
-from digital_twin_migration.models.efficiency_app import Variables
+from digital_twin_migration.models.efficiency_app import Variable
 from digital_twin_migration.models import db
 from sqlalchemy.orm import joinedload
 from sqlalchemy.orm.query import Query
@@ -14,7 +14,7 @@ class VariablesRepository:
     @staticmethod
     def get_by(**kwargs: dict) -> Query:
         """
-        Query variables by filters
+        Query variable by filters
 
         Args:
             **kwargs (dict): A dictionary of keyword arguments containing the
@@ -23,17 +23,17 @@ class VariablesRepository:
         Returns:
             Query: A query object that can be used to retrieve the filtered results.
         """
-        return Variables.query.filter_by(**kwargs)
+        return Variable.query.filter_by(**kwargs)
 
     @staticmethod
-    def get_join() -> List[Variables]:
+    def get_join() -> List[Variable]:
         """
-        Query all variables with joined units.
+        Query all variable with joined units.
 
         Returns:
-            List[Variables]: A list of variable objects with their respective units.
+            List[Variable]: A list of variable objects with their respective units.
         """
-        return Variables.query.options(joinedload(Variables.units)).all()
+        return Variable.query.options(joinedload(Variable.units)).all()
 
     @staticmethod
     def create(
@@ -44,7 +44,7 @@ class VariablesRepository:
         user_id: UUID,
         short_name: str = None,
         category: str = None
-    ) -> Variables:
+    ) -> Variable:
         """Create a new variable
 
         Args:
@@ -56,9 +56,9 @@ class VariablesRepository:
             variable_type (str): The type of the variable.
 
         Returns:
-            Variables: The newly created variable model.
+            Variable: The newly created variable model.
         """
-        variable = Variables(
+        variable = Variable(
             category=category,
             excels_id=excels_id,
             input_name=variable,
@@ -70,12 +70,12 @@ class VariablesRepository:
         return variable.save()
     
     @staticmethod
-    def get_by_ids(ids: List[str]) -> List[Variables]:
-        """Get variables by their ids"""
-        return Variables.query.filter(Variables.id.in_(ids)).all()
+    def get_by_ids(ids: List[str]) -> List[Variable]:
+        """Get variable by their ids"""
+        return Variable.query.filter(Variable.id.in_(ids)).all()
 
     @staticmethod
-    def bulk_create(variables: List[Variables]):
+    def bulk_create(variable: List[Variable]):
         """Create a new variable
 
         Args:
@@ -87,22 +87,22 @@ class VariablesRepository:
             variable_type (str): The type of the variable.
 
         Returns:
-            Variables: The newly created variable model.
+            Variable: The newly created variable model.
         """
-        db.session.add_all(variables)
+        db.session.add_all(variable)
         db.session.flush()
         return
 
     @staticmethod
     def get_by_id(id):
         """Query a variable by id"""
-        return Variables.query.filter_by(id=id).one_or_none()
+        return Variable.query.filter_by(id=id).one_or_none()
 
     @staticmethod
     def update(id, **columns):
         """Update variable information"""
 
-        variable = VariablesRepository.get_by_id(id)
+        variable = VariableRepository.get_by_id(id)
 
         if variable:
             for key, value in columns.items():
@@ -115,7 +115,7 @@ class VariablesRepository:
     @staticmethod
     def delete(id):
         """Delete variable"""
-        variable = VariablesRepository.get_by_id(id)
+        variable = VariableRepository.get_by_id(id)
         if variable:
             variable.delete()
             return True

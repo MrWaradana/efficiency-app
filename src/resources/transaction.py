@@ -3,12 +3,13 @@ from flask import request
 from flask_restful import Resource
 from flask_restful.reqparse import Argument
 import requests
-from config import WINDOWS_EFFICIENCY_APP_API
+from config import config
+from repositories.excels import ExcelsRepository
 from utils import parse_params, response, get_key_by_value
 from repositories import VariablesRepository, TransactionRepository
 from sqlalchemy.exc import SQLAlchemyError
 from digital_twin_migration.models import db
-from digital_twin_migration.models.efficiency_app import EfficiencyTransactionDetail
+from digital_twin_migration.models.efficiency_app import EfficiencyDataDetail
 
 from utils.jwt_verif import token_required
 
@@ -42,7 +43,7 @@ class TransactionsResource(Resource):
             transactions = query.all()
             transaction_data = [transaction.json for transaction in transactions]
 
-            return response(200, True, "Transactions retrieved successfully", {
+            return response(200, True, "Data transactions retrieved successfully", {
                 "transactions": transaction_data,
                 "count": count
             })
@@ -72,8 +73,16 @@ class TransactionsResource(Resource):
         """Create a new Transaction"""
         # Get variable mappings
         variables = VariablesRepository.get_by(excel_id=excel_id).all()
-        variable_mappings = {var.id: {"name": var.input_name,
-                                      "category": var.category} for var in variables}
+        variable_mappings = {str(var.id): {"name": var.input_name,
+                                           "category": var.category} for var in variables}
+        
+        # Check if trasaction periode already exists
+        # periode = datetime.strptime(periode, "%Y-%m-%d").date()
+        
+        is_periode_exist = TransactionRepository.get_by(periode=periode).first()
+            
+        if is_periode_exist:
+            return response(400, False, "Data Transaction for this periode already exist", None)
 
         input_data = {}
         transaction_records = []
@@ -84,8 +93,9 @@ class TransactionsResource(Resource):
             excel_id=excel_id,
             created_by=user_id
         )
-        
-        
+
+        excel = ExcelsRepository.get_by(id=excel_id).first().excel_filename
+
         for key, value in inputs.items():
             variable_input = variable_mappings.get(key)
 
@@ -93,16 +103,18 @@ class TransactionsResource(Resource):
                 variable_string = f"{variable_input['category']}: {variable_input['name']}" if variable_input["category"] else variable_input["name"]
                 input_data[variable_string] = value
 
-                transaction_records.append(EfficiencyTransactionDetail(
+                transaction_records.append(EfficiencyDataDetail(
                     variable_id=key,
-                    nilai=value,
+                    nilai=float(value),
+                    nilai_string=None,
                     efficiency_transaction_id=transaction_parent.id,
                     created_by=user_id
                 ))
 
         # Send data to API
         try:
-            res = requests.post(WINDOWS_EFFICIENCY_APP_API, json=input_data)
+            res = requests.post(f'{config.WINDOWS_EFFICIENCY_APP_API}/{excel}',
+                                json={'inputs': input_data})
             res.raise_for_status()  # Raises an error for HTTP codes 4xx/5xx
         except requests.exceptions.RequestException as e:
             # Handle error, e.g., logging or retry mechanism
@@ -111,24 +123,32 @@ class TransactionsResource(Resource):
 
         outputs = res.json()
 
-        for variable_title, input_value in outputs.items():
+        for variable_title, input_value in outputs['data'].items():
             variable_id = get_key_by_value(variable_mappings, variable_title)
+            value_float, value_string = None, None
+
+            try:
+                value_float = float(input_value)
+            except ValueError:
+                value_string = value
 
             if variable_id:
-                transaction_records.append(EfficiencyTransactionDetail(
+                transaction_records.append(EfficiencyDataDetail(
                     variable_id=variable_id,
                     efficiency_transaction_id=transaction_parent.id,
-                    nilai=input_value,
+                    nilai=value_float,
+                    nilai_string=value_string,
                     created_by=user_id
                 ))
 
         try:
+            db.session.add_all(transaction_records)
+
             transaction_parent.commit()
-            db.session.bulk_save_objects(transaction_records)
             db.session.commit()
         except SQLAlchemyError as e:
             db.session.rollback()
-            return response(500, False, "Failed to create transaction")
+            return response(500, False, str(e))
 
         return response(200, True, "Transaction created successfully")
 
@@ -139,7 +159,7 @@ class TransactionResource(Resource):
         transaction = TransactionRepository.get_by_id(transaction_id)
 
         if not transaction:
-            return response(404, False, "Transaction not found")
+            return response(404, False, "Data transaction not found")
 
         return response(200, True, "Transaction retrieved successfully", transaction.json)
 
@@ -200,12 +220,13 @@ class TransactionResource(Resource):
 
         # Send data to API
         try:
-            res = requests.post(WINDOWS_EFFICIENCY_APP_API, json=input_data)
+            res = requests.post(f'{WINDOWS_EFFICIENCY_APP_API}/{transaction.excels.excel_filename}',
+                                json={'inputs': input_data})
             res.raise_for_status()  # Raises an error for HTTP codes 4xx/5xx
         except requests.exceptions.RequestException as e:
             # Handle error, e.g., logging or retry mechanism
             print(f"API request failed: {e}")
-            return response(500, False, "Failed to create transaction")
+            return response(500, False, str(e))
 
         outputs = res.json()
         for variable_title, input_value in outputs.items():
@@ -226,13 +247,8 @@ class TransactionResource(Resource):
                         created_by=user_id
                     ))
 
-        try:
-            if transaction_records:
-                db.session.bulk_save_objects(transaction_records)
+        if transaction_records:
+            db.session.bulk_save_objects(transaction_records)
 
-            db.session.commit()
-        except SQLAlchemyError as e:
-            db.session.rollback()
-            return response(500, False, "Failed to create transaction")
-
+        db.session.commit()
         return response(200, True, "Transaction updated successfully")
