@@ -36,42 +36,29 @@ class VariablesRepository:
         return Variable.query.options(joinedload(Variable.units)).all()
 
     @staticmethod
-    def create(
-        excels_id: UUID,
-        variable: str,
-        satuan: str,
-        variable_type: str,
-        user_id: UUID,
-        short_name: str = None,
-        category: str = None
-    ) -> Variable:
+    def create(**attributes) -> Variable:
         """Create a new variable
 
-        Args:
-            excels_id (UUID): The id of the excel model.
-            variable (str): The name of the variable.
-            data_location (str): The location of the data.
-            units_id (UUID): The id of the units model.
-            base_case (str): The base case of the variable.
-            variable_type (str): The type of the variable.
+        Parameters:
+            attributes (dict): A dictionary of keyword arguments containing the attribute names
+                and their corresponding values to create a new Variable object with.
 
         Returns:
             Variable: The newly created variable model.
         """
-        variable = Variable(
-            category=category,
-            excels_id=excels_id,
-            input_name=variable,
-            short_name=short_name,
-            satuan=satuan,
-            in_out=variable_type,
-            created_by=user_id
-        )
-        return variable.save()
+        new_variable = Variable(**attributes)
+        return new_variable.add()
     
     @staticmethod
     def get_by_ids(ids: List[str]) -> List[Variable]:
-        """Get variable by their ids"""
+        """Get variable by their ids
+
+        Args:
+            ids (List[str]): The list of id of the variable.
+
+        Returns:
+            List[Variable]: A list of variable object.
+        """
         return Variable.query.filter(Variable.id.in_(ids)).all()
 
     @staticmethod
@@ -79,15 +66,10 @@ class VariablesRepository:
         """Create a new variable
 
         Args:
-            excels_id (UUID): The id of the excel model.
-            variable (str): The name of the variable.
-            data_location (str): The location of the data.
-            units_id (UUID): The id of the units model.
-            base_case (str): The base case of the variable.
-            variable_type (str): The type of the variable.
+            variable (List[Variable]): The list of variable object to create.
 
         Returns:
-            Variable: The newly created variable model.
+            None
         """
         db.session.add_all(variable)
         db.session.flush()
@@ -95,27 +77,47 @@ class VariablesRepository:
 
     @staticmethod
     def get_by_id(id):
-        """Query a variable by id"""
+        """Query a variable by id
+
+        Args:
+            id (str): The id of the variable.
+
+        Returns:
+            Variable or None: The variable object if found, None otherwise.
+        """
         return Variable.query.filter_by(id=id).one_or_none()
 
     @staticmethod
     def update(id, **columns):
-        """Update variable information"""
+        """Update variable information
 
-        variable = VariableRepository.get_by_id(id)
+        Args:
+            id (str): The id of the variable.
+            **columns (dict): The dictionary of column names and their corresponding values.
+
+        Returns:
+            Variable or None: The updated variable object if found, None otherwise.
+        """
+
+        variable = VariablesRepository.get_by_id(id)
 
         if variable:
             for key, value in columns.items():
                 setattr(variable, key, value)
 
-            variable.commit()
-
         return variable
 
     @staticmethod
     def delete(id):
-        """Delete variable"""
-        variable = VariableRepository.get_by_id(id)
+        """Delete variable
+
+        Args:
+            id (str): The id of the variable.
+
+        Returns:
+            bool: True if the variable is deleted, False otherwise.
+        """
+        variable = VariablesRepository.get_by_id(id)
         if variable:
             variable.delete()
             return True

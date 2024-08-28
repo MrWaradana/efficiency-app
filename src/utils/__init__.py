@@ -6,3 +6,5 @@ from .decode_image import decodeImage
 from .datetime import *
 
 from .util import fetch_data_from_api, get_key_by_value
+
+from .formula import calculate_nilai_losses, calculate_gap

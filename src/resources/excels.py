@@ -9,14 +9,17 @@ from utils.jwt_verif import token_required
 from utils.util import fetch_data_from_api
 from config import config
 
+from digital_twin_migration.database import Transactional, Propagation
 
 class ExcelsResource(Resource):
     """Excels"""
 
     @token_required
+    @Transactional(propagation=Propagation.REQUIRED)
     def get(self, user_id) -> Response:
         """
-        Get excels from source and create new ones if they don't exist.
+        Fetches all existing excels from the database and creates new excels if
+        they don't exist. Then, returns a response containing all excels.
 
         Args:
             user_id (UUID): The id of the user.
@@ -24,24 +27,34 @@ class ExcelsResource(Resource):
         Returns:
             Response: The response containing the excels.
         """
+
+        # Fetch all existing excel filenames from the database
         existing_excel_names: Set[str] = {
-            excel.excel_filename for excel in ExcelsRepository.get_by().all()
+            excel.excel_filename
+            for excel in ExcelsRepository.get_by().all()
         }
-        new_excel_names: Set[str] = (
-            set(fetch_data_from_api(config.WINDOWS_EFFICIENCY_APP_API)["data"]["excels"])
-            - existing_excel_names
-        )
+
+        # Fetch all excel filenames from the source API and remove the ones that already exist
+        source_excel_data = fetch_data_from_api(config.WINDOWS_EFFICIENCY_APP_API)
+        source_excel_names = set(source_excel_data["data"]["excels"])
+        new_excel_names = source_excel_names - existing_excel_names
+
+        # Create new excel objects for the new excels in the database
         [
             ExcelsRepository.create(name, user_id)
             for name in new_excel_names
         ]
 
-        # Get all excels
+        # Fetch all excel objects from the database
         excels = [excel.json for excel in ExcelsRepository.get_by().all()]
-        
 
-
-        return response(200, True, "Excels retrieved successfully", excels)
+        # Return a response containing all excels
+        return response(
+            200,
+            True,
+            "Excels retrieved successfully",
+            excels
+        )
 
 
 class ExcelResource(Resource):
@@ -52,17 +65,24 @@ class ExcelResource(Resource):
         Get a specific excel by id
 
         Args:
-            user_id (UUID): The id of the user.
             excel_id (str): The id of the excel to retrieve.
+            user_id (UUID): The id of the user.
 
         Returns:
             Response: The response containing the excel.
+
+        This function gets a specific excel by its id from the database.
+        If the excel is found, it returns a response containing the excel.
+        If the excel is not found, it returns a response indicating that the excel was not found.
         """
+        # Get the excel from the database by its id
         excel = ExcelsRepository.get_by_id(excel_id)
 
+        # If the excel is not found, return a response indicating that the excel was not found
         if not excel:
             return response(404, False, "Excel not found")
 
+        # Return a response containing the excel
         return response(200, True, "Excel retrieved successfully", excel.json)
 
     @token_required
@@ -71,17 +91,25 @@ class ExcelResource(Resource):
         Delete a specific excel by id
 
         Args:
-            user_id (UUID): The id of the user.
             excel_id (str): The id of the excel to delete.
+            user_id (UUID): The id of the user.
 
         Returns:
             Response: The response containing the deleted excel.
+
+        This function deletes a specific excel by its id from the database.
+        If the excel is found and deleted, it returns a response indicating that the excel was deleted successfully.
+        If the excel is not found, it returns a response indicating that the excel was not found.
         """
+        # Get the excel from the database by its id
         excel = ExcelsRepository.get_by_id(excel_id)
 
+        # If the excel is not found, return a response indicating that the excel was not found
         if not excel:
             return response(404, False, "Excel not found")
 
+        # Delete the excel from the database
         ExcelsRepository.delete(excel_id)
 
+        # Return a response indicating that the excel was deleted successfully
         return response(200, True, "Excel deleted successfully")

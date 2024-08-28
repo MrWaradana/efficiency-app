@@ -4,3 +4,5 @@ from .cases import CasesRepository
 from .excels import ExcelsRepository
 from .transaction import TransactionRepository
 from .variables import VariablesRepository
+from .causes import CausesRepository
+from .headers import HeadersRepository

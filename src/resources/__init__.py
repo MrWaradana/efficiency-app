@@ -1,7 +1,7 @@
 # from .authentication import SigninResource, SignupResource
 
-from .cases import CasesResource
-from .excels import ExcelsResource, ExcelResource
-from .variables import VariablesResource
-from .transaction import TransactionResource, TransactionsResource
-from .transaction_data import TransactionDataResource, TransactionDataDetailResource
+from .cases import *
+from .excels import *
+from .variables import *
+from .data import *
+from .data_details import *
