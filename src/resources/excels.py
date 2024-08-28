@@ -38,6 +38,8 @@ class ExcelsResource(Resource):
 
         # Get all excels
         excels = [excel.json for excel in ExcelsRepository.get_by().all()]
+        
+
 
         return response(200, True, "Excels retrieved successfully", excels)
 

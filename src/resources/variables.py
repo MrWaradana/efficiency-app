@@ -63,7 +63,7 @@ class VariablesResource(Resource):
         db.session.add_all(variable_records)
         db.session.commit()
 
-        response_data = [var.json for var in VariablesRepository.get_by(excel_id=excel_id, is_pareto=True).all()]
+        response_data = [{**var.json, "excel": var.excel.excel_filename} for var in VariablesRepository.get_by(excel_id=excel_id, is_pareto=True).all()]
 
         return response(200, True, "Variables retrieved successfully", response_data)
 
