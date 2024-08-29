@@ -39,4 +39,4 @@ EXPOSE 3002
 WORKDIR /app
 
 # Entry point for the application
-ENTRYPOINT ["poetry", "run", "python", "src/server.py"]
+CMD ["python", "src/server.py"]
