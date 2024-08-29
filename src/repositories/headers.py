@@ -1,7 +1,7 @@
 """ Defines the VariableHeaders repository """
 
 from digital_twin_migration.models.efficiency_app import VariableHeader
-
+from digital_twin_migration.database import Transactional, Propagation
 
 class HeadersRepository:
     """
@@ -24,6 +24,7 @@ class HeadersRepository:
         return VariableHeader.query.filter_by(**kwargs)
 
     @staticmethod
+    @Transactional(propagation=Propagation.REQUIRED)
     def create(**attributes):
         """
         Create a new VariableHeader.

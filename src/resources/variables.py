@@ -20,6 +20,7 @@ variable_schema = VariableSchema()
 variable_cause_schema = VariableCauseSchema()
 Variable_header_schema = VariableHeaderSchema()
 
+
 class VariablesResource(Resource):
     """Variable resource"""
 
@@ -45,7 +46,6 @@ class VariablesResource(Resource):
             var.excel_variable_name
             for var in VariablesRepository.get_by(excel_id=excel_id).all()
         }
-
 
         source_variables = fetch_data_from_api(
             f"{config.WINDOWS_EFFICIENCY_APP_API}/{excel.excel_filename}"
@@ -76,10 +76,10 @@ class VariablesResource(Resource):
 
         db.session.add_all(variable_records)
         db.session.commit()
-        
+
         response_data = VariablesRepository.get_by(
-                excel_id=excel_id, is_pareto=True
-            ).all()
+            excel_id=excel_id, is_pareto=True
+        ).all()
 
         return response(200, True, "Variables retrieved successfully", variable_schema.dump(response_data, many=True))
 
@@ -106,6 +106,27 @@ class VariableResource(Resource):
         VariablesRepository.delete(variable_id)
 
         return response(200, True, "Variable deleted successfully")
+
+    @token_required
+    @parse_params(
+        Argument("category", location="json", required=False, type=str, default=None),
+        Argument("short_name", location="json", required=False, type=str, default=None),
+        Argument("input_name", location="json", required=False, type=str, default=None),
+        Argument("satuan", location="json", required=False, type=str, default=None),
+        Argument("is_pareto", location="json", required=False, type=int, default=None),
+        Argument("is_faktor_koreksi", location="json", required=False, type=str, default=None),
+        Argument("is_nilai_losses", location="json", required=False, type=str, default=None),
+    )
+    @Transactional(propagation=Propagation.REQUIRED)
+    def put(self, user_id: str, variable_id: str, **inputs) -> Response:
+        variable = VariablesRepository.get_by_id(variable_id)
+
+        if not variable:
+            return response(404, False, "Variable not found")
+
+        VariablesRepository.update(variable_id, updated_by=user_id , **inputs)
+
+        return response(200, True, "Variable updated successfully")
 
 
 class VariableCausesResource(Resource):
@@ -141,7 +162,7 @@ class VariableCausesResource(Resource):
         if not variable:
             return response(404, False, "Variable not found")
 
-        cause = CausesRepository.create(**inputs, variable_id=variable_id)
+        cause = CausesRepository.create(**inputs, created_by=user_id, variable_id=variable_id)
 
         return response(200, True, "Cause created successfully", cause.json)
 
@@ -193,9 +214,9 @@ class VariableHeadersResource(Resource):
         if not variable:
             return response(404, False, "Variable not found")
 
-        headers = [header.json for header in variable.headers]
+        headers = variable.headers
 
-        return response(200, True, "Variable headers retrieved successfully", headers)
+        return response(200, True, "Variable headers retrieved successfully", Variable_header_schema.dump(headers, many=True))
 
     @token_required
     @parse_params(
@@ -207,16 +228,15 @@ class VariableHeadersResource(Resource):
             help="Name of the header is required",
         ),
     )
-    @Transactional(propagation=Propagation.REQUIRED)
     def post(self, variable_id: str, user_id: str, **inputs) -> Response:
         variable = VariablesRepository.get_by_id(variable_id)
 
         if not variable:
             return response(404, False, "Variable not found")
 
-        header = HeadersRepository.create(**inputs, variable_id=variable_id)
+        header = HeadersRepository.create(**inputs, variable_id=variable_id, created_by=user_id)
 
-        return response(200, True, "Header created successfully", header.json)
+        return response(200, True, "Header created successfully", Variable_header_schema.dump(header))
 
 
 class VariableHeaderResource(Resource):

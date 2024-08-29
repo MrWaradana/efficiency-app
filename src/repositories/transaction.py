@@ -4,7 +4,7 @@ from typing import Optional
 from digital_twin_migration.models.efficiency_app import EfficiencyTransaction
 from digital_twin_migration.models import db
 from sqlalchemy.orm.query import Query
-
+from digital_twin_migration.database import Transactional, Propagation
 
 class TransactionRepository:
     """The repository for the case model"""
@@ -84,6 +84,7 @@ class TransactionRepository:
         return res
 
     @staticmethod
+    @Transactional(propagation=Propagation.REQUIRED)
     def create(**attributes) -> EfficiencyTransaction:
         """
         This static method is used to create a new EfficiencyTransaction in the database.
