@@ -1,5 +1,5 @@
-# Stage 1: Builder
-FROM python:3.11-buster as builder
+# Use the official Python 3.11 image from the Docker Hub
+FROM python:3.11-slim as builder
 
 # Install Poetry
 RUN pip install poetry
@@ -10,29 +10,33 @@ ENV POETRY_NO_INTERACTION=1 \
     POETRY_VIRTUALENVS_CREATE=1 \
     POETRY_CACHE_DIR=/tmp/poetry_cache
 
+# Set the working directory
 WORKDIR /app
 
-# Copy pyproject.toml and poetry.lock for dependency installation
+# Copy the Poetry configuration files
 COPY pyproject.toml poetry.lock ./
 
-# Install dependencies with Poetry
+# Install dependencies
 RUN poetry install --no-dev --no-root
 
-# Stage 2: Runtime
-FROM python:3.11-slim-buster as runtime
+# Use a new slim image for the runtime
+FROM python:3.11-slim as runtime
 
-# Set environment variables for Poetry virtual environment
-ENV VIRTUAL_ENV=/app/.venv \
+# Set environment variables for Poetry
+ENV POETRY_VIRTUALENVS_IN_PROJECT=1 \
     PATH="/app/.venv/bin:$PATH"
 
-# Copy the virtual environment from the builder stage
+# Copy Poetry installation from builder
 COPY --from=builder /app/.venv /app/.venv
 
-# Copy application code
+# Copy application files
 COPY . /app/
 
-# Expose the port on which the application will run
+# Expose port for the application
 EXPOSE 3002
 
-# Entry point for running the application
+# Set the working directory
+WORKDIR /app
+
+# Entry point for the application
 ENTRYPOINT ["poetry", "run", "python", "src/server.py"]
