@@ -1,13 +1,14 @@
 """ Defines the Cases repository """
 
 from digital_twin_migration.models.efficiency_app import VariableCause
-
+from digital_twin_migration.database import Transactional, Propagation
 
 class CausesRepository:
     """
     The repository for the case model
     """
 
+    
     @staticmethod
     def get_by(**kwargs):
         """
@@ -22,6 +23,7 @@ class CausesRepository:
         """
         return VariableCause.query.filter_by(**kwargs)
 
+    @Transactional(propagation=Propagation.REQUIRED)
     @staticmethod
     def create(**attributes):
         """

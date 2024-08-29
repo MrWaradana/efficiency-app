@@ -1,7 +1,7 @@
 """ Defines the Cases repository """
 
 from digital_twin_migration.models.efficiency_app import Case
-
+from digital_twin_migration.database import Transactional, Propagation
 
 class CasesRepository:
     """
@@ -24,6 +24,7 @@ class CasesRepository:
         return Case.query.filter_by(**kwargs)
 
     @staticmethod
+    @Transactional(propagation=Propagation.REQUIRED)
     def create(**attributes):
         """
         Create a new case.

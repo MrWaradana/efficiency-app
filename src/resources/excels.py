@@ -2,14 +2,18 @@ from typing import Set
 from flask import Response
 from flask_restful import Resource
 from flask_restful.reqparse import Argument
+from schemas.excel import ExcelSchema
 from utils import parse_params, response
 from repositories import ExcelsRepository
 from utils.jwt_verif import token_required
 from utils.util import fetch_data_from_api
 from config import config
+from sqlalchemy.orm import joinedload
 
 from digital_twin_migration.database import Transactional, Propagation
+from digital_twin_migration.models.efficiency_app import Excel
 
+excel_schema = ExcelSchema()
 
 class ExcelsResource(Resource):
     """Excels"""
@@ -40,15 +44,15 @@ class ExcelsResource(Resource):
 
         # Create new excel objects for the new excels in the database
         [
-            ExcelsRepository.create(name=name, created_by=user_id)
+            ExcelsRepository.create(excel_filename=name, created_by=user_id)
             for name in new_excel_names
         ]
 
         # Fetch all excel objects from the database
-        excels = [excel.json for excel in ExcelsRepository.get_by().all()]
+        excels = ExcelsRepository.query().all()
 
         # Return a response containing all excels
-        return response(200, True, "Excels retrieved successfully", excels)
+        return response(200, True, "Excels retrieved successfully", excel_schema.dump(excels, many=True))
 
     @parse_params(Argument("name", location="json", required=True))
     @token_required
@@ -93,7 +97,7 @@ class ExcelResource(Resource):
             return response(404, False, "Excel not found")
 
         # Return a response containing the excel
-        return response(200, True, "Excel retrieved successfully", excel.json)
+        return response(200, True, "Excel retrieved successfully", excel_schema.dump(excel))
 
     @token_required
     def delete(self, excel_id: str, user_id: str) -> Response:

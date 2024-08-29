@@ -1,14 +1,21 @@
-from repositories import ExcelsRepository
+from digital_twin_migration.models.efficiency_app import Case
+from digital_twin_migration.database import Transactional, Propagation, db
 
-
-def excels_seeder():
+@Transactional(propagation=Propagation.REQUIRED)
+def case_seeder():
     # read_excel_value = read_excel_data("./dummy_data/TFELINK.xlsm")
     # excels = read_excel_value
     # print(excels)
+    
+    
 
-    excels = [{"name": "TFELINK", "src": "./dummy_data/TFELINK.xlsm"}]
+    target = Case(name="Target", seq=100)
+    kpi = Case(name="KPI Tahunan", seq=200)
+    current = Case(name="Current", seq=100)
 
-    for e in excels:
-        ExcelsRepository.create(e["name"], e["src"])
+    db.session.add_all([target, kpi, current])
+    db.session.commit()
 
-    print("Excels seeder done!")
+
+if __name__ == "__main__":
+    case_seeder()

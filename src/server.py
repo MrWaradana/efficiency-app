@@ -5,17 +5,13 @@ from flask_cors import CORS
 import click
 from flask.cli import with_appcontext
 from sqlalchemy import text
-
 from utils import handle_exception, response
-
 from config import config
 import routes
-
-# from models import db
 from digital_twin_migration.models import db
 from seeds import mainSeeder
-
 from schemas.ma import ma
+from flasgger import Swagger
 
 
 """Create an application."""
@@ -40,6 +36,9 @@ CORS(server)
 
 """Marshmallow Configuration"""
 ma.init_app(server)
+
+"""Swagger Configuration"""
+swagger = Swagger(server)
 
 # create command function
 @click.command(name="drop")

@@ -10,6 +10,16 @@ class ExcelsRepository:
     """
     The repository for the excel model
     """
+    
+    @staticmethod
+    def query() -> Query:
+        """
+        Query all excels
+
+        Returns:
+            Query: A query object that can be used to retrieve all excels.
+        """
+        return Excel.query
 
     @staticmethod
     def get_by(**kwargs: dict) -> Query:

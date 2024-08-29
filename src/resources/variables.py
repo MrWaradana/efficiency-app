@@ -4,6 +4,7 @@ from flask_restful.reqparse import Argument
 from repositories.excels import ExcelsRepository
 from repositories.causes import CausesRepository
 from repositories.headers import HeadersRepository
+from schemas.variable import VariableCauseSchema, VariableHeaderSchema, VariableSchema
 from utils import parse_params, response
 from repositories import VariablesRepository
 from utils.jwt_verif import token_required
@@ -14,6 +15,10 @@ from utils.util import fetch_data_from_api
 
 from digital_twin_migration.database import Transactional, Propagation
 
+
+variable_schema = VariableSchema()
+variable_cause_schema = VariableCauseSchema()
+Variable_header_schema = VariableHeaderSchema()
 
 class VariablesResource(Resource):
     """Variable resource"""
@@ -30,7 +35,6 @@ class VariablesResource(Resource):
     )
     def get(self, excel_id: str) -> Response:
         """Retrieve all variable from API based on EXCEL NAME"""
-        print(f"Get variables for excel {excel_id}")
         excel = ExcelsRepository.get_by(id=excel_id).first()
 
         if not excel:
@@ -42,7 +46,6 @@ class VariablesResource(Resource):
             for var in VariablesRepository.get_by(excel_id=excel_id).all()
         }
 
-        print(f"Existing variables: {existing_variables}")
 
         source_variables = fetch_data_from_api(
             f"{config.WINDOWS_EFFICIENCY_APP_API}/{excel.excel_filename}"
@@ -52,35 +55,33 @@ class VariablesResource(Resource):
             print(f"Failed to get variables from {excel.excel_filename}")
             return response(404, False, "Get VARIABLES failed")
 
-        print(f"Source variables: {source_variables}")
-
         variable_records = []
 
         for variable in source_variables["data"]:
-            new_var = Variable(
-                excel_id=excel_id,
-                input_name=variable["variabel"],
-                satuan=variable["unit"],
-                in_out=variable["type"],
-                excel_variable_name=f"{variable['category']}: {variable['variabel']}",
-                created_by="24d28102-4d6a-4628-9a70-665bcd50a0f0",
-                category=variable["category"],
-                short_name=None,
-            )
-            new_var.is_pareto = True
-            variable_records.append(new_var)
+            if f"{variable['category']}: {variable['variabel']}" in existing_variables:
+                continue
+            else:
+                new_var = Variable(
+                    excel_id=excel_id,
+                    input_name=variable["variabel"],
+                    satuan=variable["unit"],
+                    in_out=variable["type"],
+                    excel_variable_name=f"{variable['category']}: {variable['variabel']}",
+                    created_by="24d28102-4d6a-4628-9a70-665bcd50a0f0",
+                    category=variable["category"],
+                    short_name=None,
+                )
+                new_var.is_pareto = True
+                variable_records.append(new_var)
 
         db.session.add_all(variable_records)
         db.session.commit()
-
-        response_data = [
-            {**var.json, "excel": var.excel.excel_filename}
-            for var in VariablesRepository.get_by(
+        
+        response_data = VariablesRepository.get_by(
                 excel_id=excel_id, is_pareto=True
             ).all()
-        ]
 
-        return response(200, True, "Variables retrieved successfully", response_data)
+        return response(200, True, "Variables retrieved successfully", variable_schema.dump(response_data, many=True))
 
 
 class VariableResource(Resource):
@@ -92,7 +93,7 @@ class VariableResource(Resource):
         if not variable:
             return response(404, False, "Variable not found")
 
-        return response(200, True, "Variable retrieved successfully", variable.json)
+        return response(200, True, "Variable retrieved successfully", variable_schema.dump(variable))
 
     @token_required
     def delete(self, user_id: str, variable_id: str) -> Response:
@@ -120,9 +121,9 @@ class VariableCausesResource(Resource):
         if not variable:
             return response(404, False, "Variable not found")
 
-        causes = [cause.json for cause in variable.causes]
+        causes = variable.causes
 
-        return response(200, True, "Variable causes retrieved successfully", causes)
+        return response(200, True, "Variable causes retrieved successfully", variable_cause_schema.dump(causes, many=True))
 
     @token_required
     @parse_params(
@@ -134,7 +135,6 @@ class VariableCausesResource(Resource):
             help="Name of the cause is required",
         ),
     )
-    @Transactional(propagation=Propagation.REQUIRED)
     def post(self, variable_id: str, user_id: str, **inputs) -> Response:
         variable = VariablesRepository.get_by_id(variable_id)
 

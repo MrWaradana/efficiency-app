@@ -9,6 +9,7 @@ from digital_twin_migration.database import Transactional, Propagation
 
 case_schema = CaseSchema()
 
+
 class CasesResource(Resource):
     """
     Cases resource
@@ -17,28 +18,53 @@ class CasesResource(Resource):
     @token_required
     def get(self, user_id):
         """
-        Retrieve all masterdata
-
-        :param user_id: User ID
-        :return: Response with list of cases
+        Get all cases
+        ---
+        parameters:
+          - in: 
+            name: username
+            type: string
+            required: true
+        responses:
+          200:
+            description: A single user item
+            schema:
+              id: User
+              properties:
+                username:
+                  type: string
+                  description: The name of the user
+                  default: Steven Wilson
         """
+        # Query the Cases table in the database and retrieve all cases
         cases = CasesRepository.get_by().all()
-        
+
+        # Return a response containing the cases
         return response(200, True, "Cases retrieved successfully", case_schema.dump(cases, many=True))
 
     @token_required
-    @Transactional(propagation=Propagation.REQUIRED)
     @parse_params(Argument("name", location="json", required=True))
     def post(self, name, user_id):
         """
         Create a new case
 
-        :param name: Name of the case
-        :param user_id: User ID
-        :return: Response with created case
+        Creates a new case with the given name and returns the created case in a response.
+
+        Parameters:
+            name (str): Name of the case
+            user_id (str): User ID
+
+        Returns:
+            Response: Response with created case
         """
+
+        is_case = CasesRepository.get_by(name=name)
+        if is_case.first():
+            return response(409, False, "Case already exists")
+        
+        
         case = CasesRepository.create(name=name)
-        return response(201, True, "Case created successfully", case.json)
+        return response(201, True, "Case created successfully", case_schema.dump(case))
 
 
 class CaseResource(Resource):
@@ -63,7 +89,7 @@ class CaseResource(Resource):
         if not case:
             return response(404, False, "Case not found")
 
-        return response(200, True, "Case retrieved successfully", case.json)
+        return response(200, True, "Case retrieved successfully", case_schema.dump(case))
 
     @token_required
     @Transactional(propagation=Propagation.REQUIRED)
@@ -111,3 +137,4 @@ class CaseResource(Resource):
         CasesRepository.update(case_id, name=name)
 
         return response(200, True, "Case updated successfully")
+    
