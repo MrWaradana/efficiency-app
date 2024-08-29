@@ -1,5 +1,5 @@
 from flask import jsonify, make_response
-from typing import Union, Optional, TypeVar
+from typing import Union, TypeVar
 
 from flask.wrappers import Response
 
@@ -10,21 +10,23 @@ T = TypeVar("T")
 #     return make_response(jsonify(data), status_code)
 
 
-def response(status_code: Union[str, int], status: bool, message: str = "", data: Union[str, dict[T, T], None] = None) -> Response:
+def response(
+    status_code: Union[str, int],
+    status: bool,
+    message: str = "",
+    data: Union[str, dict[T, T], None] = None,
+) -> Response:
     if data is None:
         return make_response(
-            jsonify({
-                'status': status,
-                'message': message,
-            }),
-            status_code
+            jsonify(
+                {
+                    "status": status,
+                    "message": message,
+                }
+            ),
+            status_code,
         )
-    else :
+    else:
         return make_response(
-            jsonify({
-                'status': status,
-                'message': message,
-                'data': data
-            }),
-            status_code
+            jsonify({"status": status, "message": message, "data": data}), status_code
         )

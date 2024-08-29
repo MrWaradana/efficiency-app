@@ -1,5 +1,4 @@
-from typing import List, Set
-from uuid import UUID
+from typing import Set
 from flask import Response
 from flask_restful import Resource
 from flask_restful.reqparse import Argument
@@ -10,6 +9,7 @@ from utils.util import fetch_data_from_api
 from config import config
 
 from digital_twin_migration.database import Transactional, Propagation
+
 
 class ExcelsResource(Resource):
     """Excels"""
@@ -30,8 +30,7 @@ class ExcelsResource(Resource):
 
         # Fetch all existing excel filenames from the database
         existing_excel_names: Set[str] = {
-            excel.excel_filename
-            for excel in ExcelsRepository.get_by().all()
+            excel.excel_filename for excel in ExcelsRepository.get_by().all()
         }
 
         # Fetch all excel filenames from the source API and remove the ones that already exist
@@ -41,7 +40,7 @@ class ExcelsResource(Resource):
 
         # Create new excel objects for the new excels in the database
         [
-            ExcelsRepository.create(name, user_id)
+            ExcelsRepository.create(name=name, created_by=user_id)
             for name in new_excel_names
         ]
 
@@ -49,12 +48,23 @@ class ExcelsResource(Resource):
         excels = [excel.json for excel in ExcelsRepository.get_by().all()]
 
         # Return a response containing all excels
-        return response(
-            200,
-            True,
-            "Excels retrieved successfully",
-            excels
-        )
+        return response(200, True, "Excels retrieved successfully", excels)
+
+    @parse_params(Argument("name", location="json", required=True))
+    @token_required
+    def post(self, user_id, name) -> Response:
+        """
+        Creates a new excel in the database.
+
+        Args:
+            user_id (UUID): The id of the user.
+            name (str): The name of the excel.
+
+        Returns:
+            Response: The response containing the created excel.
+        """
+
+        return response(201, True, "Excel created successfully", {})
 
 
 class ExcelResource(Resource):

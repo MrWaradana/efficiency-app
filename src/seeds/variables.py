@@ -1,4 +1,4 @@
-from repositories import ExcelsRepository,  VariablesRepository
+from repositories import ExcelsRepository
 from utils.read_excel import read_excel_data
 
 

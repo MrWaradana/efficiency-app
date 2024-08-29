@@ -2,6 +2,7 @@
 
 from digital_twin_migration.models.efficiency_app import Case
 
+
 class CasesRepository:
     """
     The repository for the case model.

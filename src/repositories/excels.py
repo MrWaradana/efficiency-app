@@ -57,7 +57,7 @@ class ExcelsRepository:
         return Excel.query.filter_by(id=id).one_or_none()
 
     @staticmethod
-    def delete(id: str) -> None :
+    def delete(id: str) -> None:
         """
         Delete a specific excel by id
 

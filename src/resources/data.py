@@ -1,5 +1,4 @@
 from datetime import datetime
-from flask import request
 from flask_restful import Resource
 from flask_restful.reqparse import Argument
 import requests
@@ -7,13 +6,10 @@ from config import config
 from repositories.excels import ExcelsRepository
 from utils import parse_params, response, get_key_by_value
 from repositories import VariablesRepository, TransactionRepository
-from sqlalchemy.exc import SQLAlchemyError
-from digital_twin_migration.models import db
 from digital_twin_migration.models.efficiency_app import EfficiencyDataDetail
 from digital_twin_migration.database import Transactional, Propagation
 
 from utils.jwt_verif import token_required
-
 
 
 class TransactionsResource(Resource):
@@ -46,11 +42,15 @@ class TransactionsResource(Resource):
         """
 
         # Parse start and end dates if provided
-        start_date = datetime.strptime(start_date, "%Y-%m-%d").date() if start_date else None
+        start_date = (
+            datetime.strptime(start_date, "%Y-%m-%d").date() if start_date else None
+        )
         end_date = datetime.strptime(end_date, "%Y-%m-%d").date() if end_date else None
 
         # Build the query based on the date range
-        query = TransactionRepository.get_query(start_date=start_date, end_date=end_date)
+        query = TransactionRepository.get_query(
+            start_date=start_date, end_date=end_date
+        )
 
         # Get the total count of records
         count = query.count()
@@ -60,31 +60,39 @@ class TransactionsResource(Resource):
             transactions = query.all()
             transaction_data = [transaction.json for transaction in transactions]
 
-            return response(200, True, "Data transactions retrieved successfully", {
-                "transactions": transaction_data,
-                "count": count
-            })
+            return response(
+                200,
+                True,
+                "Data transactions retrieved successfully",
+                {"transactions": transaction_data, "count": count},
+            )
 
         # Apply pagination
         paginated_query = query.paginate(page=page, per_page=size)
         transactions = [transaction.json for transaction in paginated_query.items]
 
         # Construct response
-        return response(200, True, 'Transactions retrieved successfully.', {
-            "current_page": paginated_query.page,
-            "total_pages": paginated_query.pages,
-            "page_size": paginated_query.per_page,
-            "total_items": paginated_query.total,
-            "has_next_page": paginated_query.has_next,
-            "has_previous_page": paginated_query.has_prev,
-            "transactions": transactions,
-        })
+        return response(
+            200,
+            True,
+            "Transactions retrieved successfully.",
+            {
+                "current_page": paginated_query.page,
+                "total_pages": paginated_query.pages,
+                "page_size": paginated_query.per_page,
+                "total_items": paginated_query.total,
+                "has_next_page": paginated_query.has_next,
+                "has_previous_page": paginated_query.has_prev,
+                "transactions": transactions,
+            },
+        )
 
-    @parse_params(Argument("periode", location="json", required=True, type=str),
-                  Argument("jenis_parameter", location="json", required=True, type=str),
-                  Argument("excel_id", location="json", required=True, type=str),
-                  Argument("inputs", location="json", required=True, type=dict),
-                  )
+    @parse_params(
+        Argument("periode", location="json", required=True, type=str),
+        Argument("jenis_parameter", location="json", required=True, type=str),
+        Argument("excel_id", location="json", required=True, type=str),
+        Argument("inputs", location="json", required=True, type=dict),
+    )
     @token_required
     @Transactional(propagation=Propagation.REQUIRED)
     def post(self, periode, jenis_parameter, excel_id, inputs, user_id):
@@ -108,15 +116,19 @@ class TransactionsResource(Resource):
 
         # Create a dictionary of variable mappings where the keys are the variable IDs
         # and the values are dictionaries containing the variable name and category
-        variable_mappings = {str(var.id): {"name": var.input_name,
-                                           "category": var.category} for var in variables}
+        variable_mappings = {
+            str(var.id): {"name": var.input_name, "category": var.category}
+            for var in variables
+        }
 
         # Check if a transaction with the same periode already exists
         is_periode_exist = TransactionRepository.get_by(periode=periode).first()
 
         if is_periode_exist:
             # If a transaction with the same periode already exists, return an error response
-            return response(400, False, "Data Transaction for this periode already exist", None)
+            return response(
+                400, False, "Data Transaction for this periode already exist", None
+            )
 
         # Initialize empty dictionaries to store input data and transaction records
         input_data = {}
@@ -127,7 +139,7 @@ class TransactionsResource(Resource):
             periode=periode,
             jenis_parameter=jenis_parameter,
             excel_id=excel_id,
-            created_by=user_id
+            created_by=user_id,
         )
 
         # Get the filename of the Excel file associated with the transaction
@@ -141,24 +153,32 @@ class TransactionsResource(Resource):
             if variable_input:
 
                 # Construct the variable string based on the category and name of the variable
-                variable_string = f"{variable_input['category']}: {variable_input['name']}" if variable_input["category"] else variable_input["name"]
+                variable_string = (
+                    f"{variable_input['category']}: {variable_input['name']}"
+                    if variable_input["category"]
+                    else variable_input["name"]
+                )
 
                 # Add the input value to the input_data dictionary with the variable string as the key
                 input_data[variable_string] = value
 
                 # Create a new transaction record with the input value and associated variable ID
-                transaction_records.append(EfficiencyDataDetail(
-                    variable_id=key,
-                    nilai=float(value),
-                    nilai_string=None,
-                    efficiency_transaction_id=transaction_parent.id,
-                    created_by=user_id
-                ))
+                transaction_records.append(
+                    EfficiencyDataDetail(
+                        variable_id=key,
+                        nilai=float(value),
+                        nilai_string=None,
+                        efficiency_transaction_id=transaction_parent.id,
+                        created_by=user_id,
+                    )
+                )
 
         # Send the input data to the Windows Efficiency API
         try:
-            res = requests.post(f'{config.WINDOWS_EFFICIENCY_APP_API}/{excel}',
-                                json={'inputs': input_data})
+            res = requests.post(
+                f"{config.WINDOWS_EFFICIENCY_APP_API}/{excel}",
+                json={"inputs": input_data},
+            )
             res.raise_for_status()  # Raise an error if the API request fails
         except requests.exceptions.RequestException as e:
             # Handle error, e.g., logging or retry mechanism
@@ -169,7 +189,7 @@ class TransactionsResource(Resource):
         outputs = res.json()
 
         # Iterate over the output data
-        for variable_title, input_value in outputs['data'].items():
+        for variable_title, input_value in outputs["data"].items():
             variable_id = get_key_by_value(variable_mappings, variable_title)
             value_float, value_string = None, None
 
@@ -180,13 +200,15 @@ class TransactionsResource(Resource):
 
             if variable_id:
                 # Create a new transaction record with the output value and associated variable ID
-                transaction_records.append(EfficiencyDataDetail(
-                    variable_id=variable_id,
-                    efficiency_transaction_id=transaction_parent.id,
-                    nilai=value_float,
-                    nilai_string=value_string,
-                    created_by=user_id
-                ))
+                transaction_records.append(
+                    EfficiencyDataDetail(
+                        variable_id=variable_id,
+                        efficiency_transaction_id=transaction_parent.id,
+                        nilai=value_float,
+                        nilai_string=value_string,
+                        created_by=user_id,
+                    )
+                )
 
         # Bulk create the transaction records
         TransactionRepository.bulk_create(transaction_records)
@@ -196,7 +218,6 @@ class TransactionsResource(Resource):
 
 
 class TransactionResource(Resource):
-
 
     @token_required
     def get(self, transaction_id):
@@ -226,7 +247,9 @@ class TransactionResource(Resource):
 
         # If the transaction is found, return a response with a 200 status code and a success message,
         # along with the JSON representation of the transaction.
-        return response(200, True, "Transaction retrieved successfully", transaction.json)
+        return response(
+            200, True, "Transaction retrieved successfully", transaction.json
+        )
 
     @token_required
     @Transactional(propagation=Propagation.REQUIRED)
@@ -257,8 +280,6 @@ class TransactionResource(Resource):
         # After the transaction is deleted, return a response with a 200 status code,
         # a success message, and a success flag.
         return response(200, True, "Transaction deleted successfully")
-
-
 
     @token_required
     @Transactional(propagation=Propagation.REQUIRED)
@@ -293,45 +314,71 @@ class TransactionResource(Resource):
 
         # Create a dictionary of variable mappings where the keys are the variable IDs
         # and the values are dictionaries containing the variable name and category
-        variable_mappings = {str(var.id): {"name": var.input_name,
-                                           "category": var.category} for var in variables}
+        variable_mappings = {
+            str(var.id): {"name": var.input_name, "category": var.category}
+            for var in variables
+        }
 
         # Gather existing transaction details in bulk to minimize repeated queries
         # Fetch all existing data details for the transaction
-        existing_details = {detail.variable_id: detail for detail in transaction.efficiency_transaction_details.filter(
-            EfficiencyDataDetail.variable_id.in_(inputs.keys())).all()}
+        existing_details = {
+            detail.variable_id: detail
+            for detail in transaction.efficiency_transaction_details.filter(
+                EfficiencyDataDetail.variable_id.in_(inputs.keys())
+            ).all()
+        }
 
         input_data = {}  # Initialize empty dictionary to store input data
-        transaction_records = []  # Initialize empty list to store new transaction records
+        transaction_records = (
+            []
+        )  # Initialize empty list to store new transaction records
 
         # Iterate over the inputs and update the transaction data accordingly
         for key, value in inputs.items():
-            variable_input = variable_mappings.get(key)  # Get variable mapping for the input variable
+            variable_input = variable_mappings.get(
+                key
+            )  # Get variable mapping for the input variable
 
             if variable_input:
-                variable_string = f"{variable_input['category']}: {variable_input['name']}" if variable_input["category"] else variable_input["name"]
+                variable_string = (
+                    f"{variable_input['category']}: {variable_input['name']}"
+                    if variable_input["category"]
+                    else variable_input["name"]
+                )
                 input_data[variable_string] = value  # Store input data in a dictionary
 
-                transaction_data = existing_details.get(key)  # Get existing data detail for the variable
+                transaction_data = existing_details.get(
+                    key
+                )  # Get existing data detail for the variable
 
                 if transaction_data:
-                    transaction_data.nilai = value  # Update value of existing data detail
-                    transaction_data.updated_by = user_id  # Update updated_by of existing data detail
-                    transaction_data.updated_at = datetime.now(config.TIMEZONE)  # Update updated_at of existing data detail
+                    transaction_data.nilai = (
+                        value  # Update value of existing data detail
+                    )
+                    transaction_data.updated_by = (
+                        user_id  # Update updated_by of existing data detail
+                    )
+                    transaction_data.updated_at = datetime.now(
+                        config.TIMEZONE
+                    )  # Update updated_at of existing data detail
                 else:
-                    transaction_records.append(EfficiencyDataDetail(  # Create new data detail
-                        variable_id=key,
-                        nilai=value,
-                        nilai_string=None,
-                        efficiency_transaction_id=transaction_id,
-                        created_by=user_id
-                    ))
+                    transaction_records.append(
+                        EfficiencyDataDetail(  # Create new data detail
+                            variable_id=key,
+                            nilai=value,
+                            nilai_string=None,
+                            efficiency_transaction_id=transaction_id,
+                            created_by=user_id,
+                        )
+                    )
 
         # Send data to API
         try:
             # Send input data to the Windows Efficiency App API and retrieve outputs
-            res = requests.post(f'{config.WINDOWS_EFFICIENCY_APP_API}/{transaction.excels.excel_filename}',
-                                json={'inputs': input_data})
+            res = requests.post(
+                f"{config.WINDOWS_EFFICIENCY_APP_API}/{transaction.excels.excel_filename}",
+                json={"inputs": input_data},
+            )
             res.raise_for_status()  # Raise an error for HTTP codes 4xx/5xx
         except requests.exceptions.RequestException as e:
             # Handle error, e.g., logging or retry mechanism
@@ -342,25 +389,39 @@ class TransactionResource(Resource):
 
         # Iterate over the outputs and update the transaction data accordingly
         for variable_title, input_value in outputs.items():
-            variable_id = get_key_by_value(variable_mappings, variable_title)  # Get variable ID from variable mapping
+            variable_id = get_key_by_value(
+                variable_mappings, variable_title
+            )  # Get variable ID from variable mapping
 
             if variable_id:
-                transaction_data = existing_details.get(variable_id)  # Get existing data detail for the variable
+                transaction_data = existing_details.get(
+                    variable_id
+                )  # Get existing data detail for the variable
 
                 if transaction_data:
-                    transaction_data.nilai = input_value  # Update value of existing data detail
-                    transaction_data.updated_by = user_id  # Update updated_by of existing data detail
-                    transaction_data.updated_at = datetime.now(config.TIMEZONE)  # Update updated_at of existing data detail
+                    transaction_data.nilai = (
+                        input_value  # Update value of existing data detail
+                    )
+                    transaction_data.updated_by = (
+                        user_id  # Update updated_by of existing data detail
+                    )
+                    transaction_data.updated_at = datetime.now(
+                        config.TIMEZONE
+                    )  # Update updated_at of existing data detail
                 else:
-                    transaction_records.append(EfficiencyDataDetail(  # Create new data detail
-                        variable_id=variable_id,
-                        efficiency_transaction_id=transaction_id,
-                        nilai=input_value,
-                        nilai_string=None,
-                        created_by=user_id
-                    ))
+                    transaction_records.append(
+                        EfficiencyDataDetail(  # Create new data detail
+                            variable_id=variable_id,
+                            efficiency_transaction_id=transaction_id,
+                            nilai=input_value,
+                            nilai_string=None,
+                            created_by=user_id,
+                        )
+                    )
 
         if transaction_records:  # If there are new transaction records
-            TransactionRepository.bulk_create(transaction_records)  # Create new data details in the database
+            TransactionRepository.bulk_create(
+                transaction_records
+            )  # Create new data details in the database
 
         return response(200, True, "Transaction updated successfully")

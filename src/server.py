@@ -15,13 +15,15 @@ import routes
 from digital_twin_migration.models import db
 from seeds import mainSeeder
 
+from schemas.ma import ma
+
 
 """Create an application."""
 server = Flask(__name__)
 
 """Server Configuration"""
 server.debug = config.DEBUG
-server.config["SQLALCHEMY_DATABASE_URI"] = (config.DB_URI)
+server.config["SQLALCHEMY_DATABASE_URI"] = config.DB_URI
 server.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = config.SQLALCHEMY_TRACK_MODIFICATIONS
 server.config["SECRET_KEY"] = config.SECRET_KEY
 
@@ -36,6 +38,8 @@ migrate = Migrate(server, db)
 """CORS Configuration"""
 CORS(server)
 
+"""Marshmallow Configuration"""
+ma.init_app(server)
 
 # create command function
 @click.command(name="drop")
@@ -58,11 +62,7 @@ def main():
     except Exception as e:
         is_db_ok = str(e)
 
-    return response(
-        message=is_db_ok,
-        status="ok",
-        status_code=200
-    )
+    return response(message=is_db_ok, status="ok", status_code=200)
 
 
 @server.errorhandler(Exception)

@@ -1,8 +1,6 @@
 """ Defines the Cases repository """
 
-from datetime import date
 from typing import Optional
-from uuid import UUID
 from digital_twin_migration.models.efficiency_app import EfficiencyTransaction
 from digital_twin_migration.models import db
 from sqlalchemy.orm.query import Query
@@ -56,8 +54,9 @@ class TransactionRepository:
                 # If the value is a string, filter the query by the attribute of the
                 # EfficiencyTransaction model that matches the key with a LIKE query
                 if isinstance(value, str):
-                    res = res.filter(getattr(EfficiencyTransaction,
-                                     key).ilike("%{}%".format(value)))
+                    res = res.filter(
+                        getattr(EfficiencyTransaction, key).ilike("%{}%".format(value))
+                    )
                 # If the value is not a string, filter the query by the attribute of the
                 # EfficiencyTransaction model that matches the key with an equality query
                 else:
@@ -66,7 +65,9 @@ class TransactionRepository:
         # If both start_date and end_date are provided, filter the query by the periode
         # attribute with a BETWEEN query
         if start_date and end_date:
-            res = res.filter(EfficiencyTransaction.periode.between(start_date, end_date))
+            res = res.filter(
+                EfficiencyTransaction.periode.between(start_date, end_date)
+            )
         # If only start_date is provided, filter the query by the periode attribute with a
         # greater than or equal to query
         elif start_date:
@@ -241,5 +242,3 @@ class TransactionRepository:
                 setattr(case, key, value)
 
         return case
-
-    

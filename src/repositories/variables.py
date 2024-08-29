@@ -1,7 +1,6 @@
 """ Defines the Variable repository """
 
 from typing import List
-from uuid import UUID
 from digital_twin_migration.models.efficiency_app import Variable
 from digital_twin_migration.models import db
 from sqlalchemy.orm import joinedload
@@ -48,7 +47,7 @@ class VariablesRepository:
         """
         new_variable = Variable(**attributes)
         return new_variable.add()
-    
+
     @staticmethod
     def get_by_ids(ids: List[str]) -> List[Variable]:
         """Get variable by their ids

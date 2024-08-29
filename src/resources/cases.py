@@ -1,11 +1,13 @@
 from flask_restful import Resource
 from flask_restful.reqparse import Argument
+
+from schemas import CaseSchema
 from utils import parse_params, response
 from repositories import CasesRepository
 from utils.jwt_verif import token_required
-
 from digital_twin_migration.database import Transactional, Propagation
 
+case_schema = CaseSchema()
 
 class CasesResource(Resource):
     """
@@ -20,9 +22,9 @@ class CasesResource(Resource):
         :param user_id: User ID
         :return: Response with list of cases
         """
-        cases = [case.json for case in CasesRepository.get_by().all()]
-
-        return response(200, True, "Cases retrieved successfully", cases)
+        cases = CasesRepository.get_by().all()
+        
+        return response(200, True, "Cases retrieved successfully", case_schema.dump(cases, many=True))
 
     @token_required
     @Transactional(propagation=Propagation.REQUIRED)

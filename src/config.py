@@ -13,7 +13,7 @@ class EnvironmentType(str, Enum):
     TEST = "test"
 
 
-class Config():
+class Config:
     DEBUG: int = 1
     DEFAULT_LOCALE: str = "en_US"
     ENVIRONMENT: str = EnvironmentType.DEVELOPMENT
@@ -30,7 +30,9 @@ class Config():
         "db": os.getenv("APPLICATION_POSTGRES_DB"),
     }
 
-    DB_URI: str = "postgresql+psycopg2://%(user)s:%(pw)s@%(host)s:%(port)s/%(db)s" % POSTGRES
+    DB_URI: str = (
+        "postgresql+psycopg2://%(user)s:%(pw)s@%(host)s:%(port)s/%(db)s" % POSTGRES
+    )
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
     REDIS_URL: str = "redis://localhost:6379/7"

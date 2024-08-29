@@ -14,4 +14,8 @@ def handle_exception(e):
         db.session.rollback()
         return response(500, False, str(e))
 
-    return response(500, False, str(e)) if current_app.debug else response(500, False, "Internal server error")
+    return (
+        response(500, False, str(e))
+        if current_app.debug
+        else response(500, False, "Internal server error")
+    )

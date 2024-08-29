@@ -11,4 +11,3 @@ EXCELS_BLUEPRINT = Blueprint("excels", __name__)
 
 Api(EXCELS_BLUEPRINT).add_resource(ExcelsResource, "/excels")
 Api(EXCELS_BLUEPRINT).add_resource(ExcelResource, "/excels/<excel_id>")
-
