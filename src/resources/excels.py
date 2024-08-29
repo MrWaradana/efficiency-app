@@ -32,21 +32,21 @@ class ExcelsResource(Resource):
             Response: The response containing the excels.
         """
 
-        # Fetch all existing excel filenames from the database
-        existing_excel_names: Set[str] = {
-            excel.excel_filename for excel in ExcelsRepository.get_by().all()
-        }
+        # # Fetch all existing excel filenames from the database
+        # existing_excel_names: Set[str] = {
+        #     excel.excel_filename for excel in ExcelsRepository.get_by().all()
+        # }
 
-        # Fetch all excel filenames from the source API and remove the ones that already exist
-        source_excel_data = fetch_data_from_api(config.WINDOWS_EFFICIENCY_APP_API)
-        source_excel_names = set(source_excel_data["data"]["excels"])
-        new_excel_names = source_excel_names - existing_excel_names
+        # # Fetch all excel filenames from the source API and remove the ones that already exist
+        # source_excel_data = fetch_data_from_api(config.WINDOWS_EFFICIENCY_APP_API)
+        # source_excel_names = set(source_excel_data["data"]["excels"])
+        # new_excel_names = source_excel_names - existing_excel_names
 
-        # Create new excel objects for the new excels in the database
-        [
-            ExcelsRepository.create(excel_filename=name, created_by=user_id)
-            for name in new_excel_names
-        ]
+        # # Create new excel objects for the new excels in the database
+        # [
+        #     ExcelsRepository.create(excel_filename=name, created_by=user_id)
+        #     for name in new_excel_names
+        # ]
 
         # Fetch all excel objects from the database
         excels = ExcelsRepository.query().all()

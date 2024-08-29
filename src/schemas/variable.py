@@ -2,24 +2,29 @@ from digital_twin_migration.models.efficiency_app import Variable, VariableCause
 from marshmallow import fields
 from .ma import ma
 
+
 class VariableSchema(ma.SQLAlchemyAutoSchema):
     class Meta:
         model = Variable
         load_instance = True
         include_fk = True
 
+
 class VariableHeaderSchema(ma.SQLAlchemyAutoSchema):
     class Meta:
         model = VariableHeader
         load_instance = True
         include_fk = True
-    
+
     variable = fields.Nested(VariableSchema)
-    
+
+
 class VariableCauseSchema(ma.SQLAlchemyAutoSchema):
     class Meta:
         model = VariableCause
         load_instance = True
         include_fk = True
-    
+
     variable = fields.Nested(VariableSchema)
+    children = fields.Nested(lambda: VariableCauseSchema, many=True, only=["name", "id"])
+

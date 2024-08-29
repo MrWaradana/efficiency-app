@@ -6,6 +6,6 @@ from .error_handler import handle_exception
 from .decode_image import decodeImage
 from .datetime import *
 
-from .util import fetch_data_from_api, get_key_by_value
+from .util import fetch_data_from_api, get_key_by_value, modify_number
 
 from .formula import calculate_nilai_losses, calculate_gap

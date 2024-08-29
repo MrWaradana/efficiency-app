@@ -1,3 +1,4 @@
+import random
 import requests
 
 
@@ -36,3 +37,22 @@ def get_key_by_value(variable_mapping, value):
         if variable_string == value:
             return key
     return None
+
+
+def modify_number(original_number: float, max_delta) -> float:
+    """
+    Modify a number by adding or subtracting a random delta value.
+
+    :param original_number: The number to modify.
+    :param max_delta: The maximum absolute value for the random delta.
+    :return: The modified number.
+    """
+    sign = random.choice([-1, 1])
+
+    # Generate a random delta value between 0 and max_delta
+    delta = random.uniform(0, max_delta)
+
+    # Apply the delta with the random sign
+    new_number = original_number + (sign * delta)
+
+    return float(new_number)

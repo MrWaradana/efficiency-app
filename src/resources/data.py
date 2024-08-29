@@ -1,15 +1,20 @@
 from datetime import datetime
+import random
 from flask_restful import Resource
 from flask_restful.reqparse import Argument
 import requests
-from config import config
+from config import config, EnvironmentType
 from repositories.excels import ExcelsRepository
+from schemas.data import EfficiencyTransactionSchema
 from utils import parse_params, response, get_key_by_value
 from repositories import VariablesRepository, TransactionRepository
 from digital_twin_migration.models.efficiency_app import EfficiencyDataDetail
 from digital_twin_migration.database import Transactional, Propagation
 
 from utils.jwt_verif import token_required
+from utils.util import modify_number
+
+data_schema = EfficiencyTransactionSchema()
 
 
 class TransactionsResource(Resource):
@@ -69,7 +74,7 @@ class TransactionsResource(Resource):
 
         # Apply pagination
         paginated_query = query.paginate(page=page, per_page=size)
-        transactions = [transaction.json for transaction in paginated_query.items]
+        transactions = paginated_query.items
 
         # Construct response
         return response(
@@ -83,7 +88,7 @@ class TransactionsResource(Resource):
                 "total_items": paginated_query.total,
                 "has_next_page": paginated_query.has_next,
                 "has_previous_page": paginated_query.has_prev,
-                "transactions": transactions,
+                "transactions": data_schema.dump(transactions, many=True),
             },
         )
 
@@ -112,6 +117,12 @@ class TransactionsResource(Resource):
 
         # Get variable mappings
         # Fetch all variables associated with the given excel_id
+        excel = ExcelsRepository.get_by(id=excel_id).first()
+
+        if not excel:
+            print(f"Excel {excel_id} not found")
+            return response(404, False, "Excel not found")
+
         variables = VariablesRepository.get_by(excel_id=excel_id).all()
 
         # Create a dictionary of variable mappings where the keys are the variable IDs
@@ -124,7 +135,7 @@ class TransactionsResource(Resource):
         # Check if a transaction with the same periode already exists
         is_periode_exist = TransactionRepository.get_by(periode=periode).first()
 
-        if is_periode_exist:
+        if jenis_parameter == "Current" and is_periode_exist:
             # If a transaction with the same periode already exists, return an error response
             return response(
                 400, False, "Data Transaction for this periode already exist", None
@@ -195,6 +206,9 @@ class TransactionsResource(Resource):
 
             try:
                 value_float = float(input_value)
+                if config.ENVIRONMENT == EnvironmentType.DEVELOPMENT:
+                    value_float -= random.uniform(0.5, 7.5)
+
             except ValueError:
                 value_string = value
 
