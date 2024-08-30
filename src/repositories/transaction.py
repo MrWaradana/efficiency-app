@@ -84,7 +84,6 @@ class TransactionRepository:
         return res
 
     @staticmethod
-    @Transactional(propagation=Propagation.REQUIRED)
     def create(**attributes) -> EfficiencyTransaction:
         """
         This static method is used to create a new EfficiencyTransaction in the database.
