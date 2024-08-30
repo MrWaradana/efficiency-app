@@ -2,6 +2,7 @@ from collections import defaultdict
 from flask_restful import Resource
 from flask_restful.reqparse import Argument
 from sqlalchemy import and_
+from schemas.variable import VariableSchema
 from utils import (
     parse_params,
     response,
@@ -15,7 +16,11 @@ from digital_twin_migration.models.efficiency_app import (
     Variable,
 )
 
+from digital_twin_migration.database import db
+
 from utils.jwt_verif import token_required
+
+variable_schema = VariableSchema()
 
 
 class TransactionDataDetailsResource(Resource):
@@ -76,16 +81,22 @@ class TransactionDataParetoResource(Resource):
 
     @token_required
     def get(self, user_id, transaction_id):
-        current_data = (
-            EfficiencyDataDetail.query.join(EfficiencyDataDetail.efficiency_transaction)
+        query = (
+            db.session.query(
+                EfficiencyDataDetail,
+            )
+            .join(EfficiencyDataDetail.efficiency_transaction)
             .join(EfficiencyDataDetail.variable)
+            .join(EfficiencyDataDetail.root_causes)
             .filter(
                 and_(
-                    EfficiencyTransaction.id == transaction_id, Variable.in_out == "out"
+                    EfficiencyTransaction.id == transaction_id,
+                    Variable.in_out == "out"
                 )
             )
-            .all()
-        )
+        ).all()
+        
+        raise Exception(query)
 
         target_data = (
             EfficiencyDataDetail.query.join(EfficiencyDataDetail.efficiency_transaction)
@@ -124,7 +135,7 @@ class TransactionDataParetoResource(Resource):
                 calculated_data.append(
                     {
                         "id": current_item.id,
-                        "variable": current_item.variable.json,
+                        "variable": variable_schema.dump(current_item.variable),
                         "existing_data": current_item.nilai,
                         "reference_data": target_item.nilai,
                         "deviasi": current_item.deviasi,

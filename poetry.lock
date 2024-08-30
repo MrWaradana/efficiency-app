@@ -540,7 +540,7 @@ toml = ["tomli"]
 
 [[package]]
 name = "digital-twin-migration"
-version = "1.0.19"
+version = "1.0.23"
 description = ""
 optional = false
 python-versions = ">=3.8"
@@ -554,7 +554,7 @@ dev = ["Sphinx (>=4.3.0,<7.1.0)", "black (>=23.0,<24.0)", "build", "furo (==2023
 type = "git"
 url = "https://github.com/Cizz22/digital-twin-migration"
 reference = "HEAD"
-resolved_reference = "15efdebb1ebe35a6d89554444862f69e587bf0e9"
+resolved_reference = "308b590fd3ebd03e5ed7ad97834724c1c6685d63"
 
 [[package]]
 name = "exceptiongroup"

@@ -133,9 +133,9 @@ class TransactionsResource(Resource):
         }
 
         # Check if a transaction with the same periode already exists
-        is_periode_exist = TransactionRepository.get_by(periode=periode).first()
+        is_periode_exist = TransactionRepository.get_by(periode=periode, jenis_parameter="Current").first()
 
-        if jenis_parameter == "Current" and is_periode_exist:
+        if is_periode_exist:
             # If a transaction with the same periode already exists, return an error response
             return response(
                 400, False, "Data Transaction for this periode already exist", None
