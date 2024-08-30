@@ -3,6 +3,7 @@
 from typing import Optional
 from uuid import UUID
 from digital_twin_migration.models.efficiency_app import Excel
+from digital_twin_migration.database import Transactional, Propagation
 from sqlalchemy.orm.query import Query
 
 
@@ -10,7 +11,7 @@ class ExcelsRepository:
     """
     The repository for the excel model
     """
-    
+
     @staticmethod
     def query() -> Query:
         """
@@ -36,6 +37,7 @@ class ExcelsRepository:
         return Excel.query.filter_by(**kwargs)
 
     @staticmethod
+    @Transactional(propagation=Propagation.REQUIRED)
     def create(**attributes: dict) -> Excel:
         """
         Create a new excel

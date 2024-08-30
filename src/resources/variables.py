@@ -1,4 +1,4 @@
-from flask import Response
+from flask import Response, request
 from flask_restful import Resource
 from flask_restful.reqparse import Argument
 from sqlalchemy import and_
@@ -82,6 +82,36 @@ class VariablesResource(Resource):
 
         return response(200, True, "Variables retrieved successfully", variable_schema.dump(response_data, many=True))
 
+    @token_required
+    @parse_params(
+        Argument("is_bulk", location="args", required=False, type=int, default=0),
+        Argument("excel_id", location="json", required=True, type=str),
+        Argument("variables", location="json", required=False, type=list, default=None),
+        Argument("input_name", location="json", required=False, type=str),
+        Argument("short_name", location="json", required=False, type=str),
+        Argument("excel_variable_name", location="json", required=False, type=str),
+        Argument("satuan", location="json", required=False, type=str),
+        Argument("in_out", location="json", required=False, type=str),
+        Argument("category", location="json", required=False, type=str),
+    )
+    @Transactional(propagation=Propagation.REQUIRED)
+    def post(self, user_id: str, is_bulk: int, excel_id: str, variables: list, **inputs) -> Response:
+        """Create a new variable"""
+        if is_bulk:
+            if not variables:
+                return response(400, False, "variables is required when 'is_bulk' is set")
+            variable_records = [Variable(created_by=user_id, excel_id=excel_id, **variable) for variable in variables]
+            db.session.add_all(variable_records)
+
+        else:
+            missing_input = next((name for name, input in inputs.items() if not input), None)
+            if missing_input:
+                return response(400, False, f"'{missing_input}' is required when 'is_bulk' is not set")
+            new_var = Variable(created_by=user_id, excel_id=excel_id, **inputs)
+            db.session.add(new_var)
+
+        return response(200, True, "Variable created successfully")
+
 
 class VariableResource(Resource):
 
@@ -126,5 +156,3 @@ class VariableResource(Resource):
         VariablesRepository.update(variable_id, updated_by=user_id , **inputs)
 
         return response(200, True, "Variable updated successfully")
-
-

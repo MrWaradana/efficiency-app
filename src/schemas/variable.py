@@ -16,7 +16,7 @@ class VariableHeaderSchema(ma.SQLAlchemyAutoSchema):
         load_instance = True
         include_fk = True
 
-    variable = fields.Nested(VariableSchema)
+    # variable = fields.Nested(VariableSchema)
 
 
 class VariableCauseSchema(ma.SQLAlchemyAutoSchema):
@@ -25,6 +25,6 @@ class VariableCauseSchema(ma.SQLAlchemyAutoSchema):
         load_instance = True
         include_fk = True
 
-    variable = fields.Nested(VariableSchema)
-    children = fields.Nested(lambda: VariableCauseSchema, many=True, only=["name", "id"])
+    # variable = fields.Nested(VariableSchema)
+    children = fields.Nested(lambda: VariableCauseSchema, many=True)
 

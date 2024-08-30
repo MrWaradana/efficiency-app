@@ -15,6 +15,7 @@ from digital_twin_migration.models.efficiency_app import Excel
 
 excel_schema = ExcelSchema()
 
+
 class ExcelsResource(Resource):
     """Excels"""
 
@@ -68,7 +69,10 @@ class ExcelsResource(Resource):
             Response: The response containing the created excel.
         """
 
-        return response(201, True, "Excel created successfully", {})
+        # Create a new excel object
+        excel = ExcelsRepository.create(excel_filename=name, created_by=user_id)
+
+        return response(201, True, "Excel created successfully", excel_schema.dump(excel))
 
 
 class ExcelResource(Resource):
@@ -100,6 +104,7 @@ class ExcelResource(Resource):
         return response(200, True, "Excel retrieved successfully", excel_schema.dump(excel))
 
     @token_required
+    @Transactional(propagation=Propagation.REQUIRED)
     def delete(self, excel_id: str, user_id: str) -> Response:
         """
         Delete a specific excel by id
@@ -123,7 +128,25 @@ class ExcelResource(Resource):
             return response(404, False, "Excel not found")
 
         # Delete the excel from the database
-        ExcelsRepository.delete(excel_id)
+        excel.delete()
 
         # Return a response indicating that the excel was deleted successfully
         return response(200, True, "Excel deleted successfully")
+
+    @token_required
+    @parse_params(Argument("name", location="json", required=False, type=str, default=None))
+    @Transactional(propagation=Propagation.REQUIRED)
+    def put(self, excel_id: str, user_id: str, name) -> Response:
+
+        # Get the excel from the database by its id
+        excel = ExcelsRepository.get_by_id(excel_id)
+
+        # If the excel is not found, return a response indicating that the excel was not found
+        if not excel:
+            return response(404, False, "Excel not found")
+
+        # Update the excel in the database
+        ExcelsRepository.update(excel_id, name=name)
+
+        # Return a response indicating that the excel was updated successfully
+        return response(200, True, "Excel updated successfully")
