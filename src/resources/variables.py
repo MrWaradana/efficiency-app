@@ -41,40 +41,40 @@ class VariablesResource(Resource):
             print(f"Excel {excel_id} not found")
             return response(404, False, "Excel not found")
 
-        existing_variables = {
-            var.excel_variable_name
-            for var in VariablesRepository.get_by(excel_id=excel_id).all()
-        }
+        # existing_variables = {
+        #     var.excel_variable_name
+        #     for var in VariablesRepository.get_by(excel_id=excel_id).all()
+        # }
 
-        source_variables = fetch_data_from_api(
-            f"{config.WINDOWS_EFFICIENCY_APP_API}/{excel.excel_filename}"
-        )
+        # source_variables = fetch_data_from_api(
+        #     f"{config.WINDOWS_EFFICIENCY_APP_API}/{excel.excel_filename}"
+        # )
 
-        if not source_variables:
-            print(f"Failed to get variables from {excel.excel_filename}")
-            return response(404, False, "Get VARIABLES failed")
+        # if not source_variables:
+        #     print(f"Failed to get variables from {excel.excel_filename}")
+        #     return response(404, False, "Get VARIABLES failed")
 
-        variable_records = []
+        # variable_records = []
 
-        for variable in source_variables["data"]:
-            if f"{variable['category']}: {variable['variabel']}" in existing_variables:
-                continue
-            else:
-                new_var = Variable(
-                    excel_id=excel_id,
-                    input_name=variable["variabel"],
-                    satuan=variable["unit"],
-                    in_out=variable["type"],
-                    excel_variable_name=f"{variable['category']}: {variable['variabel']}",
-                    created_by="24d28102-4d6a-4628-9a70-665bcd50a0f0",
-                    category=variable["category"],
-                    short_name=None,
-                )
-                new_var.is_pareto = True
-                variable_records.append(new_var)
+        # for variable in source_variables["data"]:
+        #     if f"{variable['category']}: {variable['variabel']}" in existing_variables:
+        #         continue
+        #     else:
+        #         new_var = Variable(
+        #             excel_id=excel_id,
+        #             input_name=variable["variabel"],
+        #             satuan=variable["unit"],
+        #             in_out=variable["type"],
+        #             excel_variable_name=f"{variable['category']}: {variable['variabel']}",
+        #             created_by="24d28102-4d6a-4628-9a70-665bcd50a0f0",
+        #             category=variable["category"],
+        #             short_name=variable["variabel"],
+        #         )
+        #         new_var.is_pareto = True
+        #         variable_records.append(new_var)
 
-        db.session.add_all(variable_records)
-        db.session.commit()
+        # db.session.add_all(variable_records)
+        # db.session.commit()
 
         response_data = VariablesRepository.get_by(
             excel_id=excel_id, is_pareto=True

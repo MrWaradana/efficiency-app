@@ -81,13 +81,10 @@ class TransactionDataParetoResource(Resource):
 
     @token_required
     def get(self, user_id, transaction_id):
-        query = (
-            db.session.query(
-                EfficiencyDataDetail,
-            )
+        current_data = (
+            EfficiencyDataDetail.query
             .join(EfficiencyDataDetail.efficiency_transaction)
             .join(EfficiencyDataDetail.variable)
-            .join(EfficiencyDataDetail.root_causes)
             .filter(
                 and_(
                     EfficiencyTransaction.id == transaction_id,
@@ -96,7 +93,6 @@ class TransactionDataParetoResource(Resource):
             )
         ).all()
         
-        raise Exception(query)
 
         target_data = (
             EfficiencyDataDetail.query.join(EfficiencyDataDetail.efficiency_transaction)

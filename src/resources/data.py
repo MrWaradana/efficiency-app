@@ -1,5 +1,6 @@
 from datetime import datetime
 import random
+from uuid import UUID
 from flask_restful import Resource
 from flask_restful.reqparse import Argument
 import requests
@@ -8,8 +9,9 @@ from repositories.excels import ExcelsRepository
 from schemas.data import EfficiencyTransactionSchema
 from utils import parse_params, response, get_key_by_value
 from repositories import VariablesRepository, TransactionRepository
-from digital_twin_migration.models.efficiency_app import EfficiencyDataDetail
+from digital_twin_migration.models.efficiency_app import EfficiencyDataDetail, EfficiencyTransaction
 from digital_twin_migration.database import Transactional, Propagation
+from sqlalchemy.orm import joinedload
 
 from utils.jwt_verif import token_required
 from utils.util import modify_number
@@ -234,7 +236,7 @@ class TransactionsResource(Resource):
 class TransactionResource(Resource):
 
     @token_required
-    def get(self, transaction_id):
+    def get(self, transaction_id, user_id):
         # Retrieve the transaction by its ID from the database using the `TransactionRepository.get_by_id`
         # method.
         """
@@ -262,7 +264,7 @@ class TransactionResource(Resource):
         # If the transaction is found, return a response with a 200 status code and a success message,
         # along with the JSON representation of the transaction.
         return response(
-            200, True, "Transaction retrieved successfully", transaction.json
+            200, True, "Transaction retrieved successfully", data_schema.dump(transaction)
         )
 
     @token_required
@@ -297,7 +299,10 @@ class TransactionResource(Resource):
 
     @token_required
     @Transactional(propagation=Propagation.REQUIRED)
-    def put(self, transaction_id, inputs, user_id):
+    @parse_params(
+        Argument("inputs", type=dict, required=True),
+    )
+    def put(self, transaction_id, user_id, inputs):
         """
         This method updates the transaction data with the specified ID.
 
@@ -317,17 +322,17 @@ class TransactionResource(Resource):
             dict: A response dictionary containing a success flag, a success message, and a status code.
         """
         # Fetch the transaction and its details by ID
-        transaction = TransactionRepository.get_by_id(transaction_id)
+        transaction = TransactionRepository.get_by(id=transaction_id).first()
+
+        return response(200, True, "Transaction retrieved successfully", data_schema.dump(transaction))
+    
 
         if not transaction:
             return response(404, False, "Transaction not found")
 
-        # Get variables mapping
-        # Fetch all variables associated with the given excel_id
-        variables = VariablesRepository.get_by(excel_id=transaction.excel_id).all()
-
         # Create a dictionary of variable mappings where the keys are the variable IDs
         # and the values are dictionaries containing the variable name and category
+        variables = VariablesRepository.get_by(excel_id=transaction.excel_id).all()
         variable_mappings = {
             str(var.id): {"name": var.input_name, "category": var.category}
             for var in variables
@@ -337,10 +342,10 @@ class TransactionResource(Resource):
         # Fetch all existing data details for the transaction
         existing_details = {
             detail.variable_id: detail
-            for detail in transaction.efficiency_transaction_details.filter(
-                EfficiencyDataDetail.variable_id.in_(inputs.keys())
-            ).all()
+            for detail in transaction.efficiency_transaction_details
         }
+
+        raise Exception(existing_details)
 
         input_data = {}  # Initialize empty dictionary to store input data
         transaction_records = (
@@ -361,9 +366,7 @@ class TransactionResource(Resource):
                 )
                 input_data[variable_string] = value  # Store input data in a dictionary
 
-                transaction_data = existing_details.get(
-                    key
-                )  # Get existing data detail for the variable
+                transaction_data = existing_details.get(key)  # Get existing data detail for the variable
 
                 if transaction_data:
                     transaction_data.nilai = (
