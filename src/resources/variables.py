@@ -32,8 +32,15 @@ class VariablesResource(Resource):
             type=str,
             help="Excel Id is required",
         ),
+        Argument(
+            "type",
+            location="args",
+            required=True,
+            type=str,
+            default="in"
+        )
     )
-    def get(self, excel_id: str) -> Response:
+    def get(self, excel_id: str, type) -> Response:
         """Retrieve all variable from API based on EXCEL NAME"""
         excel = ExcelsRepository.get_by(id=excel_id).first()
 
@@ -77,7 +84,7 @@ class VariablesResource(Resource):
         # db.session.commit()
 
         response_data = VariablesRepository.get_by(
-            excel_id=excel_id, is_pareto=True
+            excel_id=excel_id, is_pareto=True, in_out=type
         ).all()
 
         return response(200, True, "Variables retrieved successfully", variable_schema.dump(response_data, many=True))
