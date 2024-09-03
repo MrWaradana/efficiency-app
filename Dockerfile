@@ -22,6 +22,11 @@ RUN poetry install --no-dev --no-root
 # Use a new slim image for the runtime
 FROM python:3.11-slim as runtime
 
+# Install necessary tools for running the app, including `make`
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    make \
+    && rm -rf /var/lib/apt/lists/*
+
 # Set environment variables for Poetry
 ENV POETRY_VIRTUALENVS_IN_PROJECT=1 \
     PATH="/app/.venv/bin:$PATH"
@@ -38,5 +43,5 @@ EXPOSE 3002
 # Set the working directory
 WORKDIR /app
 
-# Entry point for the application
-CMD ["python", "src/server.py"]
+# Run `make run` as the entry point
+CMD ["make", "run"]
