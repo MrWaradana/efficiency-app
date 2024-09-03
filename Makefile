@@ -11,7 +11,7 @@ install:
 
 # Run the application
 run:
-	$(PYTHON) $(APP)
+	gunicorn -c gunicorn.py main:app
 
 # Run tests
 test:
@@ -19,11 +19,12 @@ test:
 
 # Lint the code
 lint:
-	$(POETRY) run flake8 src
+	$(POETRY) run flake8 app core
 
 # Format the code
 format:
-	$(POETRY) run black src
+	$(POETRY) run black core app
+	$(POETRY) run isort app core
 
 # Clean up cache and pyc files
 clean:

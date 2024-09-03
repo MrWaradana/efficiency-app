@@ -84,6 +84,7 @@ werkzeug = "3.0.3"
 zipp = "3.20.0"
 digital-twin-migration = {git = "https://github.com/Cizz22/digital-twin-migration"}
 flasgger = "^0.9.7.1"
+isort = "^5.13.2"
 
 
 [tool.poetry.group.dev.dependencies]
