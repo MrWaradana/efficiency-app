@@ -80,4 +80,3 @@ def create_app():
             app.register_blueprint(blueprint, url_prefix=config.APPLICATION_ROOT)
 
     return app
-

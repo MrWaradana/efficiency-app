@@ -1,6 +1,7 @@
 # from .authentication import SigninResource, SignupResource
 
 from .cases import *
+from .data import *
 from .excels import *
 from .variable import *
 

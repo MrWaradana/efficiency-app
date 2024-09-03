@@ -272,6 +272,34 @@ class BaseRepository(Generic[ModelType]):
 
         return query
 
+    def paginate(self, query: Select, page: int, size: int):
+        # Calculate total items
+        total_items = self._count(query)
+
+        # Calculate total pages
+        total_pages = (total_items + size - 1) // size
+
+        # Calculate offset for the current page
+        offset = (page - 1) * size
+
+        # Apply limit and offset to the select statemßent
+        paginated_stmt = query.offset(offset).limit(size)
+
+        # Execute the paginated query
+        items = self._all(paginated_stmt)
+
+        # Create pagination metadata
+        pagination = {
+            "current_page": page,
+            "total_pages": total_pages,
+            "page_size": size,
+            "total_items": total_items,
+            "has_next_page": page < total_pages,
+            "has_previous_page": page > 1,
+        }
+
+        return pagination, items
+
     def _add_join_to_query(self, query: Select, join_: set[str]) -> Select:
         """
         Returns the query with the given join.

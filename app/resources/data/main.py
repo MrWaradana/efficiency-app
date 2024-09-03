@@ -1,26 +1,32 @@
 import random
 from datetime import datetime
+from enum import Enum
 from uuid import UUID
 
 import requests
-from config import EnvironmentType, config
 from digital_twin_migration.database import Propagation, Transactional
 from digital_twin_migration.models.efficiency_app import (
     EfficiencyDataDetail, EfficiencyTransaction)
 from flask_restful import Resource
 from flask_restful.reqparse import Argument
-from repositories import TransactionRepository, VariablesRepository
-from repositories.excels import ExcelsRepository
-from schemas.data import EfficiencyTransactionSchema
 from sqlalchemy.orm import joinedload
-from utils import get_key_by_value, parse_params, response
-from utils.jwt_verif import token_required
-from utils.util import modify_number
 
-data_schema = EfficiencyTransactionSchema()
+from app.repositories import DataRepository, VariablesRepository
+from app.repositories.excels import ExcelsRepository
+from app.resources.excels import excel_repository
+from app.resources.variable.main import variable_repository
+from app.schemas.data import EfficiencyTransactionSchema
+from core.config import EnvironmentType, config
+from core.security.jwt_verif import token_required
+from core.utils import get_key_by_value, now, parse_params, response
+from core.utils.util import modify_number
+
+data_schema = EfficiencyTransactionSchema(exclude=["efficiency_transaction_details"])
+data_schema_with_rel = EfficiencyTransactionSchema()
+data_repository = DataRepository(EfficiencyTransaction)
 
 
-class TransactionsResource(Resource):
+class DataListResource(Resource):
     """
     Resource for retrieving and creating Transactions.
     """
@@ -56,18 +62,14 @@ class TransactionsResource(Resource):
         end_date = datetime.strptime(end_date, "%Y-%m-%d").date() if end_date else None
 
         # Build the query based on the date range
-        query = TransactionRepository.get_query(
-            start_date=start_date, end_date=end_date
-        )
+        query = data_repository.get_query(start_date=start_date, end_date=end_date)
 
         # Get the total count of records
-        count = query.count()
+        count = data_repository._count(query)
 
         if all:
             # Retrieve all transactions without pagination
-            transactions = query.all()
-            transaction_data = [transaction.json for transaction in transactions]
-
+            transactions = data_repository._all(query)
             return response(
                 200,
                 True,
@@ -78,14 +80,13 @@ class TransactionsResource(Resource):
                     "page_size": None,
                     "has_next_page": None,
                     "has_previous_page": None,
-                    "transactions": data_schema.dump(transaction_data, many=True),
+                    "transactions": data_schema.dump(transactions, many=True),
                     "total_items": count,
                 },
             )
 
         # Apply pagination
-        paginated_query = query.paginate(page=page, per_page=size)
-        transactions = paginated_query.items
+        paginated_option, items = data_repository.paginate(query, page, size)
 
         # Construct response
         return response(
@@ -93,48 +94,34 @@ class TransactionsResource(Resource):
             True,
             "Transactions retrieved successfully.",
             {
-                "current_page": paginated_query.page,
-                "total_pages": paginated_query.pages,
-                "page_size": paginated_query.per_page,
-                "total_items": paginated_query.total,
-                "has_next_page": paginated_query.has_next,
-                "has_previous_page": paginated_query.has_prev,
-                "transactions": data_schema.dump(transactions, many=True),
+                **paginated_option,
+                "transactions": data_schema.dump(items, many=True),
             },
         )
 
     @parse_params(
-        Argument("periode", location="json", required=True, type=str),
-        Argument("jenis_parameter", location="json", required=True, type=str),
+        Argument(
+            "jenis_parameter",
+            location="json",
+            required=False,
+            type=str,
+            default="Current",
+        ),
         Argument("excel_id", location="json", required=True, type=str),
         Argument("inputs", location="json", required=True, type=dict),
     )
     @token_required
     @Transactional(propagation=Propagation.REQUIRED)
-    def post(self, periode, jenis_parameter, excel_id, inputs, user_id):
-        """
-        Create a new Transaction.
-
-        Args:
-            periode (str): The periode of the transaction in the format "YYYY-MM-DD".
-            jenis_parameter (str): The type of parameter for the transaction.
-            excel_id (str): The ID of the Excel file associated with the transaction.
-            inputs (dict): A dictionary of input values for the transaction.
-            user_id (int): The ID of the user making the request.
-
-        Returns:
-            dict: Response indicating the success or failure of the transaction creation.
-        """
-
+    def post(self, jenis_parameter, excel_id, inputs, user_id):
         # Get variable mappings
         # Fetch all variables associated with the given excel_id
-        excel = ExcelsRepository.get_by(id=excel_id).first()
+        excel = excel_repository.get_by_uuid(excel_id)
 
         if not excel:
             print(f"Excel {excel_id} not found")
             return response(404, False, "Excel not found")
 
-        variables = VariablesRepository.get_by(excel_id=excel_id).all()
+        variables = variable_repository.get_by_excel_id(excel_id)
 
         # Create a dictionary of variable mappings where the keys are the variable IDs
         # and the values are dictionaries containing the variable name and category
@@ -143,31 +130,32 @@ class TransactionsResource(Resource):
             for var in variables
         }
 
-        # Check if a transaction with the same periode already exists
-        is_periode_exist = TransactionRepository.get_by(
-            periode=periode, jenis_parameter="Current"
-        ).first()
+        # # Check if a transaction with the same periode already exists
+        # is_periode_exist = data_repository.get_by_multiple(
+        #     None, True, {"periode": periode, "jenis_parameter": "Current"}
+        # )
 
-        if is_periode_exist:
-            # If a transaction with the same periode already exists, return an error response
-            return response(
-                400, False, "Data Transaction for this periode already exist", None
-            )
+        # if is_periode_exist:
+        #     # If a transaction with the same periode already exists, return an error response
+        #     return response(
+        #         400, False, "Data Transaction for this periode already exist", None
+        #     )
 
         # Initialize empty dictionaries to store input data and transaction records
         input_data = {}
         transaction_records = []
 
         # Create a new parent transaction
-        transaction_parent = TransactionRepository.create(
-            periode=periode,
-            jenis_parameter=jenis_parameter,
-            excel_id=excel_id,
-            created_by=user_id,
+        transaction_parent = data_repository.create(
+            {
+                "jenis_parameter": jenis_parameter,
+                "excel_id": excel_id,
+                "created_by": user_id,
+            }
         )
 
         # Get the filename of the Excel file associated with the transaction
-        excel = ExcelsRepository.get_by(id=excel_id).first().excel_filename
+        excel = excel_repository.get_by_uuid(excel_id).excel_filename
 
         # Iterate over the inputs dictionary
         for key, value in inputs.items():
@@ -238,35 +226,17 @@ class TransactionsResource(Resource):
                 )
 
         # Bulk create the transaction records
-        TransactionRepository.bulk_create(transaction_records)
+        data_repository.create_bulk(transaction_records)
 
         # Return a success response
         return response(200, True, "Transaction created successfully")
 
 
-class TransactionResource(Resource):
+class DataResource(Resource):
 
     @token_required
     def get(self, transaction_id, user_id):
-        # Retrieve the transaction by its ID from the database using the `TransactionRepository.get_by_id`
-        # method.
-        """
-        Get a transaction by its ID.
-
-        This function retrieves a transaction from the database by its ID using the `TransactionRepository.get_by_id`
-        method. If the transaction is not found in the database, a response with a 404 status code and an error message
-        is returned. If the transaction is found, a response with a 200 status code, a success message, and the JSON
-        representation of the transaction is returned.
-
-        Parameters:
-            transaction_id (str): The ID of the transaction to retrieve.
-
-        Returns:
-            dict: A response dictionary containing a success flag, a success message, and a status code. The response
-            also contains the JSON representation of the transaction if it is found in the database.
-        """
-        transaction = TransactionRepository.get_by_id(transaction_id)
-
+        transaction = data_repository.get_by_uuid(transaction_id)
         # If the transaction is not found in the database, return a response with a 404 status code
         # and an error message.
         if not transaction:
@@ -278,12 +248,12 @@ class TransactionResource(Resource):
             200,
             True,
             "Transaction retrieved successfully",
-            data_schema.dump(transaction),
+            data_schema_with_rel.dump(transaction),
         )
 
     @token_required
     @Transactional(propagation=Propagation.REQUIRED)
-    def delete(self, transaction_id):
+    def delete(self, user_id, transaction_id):
         """
         This method handles the deletion of a transaction by its ID.
 
@@ -296,7 +266,7 @@ class TransactionResource(Resource):
 
         # Retrieve the transaction by its ID from the database
         # using the `TransactionRepository.get_by_id` method.
-        transaction = TransactionRepository.get_by_id(transaction_id)
+        transaction = data_repository.get_by_uuid(transaction_id)
 
         # If the transaction is not found in the database, return a response with
         # a 404 status code and an error message.
@@ -305,7 +275,7 @@ class TransactionResource(Resource):
 
         # If the transaction is found, delete it from the database
         # by calling the `delete` method of the transaction object.
-        transaction.delete()
+        data_repository.delete(transaction)
 
         # After the transaction is deleted, return a response with a 200 status code,
         # a success message, and a success flag.
@@ -336,7 +306,7 @@ class TransactionResource(Resource):
             dict: A response dictionary containing a success flag, a success message, and a status code.
         """
         # Fetch the transaction and its details by ID
-        transaction = TransactionRepository.get_by(id=transaction_id).first()
+        transaction = data_repository.get_by_uuid(transaction_id)
 
         return response(
             200,

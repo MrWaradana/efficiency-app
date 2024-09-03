@@ -20,7 +20,7 @@ class HeadersRepository(BaseRepository[VariableHeader]):
             return self._all_unique(query)
 
         return self._all(query)
-    
+
     def get_by_uuid(self, uuid: str, join_: set[str] | None = None):
         query = self._query(join_)
         query = query.filter(VariableHeader.id == uuid)

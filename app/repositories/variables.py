@@ -19,3 +19,12 @@ class VariablesRepository(BaseRepository[Variable]):
             return self._all_unique(query)
 
         return self._one_or_none(query)
+
+    def get_by_excel_id(self, excel_id: str, join_: set[str] | None = None):
+        query = self._query(join_)
+        query = query.filter(Variable.excel_id == excel_id)
+
+        if join_ is not None:
+            return self._all_unique(query)
+
+        return self._all(query)

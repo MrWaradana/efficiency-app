@@ -17,3 +17,7 @@ class EfficiencyTransactionSchema(ma.SQLAlchemyAutoSchema):
         model = EfficiencyTransaction
         load_instance = True
         include_fk = True
+
+    efficiency_transaction_details = fields.Nested(
+        EfficiencyDataDetailSchema, many=True
+    )

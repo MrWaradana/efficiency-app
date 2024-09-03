@@ -1,22 +1,19 @@
-from collections import defaultdict
-
-from digital_twin_migration.database import Propagation, Transactional, db
-from digital_twin_migration.models.efficiency_app import (
-    EfficiencyDataDetail, EfficiencyDataDetailRootCause, EfficiencyTransaction,
-    Variable)
+from digital_twin_migration.models.efficiency_app import EfficiencyDataDetail
 from flask_restful import Resource
 from flask_restful.reqparse import Argument
-from repositories import TransactionRepository, VariablesRepository
-from schemas import EfficiencyDataDetailSchema, VariableSchema
-from sqlalchemy import and_
-from utils import calculate_gap, calculate_nilai_losses, parse_params, response
-from utils.jwt_verif import token_required
+
+from app.repositories import DataDetailRepository
+from app.schemas import EfficiencyDataDetailSchema, VariableSchema
+from core.security.jwt_verif import token_required
+from core.utils import parse_params, response
 
 variable_schema = VariableSchema()
 data_details_schema = EfficiencyDataDetailSchema()
 
+data_detail_repository = DataDetailRepository(EfficiencyDataDetail)
 
-class TransactionDataDetailsResource(Resource):
+
+class DataDetailListResource(Resource):
 
     @token_required
     @parse_params(
@@ -25,16 +22,8 @@ class TransactionDataDetailsResource(Resource):
     def get(self, user_id, transaction_id, type):
         """Get all transaction data by transaction id"""
 
-        data_details = (
-            EfficiencyDataDetail.query.join(EfficiencyDataDetail.efficiency_transaction)
-            .join(EfficiencyDataDetail.variable)
-            .filter(
-                and_(
-                    EfficiencyDataDetail.efficiency_transaction_id == transaction_id,
-                    Variable.in_out == type,
-                )
-            )
-            .all()
+        data_details = data_detail_repository.get_by_data_id_and_variable_type(
+            transaction_id, type
         )
 
         return response(
@@ -45,13 +34,16 @@ class TransactionDataDetailsResource(Resource):
         )
 
 
-class TransactionDataDetailResource(Resource):
+class DataDetailResource(Resource):
 
     @token_required
     def get(self, user_id, transaction_id, detail_id):
         """Get transaction data by transaction id and variable id"""
 
-        data_detail = EfficiencyDataDetail.query.get(detail_id)
+        data_detail = data_detail_repository.get_by_uuid(detail_id)
+
+        if not data_detail:
+            return response(404, False, "Data detail not found")
 
         return response(
             200,

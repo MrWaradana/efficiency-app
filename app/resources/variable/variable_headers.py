@@ -71,7 +71,6 @@ class VariableHeaderResource(Resource):
         if not header:
             return response(404, False, "Header not found")
 
-
         return response(
             200,
             True,

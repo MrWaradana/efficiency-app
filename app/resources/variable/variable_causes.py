@@ -3,10 +3,10 @@ from digital_twin_migration.models.efficiency_app import VariableCause
 from flask import Response
 from flask_restful import Resource
 from flask_restful.reqparse import Argument
-from app.schemas.variable import VariableCauseSchema
 
 from app.repositories import CausesRepository
 from app.resources.variable.main import variable_repository
+from app.schemas.variable import VariableCauseSchema
 from core.security import token_required
 from core.utils import parse_params, response
 
@@ -26,9 +26,7 @@ class VariableCausesResource(Resource):
         if not variable:
             return response(404, False, "Variable not found")
 
-        causes = variable_cause_repository.get_by_variable_id(
-            variable_id, {"children"}
-        )
+        causes = variable_cause_repository.get_by_variable_id(variable_id, {"children"})
 
         return response(
             200,

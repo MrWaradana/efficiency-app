@@ -6,44 +6,26 @@ from digital_twin_migration.models.efficiency_app import (
     Variable)
 from flask_restful import Resource
 from flask_restful.reqparse import Argument
-from schemas import EfficiencyDataDetailSchema, VariableSchema
+from app.schemas import EfficiencyDataDetailSchema, VariableSchema
 from sqlalchemy import and_, func
-from utils import (calculate_gap, calculate_persen_losses, parse_params,
+from core.utils import (calculate_gap, calculate_persen_losses, parse_params,
                    response)
-from utils.jwt_verif import token_required
+from core.security import token_required
+from app.resources.data.data_details import data_detail_repository
 
 variable_schema = VariableSchema()
 data_details_schema = EfficiencyDataDetailSchema()
 
 
-class TransactionListDataParetoResource(Resource):
+
+class DataListParetoResource(Resource):
 
     @token_required
     def get(self, user_id, transaction_id):
-        current_data = (
-            db.session.query(EfficiencyDataDetail, EfficiencyDataDetail.total_cost())
-            .join(EfficiencyDataDetail.efficiency_transaction)
-            .join(EfficiencyDataDetail.variable)
-            .filter(
-                and_(
-                    EfficiencyTransaction.id == transaction_id, Variable.in_out == "out"
-                )
-            )
-            .all()
-        )
-
-        target_data = (
-            EfficiencyDataDetail.query.join(EfficiencyDataDetail.efficiency_transaction)
-            .join(EfficiencyDataDetail.variable)
-            .filter(
-                and_(
-                    EfficiencyTransaction.jenis_parameter == "Target",
-                    Variable.in_out == "out",
-                )
-            )
-            .all()
-        )
-
+        current_data = data_detail_repository.get_data_pareto(transaction_id, True)
+        target_data =  data_detail_repository.get_data_pareto(transaction_id, False)
+        
+     
         current_dict = {
             item.variable_id: (item, total_cost) for item, total_cost in current_data
         }
@@ -118,9 +100,10 @@ class TransactionDetailDataParetoResource(Resource):
     @Transactional(propagation=Propagation.REQUIRED)
     def put(user_id, transaction_id, deviasi, persen_hr, detail_id):
 
-        data_detail = EfficiencyDataDetail.query.get(detail_id)
-        data_detail.devisi = deviasi
-        data_detail.persen_hr = persen_hr
-        data_detail.updated_by = user_id
-
+        data_detail = data_detail_repository.get_by_uuid(detail_id)
+        
+        if not data_detail:
+            return response(404, False, "Data Detail not found")
+        
+        data_detail_repository.update(data_detail, {"deviasi": deviasi, "persen_hr": persen_hr, "updated_by": user_id})
         return response(200, True, "Data Detail updated successfully")

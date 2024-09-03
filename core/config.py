@@ -2,6 +2,7 @@ import logging
 import os
 from enum import Enum
 
+import pytz
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -17,6 +18,7 @@ class Config:
     DEBUG: int = 1
     DEFAULT_LOCALE: str = "en_US"
     ENVIRONMENT: str = EnvironmentType.DEVELOPMENT
+    TIMEZONE = pytz.timezone("Asia/Bangkok")
 
     APPLICATION_ROOT = os.getenv("APPLICATION_APPLICATION_ROOT", "/")
     HOST = os.getenv("APPLICATION_HOST")

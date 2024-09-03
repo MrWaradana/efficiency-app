@@ -25,5 +25,5 @@ class VariableCauseSchema(ma.SQLAlchemyAutoSchema):
         model = VariableCause
         load_instance = True
         include_fk = True
-        
+
     children = fields.Nested(lambda: VariableCauseSchema, many=True)
