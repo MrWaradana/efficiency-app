@@ -9,7 +9,6 @@ from core.utils import parse_params, response
 
 variable_schema = VariableSchema()
 data_details_schema = EfficiencyDataDetailSchema()
-
 data_detail_repository = DataDetailRepository(EfficiencyDataDetail)
 
 

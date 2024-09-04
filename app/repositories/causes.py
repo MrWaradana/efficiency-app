@@ -1,9 +1,9 @@
 """ Defines the Cases repository """
 
 from digital_twin_migration.database import Propagation, Transactional
-from digital_twin_migration.models.efficiency_app import VariableCause
+from digital_twin_migration.models.efficiency_app import VariableCause, EfficiencyDataDetailRootCause, EfficiencyDataDetail
 from sqlalchemy import Select
-from sqlalchemy.orm import joinedload
+from sqlalchemy.orm import joinedload, contains_eager
 
 from core.repository import BaseRepository
 
@@ -28,6 +28,9 @@ class CausesRepository(BaseRepository[VariableCause]):
 
     def _join_children(self, query: Select) -> Select:
         return query.options(joinedload(VariableCause.children))
+
+    def _join_root_causes(self, query: Select) -> Select:
+        return query.options(joinedload(VariableCause.root_causes))
 
     def get_by_uuid(self, uuid: str, join_: set[str] | None = None):
         query = self._query(join_)

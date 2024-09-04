@@ -3,6 +3,7 @@ from digital_twin_migration.models.efficiency_app import (Variable,
                                                           VariableHeader)
 from marshmallow import fields
 
+from app.schemas.data import EfficiencyDataDetailRootCauseSchema
 from core.schema import ma
 
 
@@ -27,3 +28,4 @@ class VariableCauseSchema(ma.SQLAlchemyAutoSchema):
         include_fk = True
 
     children = fields.Nested(lambda: VariableCauseSchema, many=True)
+    root_causes = fields.Nested(EfficiencyDataDetailRootCauseSchema, many=True)

@@ -21,3 +21,9 @@ class EfficiencyTransactionSchema(ma.SQLAlchemyAutoSchema):
     efficiency_transaction_details = fields.Nested(
         EfficiencyDataDetailSchema, many=True
     )
+
+class EfficiencyDataDetailRootCauseSchema(ma.SQLAlchemyAutoSchema):
+    class Meta:
+        model = EfficiencyDataDetailRootCause
+        load_instance = True
+        include_fk = True
