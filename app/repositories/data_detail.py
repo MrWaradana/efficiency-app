@@ -4,8 +4,9 @@ from typing import Optional
 
 from digital_twin_migration.database import Propagation, Transactional
 from digital_twin_migration.models import db
-from digital_twin_migration.models.efficiency_app import (EfficiencyDataDetail,
-                                                          Variable, EfficiencyTransaction, EfficiencyDataDetailRootCause)
+from digital_twin_migration.models.efficiency_app import (
+    EfficiencyDataDetail, EfficiencyDataDetailRootCause, EfficiencyTransaction,
+    Variable)
 from sqlalchemy import Select, and_, func, select
 from sqlalchemy.orm import joinedload
 
@@ -15,7 +16,7 @@ from core.repository import BaseRepository
 class DataDetailRepository(BaseRepository[EfficiencyDataDetail]):
 
     def get_by_data_id_and_variable_type(self, data_id: str, type: str):
-        query = self._query({'variable'})
+        query = self._query({"variable"})
         query = query.filter(
             and_(
                 EfficiencyDataDetail.efficiency_transaction_id == data_id,
@@ -37,25 +38,36 @@ class DataDetailRepository(BaseRepository[EfficiencyDataDetail]):
 
     def get_data_pareto(self, data_id: str, with_total_cost: bool = False):
         if with_total_cost:
-            query = db.session.query(EfficiencyDataDetail, EfficiencyDataDetail.total_cost()).join(EfficiencyTransaction).join(Variable).filter(and_(
-                EfficiencyDataDetail.efficiency_transaction_id == data_id,
-                Variable.in_out == "out",
-            )).all()
-            
+            query = (
+                db.session.query(
+                    EfficiencyDataDetail, EfficiencyDataDetail.total_cost()
+                )
+                .join(EfficiencyTransaction)
+                .join(Variable)
+                .filter(
+                    and_(
+                        EfficiencyDataDetail.efficiency_transaction_id == data_id,
+                        Variable.in_out == "out",
+                    )
+                )
+                .all()
+            )
+
             return query
-        
+
         else:
             query = select(self.model_class)
-            query = self._maybe_join(query, {'variable', 'data'})
-            query = query.filter(and_(
-                EfficiencyTransaction.jenis_parameter == "Target",
-                Variable.in_out == "out",
-            ))
+            query = self._maybe_join(query, {"variable", "data"})
+            query = query.filter(
+                and_(
+                    EfficiencyTransaction.jenis_parameter == "Target",
+                    Variable.in_out == "out",
+                )
+            )
             return self._all(query)
-    
-    
+
     def _join_data(self, query: Select) -> Select:
         return query.join(EfficiencyTransaction)
-    
+
     def _join_root_cause(self, query: Select) -> Select:
         return query.join(EfficiencyDataDetailRootCause)

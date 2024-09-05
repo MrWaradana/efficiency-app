@@ -1,11 +1,12 @@
 """ Defines the Cases repository """
 
+from datetime import date, datetime
 from typing import Optional
 
 from digital_twin_migration.database import Propagation, Transactional
 from digital_twin_migration.models import db
 from digital_twin_migration.models.efficiency_app import EfficiencyTransaction
-from sqlalchemy import Select
+from sqlalchemy import Select, func
 from sqlalchemy.orm.query import Query
 
 from core.repository import BaseRepository
@@ -21,6 +22,21 @@ class DataRepository(BaseRepository[EfficiencyTransaction]):
             return self._all_unique(query)
 
         return self._one_or_none(query)
+
+    def get_daily_increment(self):
+        today = date.today()
+
+        # Get the highest daily increment for today
+        max_increment = (
+            self.session.query(func.max(EfficiencyTransaction.sequence))
+            .filter(func.date(EfficiencyTransaction.created_at) == today)
+            .scalar()
+        )
+
+        if max_increment is None:
+            return 1
+        else:
+            return max_increment + 1
 
     def get_query(
         self, start_date, end_date, join_: set[str] | None = None, **kwargs

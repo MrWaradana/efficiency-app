@@ -1,7 +1,5 @@
 import random
 from datetime import datetime
-from enum import Enum
-from uuid import UUID
 
 import requests
 from digital_twin_migration.database import Propagation, Transactional
@@ -12,14 +10,12 @@ from flask_restful.reqparse import Argument
 from sqlalchemy.orm import joinedload
 
 from app.repositories import DataRepository, VariablesRepository
-from app.repositories.excels import ExcelsRepository
 from app.resources.excels import excel_repository
 from app.resources.variable.main import variable_repository
 from app.schemas.data import EfficiencyTransactionSchema
 from core.config import EnvironmentType, config
 from core.security.jwt_verif import token_required
-from core.utils import get_key_by_value, now, parse_params, response
-from core.utils.util import modify_number
+from core.utils import get_key_by_value, parse_params, response
 
 data_schema = EfficiencyTransactionSchema(exclude=["efficiency_transaction_details"])
 data_schema_with_rel = EfficiencyTransactionSchema()
@@ -107,12 +103,18 @@ class DataListResource(Resource):
             type=str,
             default="Current",
         ),
+        Argument(
+            "name",
+            location="json",
+            required=True,
+            type=str,
+        ),
         Argument("excel_id", location="json", required=True, type=str),
         Argument("inputs", location="json", required=True, type=dict),
     )
     @token_required
     @Transactional(propagation=Propagation.REQUIRED)
-    def post(self, jenis_parameter, excel_id, inputs, user_id):
+    def post(self, jenis_parameter, excel_id, inputs, user_id, name):
         # Get variable mappings
         # Fetch all variables associated with the given excel_id
         excel = excel_repository.get_by_uuid(excel_id)
@@ -148,9 +150,11 @@ class DataListResource(Resource):
         # Create a new parent transaction
         transaction_parent = data_repository.create(
             {
+                "name": name,
                 "jenis_parameter": jenis_parameter,
                 "excel_id": excel_id,
                 "created_by": user_id,
+                "sequence": data_repository.get_daily_increment(),
             }
         )
 

@@ -22,6 +22,7 @@ class EfficiencyTransactionSchema(ma.SQLAlchemyAutoSchema):
         EfficiencyDataDetailSchema, many=True
     )
 
+
 class EfficiencyDataDetailRootCauseSchema(ma.SQLAlchemyAutoSchema):
     class Meta:
         model = EfficiencyDataDetailRootCause
