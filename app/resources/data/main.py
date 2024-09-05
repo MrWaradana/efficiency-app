@@ -235,7 +235,7 @@ class DataListResource(Resource):
         data_repository.create_bulk(transaction_records)
 
         # Return a success response
-        return response(200, True, "Transaction created successfully")
+        return response(200, True, "Transaction created successfully", {"data_id": transaction_parent.id})
 
 
 class DataResource(Resource):
