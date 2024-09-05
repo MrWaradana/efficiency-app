@@ -63,6 +63,7 @@ class DataListParetoResource(Resource):
                         "nilai_losses": nilai_losses,
                         "gap": gap,
                         "total_biaya": total_cost,
+                        "symptoms": "Higher" if gap > 0 else "Lower",
                     }
                 )
 
