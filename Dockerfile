@@ -38,7 +38,7 @@ COPY --from=builder /app/.venv /app/.venv
 COPY . /app/
 
 # Expose port for the application
-EXPOSE 3002
+EXPOSE 3000
 
 # Set the working directory
 WORKDIR /app
