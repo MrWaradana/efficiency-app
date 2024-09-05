@@ -8,7 +8,7 @@ from flask_restful.reqparse import Argument
 
 from app.repositories import VariablesRepository
 from app.resources.excels import excel_repository
-from app.schemas.variable import (VariableCauseSchema, VariableHeaderSchema,
+from app.schemas import (VariableCauseSchema, VariableHeaderSchema,
                                   VariableSchema)
 from core.config import config
 from core.security.jwt_verif import token_required
