@@ -5,6 +5,7 @@ from digital_twin_migration.models.efficiency_app import (
 )
 from marshmallow import fields
 
+from app.schemas.variable import VariableSchema
 from core.schema import ma
 
 
@@ -13,6 +14,8 @@ class EfficiencyDataDetailSchema(ma.SQLAlchemyAutoSchema):
         model = EfficiencyDataDetail
         load_instance = True
         include_fk = True
+
+    variable = fields.Nested(VariableSchema)
 
 
 class EfficiencyTransactionSchema(ma.SQLAlchemyAutoSchema):
