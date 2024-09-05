@@ -1,6 +1,8 @@
-from digital_twin_migration.models.efficiency_app import (Variable,
-                                                          VariableCause,
-                                                          VariableHeader)
+from digital_twin_migration.models.efficiency_app import (
+    Variable,
+    VariableCause,
+    VariableHeader,
+)
 from marshmallow import fields
 
 from app.schemas.data import EfficiencyDataDetailRootCauseSchema

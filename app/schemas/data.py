@@ -1,5 +1,8 @@
 from digital_twin_migration.models.efficiency_app import (
-    EfficiencyDataDetail, EfficiencyDataDetailRootCause, EfficiencyTransaction)
+    EfficiencyDataDetail,
+    EfficiencyDataDetailRootCause,
+    EfficiencyTransaction,
+)
 from marshmallow import fields
 
 from core.schema import ma

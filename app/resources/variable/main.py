@@ -14,6 +14,7 @@ from core.config import config
 from core.security.jwt_verif import token_required
 from core.utils import parse_params, response
 from core.utils.util import fetch_data_from_api
+import random
 
 variable_schema = VariableSchema()
 variable_repository = VariablesRepository(Variable)
@@ -39,15 +40,20 @@ class VariablesResource(Resource):
             print(f"Excel {excel_id} not found")
             return response(404, False, "Excel not found")
 
-        response_data = variable_repository.get_by_multiple(
+        variables = variable_repository.get_by_multiple(
             attributes={"excel_id": excel_id, "is_pareto": True, "in_out": type}
         )
+
+        variables_base_case = [
+            {**variable_schema.dump(variable), "base_case": random.randint(7, 20)}
+            for variable in variables
+        ]
 
         return response(
             200,
             True,
             "Variables retrieved successfully",
-            variable_schema.dump(response_data, many=True),
+            variables_base_case,
         )
 
         # existing_variables = {

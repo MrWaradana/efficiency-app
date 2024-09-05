@@ -5,9 +5,14 @@ Defines the blueprint for the variables
 from flask import Blueprint
 from flask_restful import Api
 
-from app.resources import (DataDetailListResource, DataDetailResource,
-                           DataListParetoResource, DataListResource,
-                           DataResource, DataRootCausesListResource)
+from app.resources import (
+    DataDetailListResource,
+    DataDetailResource,
+    DataListParetoResource,
+    DataListResource,
+    DataResource,
+    DataRootCausesListResource,
+)
 
 TRANSACTION_BLUEPRIENT = Blueprint("data", __name__)
 

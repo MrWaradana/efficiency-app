@@ -7,8 +7,7 @@ from flask_restful.reqparse import Argument
 from app.resources.data.data_details import data_detail_repository
 from app.schemas import EfficiencyDataDetailSchema, VariableSchema
 from core.security import token_required
-from core.utils import (calculate_gap, calculate_persen_losses, parse_params,
-                        response)
+from core.utils import calculate_gap, calculate_persen_losses, parse_params, response
 
 variable_schema = VariableSchema()
 data_details_schema = EfficiencyDataDetailSchema()

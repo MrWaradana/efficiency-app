@@ -4,7 +4,9 @@ from datetime import datetime
 import requests
 from digital_twin_migration.database import Propagation, Transactional
 from digital_twin_migration.models.efficiency_app import (
-    EfficiencyDataDetail, EfficiencyTransaction)
+    EfficiencyDataDetail,
+    EfficiencyTransaction,
+)
 from flask_restful import Resource
 from flask_restful.reqparse import Argument
 from sqlalchemy.orm import joinedload

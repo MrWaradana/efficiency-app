@@ -2,7 +2,10 @@
 
 from digital_twin_migration.database import Propagation, Transactional
 from digital_twin_migration.models.efficiency_app import (
-    EfficiencyDataDetail, EfficiencyDataDetailRootCause, VariableCause)
+    EfficiencyDataDetail,
+    EfficiencyDataDetailRootCause,
+    VariableCause,
+)
 from sqlalchemy import Select
 from sqlalchemy.orm import contains_eager, joinedload
 
