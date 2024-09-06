@@ -13,6 +13,7 @@ data_detail_repository = DataDetailRepository(EfficiencyDataDetail)
 
 
 class DataDetailListResource(Resource):
+    
 
     @token_required
     @parse_params(

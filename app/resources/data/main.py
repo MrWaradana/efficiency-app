@@ -93,7 +93,7 @@ class DataListResource(Resource):
             "Transactions retrieved successfully.",
             {
                 **paginated_option,
-                "transactions": data_schema.dump(items, many=True),
+                "transactions": [{**data_schema.dump(item), "periode": f"{item.periode.strftime('%Y-%m-%d')} {item.sequence}"} for item in items],
             },
         )
 
