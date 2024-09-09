@@ -18,9 +18,9 @@ class DataListParetoResource(Resource):
 
     @token_required
     @parse_params(
-        Argument("persen_threshold", location="args", type=int, required=False, default=None),
+        Argument("percent_threshold", location="args", type=int, required=False, default=None),
     )
-    def get(self, user_id, transaction_id, persen_threshold):
+    def get(self, user_id, transaction_id, percent_threshold):
         current_data = data_detail_repository.get_data_pareto(transaction_id, True)
         target_data = data_detail_repository.get_data_pareto(transaction_id, False)
 
@@ -103,7 +103,7 @@ class DataListParetoResource(Resource):
             
             total_persen += losses
         
-            if persen_threshold and total_persen >= persen_threshold:
+            if percent_threshold and total_persen >= percent_threshold:
                 break
 
             result.append(category_data)
