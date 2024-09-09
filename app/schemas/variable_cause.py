@@ -5,7 +5,6 @@ from core.schema import ma
 
 from digital_twin_migration.models.efficiency_app import (
     VariableCause,
-
 )
 
 

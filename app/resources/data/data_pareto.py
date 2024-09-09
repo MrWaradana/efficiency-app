@@ -8,6 +8,7 @@ from app.resources.data.data_details import data_detail_repository
 from app.schemas import EfficiencyDataDetailSchema, VariableSchema
 from core.security import token_required
 from core.utils import calculate_gap, calculate_persen_losses, parse_params, response
+import math
 
 variable_schema = VariableSchema()
 data_details_schema = EfficiencyDataDetailSchema()
@@ -17,11 +18,18 @@ class DataListParetoResource(Resource):
 
     @token_required
     @parse_params(
-        Argument("persen_threshold", location="args", type=int, required=False),
+        Argument("persen_threshold", location="args", type=int, required=False, default=None),
     )
     def get(self, user_id, transaction_id, persen_threshold):
         current_data = data_detail_repository.get_data_pareto(transaction_id, True)
         target_data = data_detail_repository.get_data_pareto(transaction_id, False)
+
+        if current_data is None or target_data is None:
+            return response(
+                404,
+                False,
+                "Data is not available"
+            )
 
         current_dict = {
             item.variable_id: (item, total_cost) for item, total_cost in current_data
@@ -33,12 +41,14 @@ class DataListParetoResource(Resource):
 
         for variable_id, (current_item, total_cost) in current_dict.items():
             target_item = target_dict.get(variable_id)
+            
 
             if target_item:
                 gap = calculate_gap(target_item.nilai, current_item.nilai)
 
                 if gap is None:
                     raise Exception(gap, target_item.nilai_string, current_item.nilai)
+                
 
                 persen_losses = calculate_persen_losses(
                     gap, current_item.deviasi, current_item.persen_hr
@@ -47,7 +57,7 @@ class DataListParetoResource(Resource):
                 nilai_losses = (persen_losses / 100) * 1000
 
                 aggregated_persen_losses[current_item.variable.category] += (
-                    nilai_losses if nilai_losses is not None else 0
+                    persen_losses if persen_losses is not None else 0
                 )
 
                 calculated_data.append(
@@ -62,7 +72,7 @@ class DataListParetoResource(Resource):
                         "nilai_losses": nilai_losses,
                         "gap": gap,
                         "total_biaya": total_cost,
-                        "symptoms": "Higher" if gap > 0 else "Lower",
+                        # "symptoms": "Higher" if gap > 0 else "Lower",
                     }
                 )
 
@@ -73,8 +83,13 @@ class DataListParetoResource(Resource):
             sorted(aggregated_persen_losses.items(), key=lambda x: x[1], reverse=True)
         )
 
+        max_persen_losses = max(aggregated_persen_losses.values())
+        
+
         for category, losses in aggregated_persen_losses.items():
-            total_persen += losses
+            
+            # normalize_losses_persen = (losses / max_persen_losses) * 100
+         
             category_data = {
                 "category": category,
                 "total_persen_losses": losses,
@@ -85,7 +100,9 @@ class DataListParetoResource(Resource):
                     if item["variable"]["category"] == category
                 ],
             }
-
+            
+            total_persen += losses
+        
             if persen_threshold and total_persen >= persen_threshold:
                 break
 

@@ -1,3 +1,4 @@
+from app.controllers import data_controller
 import random
 from datetime import datetime
 
@@ -38,36 +39,9 @@ class DataListResource(Resource):
         Argument("end_date", location="args", type=str, required=False, default=None),
     )
     def get(self, user_id, page, size, all, start_date, end_date):
-        """
-        Retrieve all Transactions.
-
-        Args:
-            user_id (int): The ID of the user making the request.
-            page (int): The page number of the results.
-            size (int): The number of results per page.
-            all (bool): Flag indicating whether to retrieve all results without pagination.
-            start_date (str): The start date of the query in the format "YYYY-MM-DD".
-            end_date (str): The end date of the query in the format "YYYY-MM-DD".
-
-        Returns:
-            dict: Response containing the retrieved transactions and pagination information.
-        """
-
-        # Parse start and end dates if provided
-        start_date = (
-            datetime.strptime(start_date, "%Y-%m-%d").date() if start_date else None
-        )
-        end_date = datetime.strptime(end_date, "%Y-%m-%d").date() if end_date else None
-
-        # Build the query based on the date range
-        query = data_repository.get_query(start_date=start_date, end_date=end_date)
-
-        # Get the total count of records
-        count = data_repository._count(query)
-
         if all:
             # Retrieve all transactions without pagination
-            transactions = data_repository._all(query)
+            data = data_controller.paginated_list_data(page, size, all, start_date, end_date)
             return response(
                 200,
                 True,
@@ -78,13 +52,13 @@ class DataListResource(Resource):
                     "page_size": None,
                     "has_next_page": None,
                     "has_previous_page": None,
-                    "transactions": data_schema.dump(transactions, many=True),
-                    "total_items": count,
+                    "transactions": data_schema.dump(data[0], many=True),
+                    "total_items": data[1],
                 },
             )
 
         # Apply pagination
-        paginated_option, items = data_repository.paginate(query, page, size)
+        data = data_controller.paginated_list_data(page, size, all, start_date, end_date)
 
         # Construct response
         return response(
@@ -92,8 +66,14 @@ class DataListResource(Resource):
             True,
             "Transactions retrieved successfully.",
             {
-                **paginated_option,
-                "transactions": [{**data_schema.dump(item), "periode": f"{item.periode.strftime('%Y-%m-%d')} {item.sequence}"} for item in items],
+                **data[0],
+                "transactions": [
+                    {
+                        **data_schema.dump(item),
+                        "periode": f"{item.periode.strftime('%Y-%m-%d')} {item.sequence}",
+                    }
+                    for item in data[1]
+                ],
             },
         )
 
@@ -235,7 +215,12 @@ class DataListResource(Resource):
         data_repository.create_bulk(transaction_records)
 
         # Return a success response
-        return response(200, True, "Transaction created successfully", {"data_id": transaction_parent.id})
+        return response(
+            200,
+            True,
+            "Transaction created successfully",
+            {"data_id": transaction_parent.id},
+        )
 
 
 class DataResource(Resource):

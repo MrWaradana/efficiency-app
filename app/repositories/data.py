@@ -12,6 +12,7 @@ from sqlalchemy.orm.query import Query
 from core.repository import BaseRepository
 
 
+
 class DataRepository(BaseRepository[EfficiencyTransaction]):
 
     def get_by_uuid(self, uuid: str, join_: set[str] | None = None):

@@ -9,6 +9,7 @@ from flask_migrate import Migrate
 from sqlalchemy import text
 
 import app.routes as routes
+from core.cache import Cache, RedisBackend, CustomKeyMaker
 from core.config import config
 from core.exceptions import handle_exception
 from core.schema import ma
@@ -39,6 +40,9 @@ def create_app():
 
     # CORS Configuration
     CORS(app)
+    
+    # Redis
+    Cache.init(RedisBackend, CustomKeyMaker)
 
     # Create command functions
     @click.command(name="drop")

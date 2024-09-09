@@ -20,5 +20,3 @@ class VariableHeaderSchema(ma.SQLAlchemyAutoSchema):
         model = VariableHeader
         load_instance = True
         include_fk = True
-
-

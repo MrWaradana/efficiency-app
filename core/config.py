@@ -37,7 +37,7 @@ class Config:
     )
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
-    REDIS_URL: str = "redis://localhost:6379/7"
+    REDIS_URL: str = "redis://192.168.1.51:6379/7"
     RELEASE_VERSION: str = "0.1"
     SHOW_SQL_ALCHEMY_QUERIES: int = 0
     SECRET_KEY = os.getenv("APPLICATION_SECRET_KEY")
