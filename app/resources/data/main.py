@@ -70,7 +70,7 @@ class DataListResource(Resource):
                 "transactions": [
                     {
                         **data_schema.dump(item),
-                        "periode": f"{item.periode.strftime('%Y-%m-%d')} {item.sequence}",
+                        "periode": f"{item.periode.strftime('%Y-%m-%d')} | {item.sequence}",
                     }
                     for item in data[1]
                 ],
