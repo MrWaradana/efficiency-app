@@ -28,7 +28,7 @@ class DataController(BaseController[EfficiencyTransaction]):
         self.data_repository = data_repository
 
     
-    # @Cache.cached(prefix="get_data_paginated")
+    @Cache.cached(prefix="get_data_paginated")
     def paginated_list_data(self, page, size, all, start_date, end_date):
         """
         Retrieve all Transactions.

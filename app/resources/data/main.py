@@ -59,6 +59,8 @@ class DataListResource(Resource):
 
         # Apply pagination
         data = data_controller.paginated_list_data(page, size, all, start_date, end_date)
+        
+        # raise Exception(print(data))
 
         # Construct response
         return response(

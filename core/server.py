@@ -42,7 +42,7 @@ def create_app():
     CORS(app)
     
     # Redis
-    Cache.init(RedisBackend, CustomKeyMaker)
+    Cache.init(RedisBackend(), CustomKeyMaker())
 
     # Create command functions
     @click.command(name="drop")

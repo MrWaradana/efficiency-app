@@ -1,35 +1,45 @@
 import pickle
 from typing import Any
 
-import redis.asyncio as aioredis
+from redis import StrictRedis
 import ujson
 
 from core.cache.base import BaseBackend
 from core.config import config
 
-redis = aioredis.from_url(url=config.REDIS_URL)
+import logging
+
+redis = StrictRedis.from_url(config.REDIS_URL)
+
+logging.basicConfig(level=logging.ERROR)
+logger = logging.getLogger(__name__)
 
 
 class RedisBackend(BaseBackend):
-    async def get(self, key: str) -> Any:
-        result = await redis.get(key)
-        redis.f
+    def get(self, key: str) -> Any:
+        result = redis.get(key)
         if not result:
             return
 
         try:
             return ujson.loads(result.decode("utf8"))
-        except UnicodeDecodeError:
-            return pickle.loads(result)
+        except (UnicodeDecodeError, ujson.JSONDecodeError) as e:
+            logger.error(f"JSON decode error for key '{key}': {e}")
+            # Try to deserialize using pickle
+            try:
+                return pickle.loads(result)
+            except (pickle.UnpicklingError, EOFError, AttributeError) as e:
+                logger.error(f"Pickle load error for key '{key}': {e}")
+                return None
 
-    async def set(self, response: Any, key: str, ttl: int = 60) -> None:
+    def set(self, response: Any, key: str, ttl: int = 60) -> None:
         if isinstance(response, dict):
             response = ujson.dumps(response)
         elif isinstance(response, object):
             response = pickle.dumps(response)
 
-        await redis.set(name=key, value=response, ex=ttl)
+        redis.set(name=key, value=response, ex=ttl)
 
-    async def delete_startswith(self, value: str) -> None:
-        async for key in redis.scan_iter(f"{value}::*"):
-            await redis.delete(key)
+    def delete_startswith(self, value: str) -> None:
+        for key in redis.scan_iter(f"{value}::*"):
+            redis.delete(key)
