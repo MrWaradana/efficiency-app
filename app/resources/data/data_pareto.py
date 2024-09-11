@@ -5,8 +5,9 @@ from digital_twin_migration.database import Propagation, Transactional, db
 from flask_restful import Resource
 from flask_restful.reqparse import Argument
 
-from app.controllers.data.data_detail import data_detail_repository
+from app.controllers.data.data_detail import data_detail_repository, data_detail_controller
 from app.schemas import EfficiencyDataDetailSchema, VariableSchema
+from core.cache.cache_manager import Cache
 from core.security import token_required
 from core.utils import (calculate_gap, calculate_persen_losses, parse_params,
                         response)
@@ -24,62 +25,65 @@ class DataListParetoResource(Resource):
         ),
     )
     def get(self, user_id, transaction_id, percent_threshold):
-        data = data_detail_repository.get_data_pareto(transaction_id)
-        # target_data = data_detail_repository.get_data_pareto(transaction_id, False)
 
-        if data is None:
-            return response(404, False, "Data is not available")
+        result = data_detail_controller.get_data_pareto(transaction_id, percent_threshold)
 
-        calculated_data_by_category = defaultdict(list)
-        aggregated_persen_losses = defaultdict(float)
+        # data = data_detail_repository.get_data_pareto(transaction_id)
+        # # target_data = data_detail_repository.get_data_pareto(transaction_id, False)
 
-        total_persen = 0
-        result = []
+        # if data is None:
+        #     return response(404, False, "Data is not available")
 
-        for current_data, target_data, total_cost in data:
-            gap = calculate_gap(target_data.nilai, current_data.nilai)
-            persen_losses = calculate_persen_losses(
-                gap, target_data.deviasi, current_data.persen_hr
-            )
-            nilai_losses = (persen_losses / 100) * 1000
+        # calculated_data_by_category = defaultdict(list)
+        # aggregated_persen_losses = defaultdict(float)
 
-            category = current_data.variable.category
-            aggregated_persen_losses[category] += persen_losses or 0
+        # total_persen = 0
+        # result = []
 
-            calculated_data_by_category[category].append(
-                {
-                    "id": current_data.id,
-                    "variable": variable_schema.dump(current_data.variable),
-                    "existing_data": current_data.nilai,
-                    "reference_data": target_data.nilai,
-                    "deviasi": current_data.deviasi,
-                    "persen_hr": current_data.persen_hr,
-                    "persen_losses": persen_losses,
-                    "nilai_losses": nilai_losses,
-                    "gap": gap,
-                    "total_biaya": total_cost,
-                    "symptoms": "Higher" if gap > 0 else "Lower",
-                }
-            )
+        # for current_data, target_data, total_cost in data:
+        #     gap = calculate_gap(target_data.nilai, current_data.nilai)
+        #     persen_losses = calculate_persen_losses(
+        #         gap, target_data.deviasi, current_data.persen_hr
+        #     )
+        #     nilai_losses = (persen_losses / 100) * 1000
 
-        # Sort aggregated losses only once, limit looping
-        aggregated_persen_losses = dict(
-            sorted(aggregated_persen_losses.items(), key=lambda x: x[1], reverse=True)
-        )
+        #     category = current_data.variable.category
+        #     aggregated_persen_losses[category] += persen_losses or 0
 
-        for category, losses in aggregated_persen_losses.items():
-            total_persen += losses
-            if percent_threshold and total_persen >= percent_threshold:
-                break
+        #     calculated_data_by_category[category].append(
+        #         {
+        #             "id": current_data.id,
+        #             "variable": variable_schema.dump(current_data.variable),
+        #             "existing_data": current_data.nilai,
+        #             "reference_data": target_data.nilai,
+        #             "deviasi": current_data.deviasi,
+        #             "persen_hr": current_data.persen_hr,
+        #             "persen_losses": persen_losses,
+        #             "nilai_losses": nilai_losses,
+        #             "gap": gap,
+        #             "total_biaya": total_cost,
+        #             "symptoms": "Higher" if gap > 0 else "Lower",
+        #         }
+        #     )
 
-            result.append(
-                {
-                    "category": category,
-                    "total_persen_losses": losses,
-                    "total_nilai_losses": (losses / 100) * 1000,
-                    "data": calculated_data_by_category[category],
-                }
-            )
+        # # Sort aggregated losses only once, limit looping
+        # aggregated_persen_losses = dict(
+        #     sorted(aggregated_persen_losses.items(), key=lambda x: x[1], reverse=True)
+        # )
+
+        # for category, losses in aggregated_persen_losses.items():
+        #     total_persen += losses
+        #     if percent_threshold and total_persen >= percent_threshold:
+        #         break
+
+        #     result.append(
+        #         {
+        #             "category": category,
+        #             "total_persen_losses": losses,
+        #             "total_nilai_losses": (losses / 100) * 1000,
+        #             "data": calculated_data_by_category[category],
+        #         }
+        #     )
 
         return response(200, True, "Data retrieved successfully", result)
 
@@ -90,8 +94,8 @@ class DataListParetoResource(Resource):
             "pareto_data", location="json", type=list, required=False, default=None
         ),
         Argument("detail_id", location="json", type=str, required=False),
-        Argument("deviasi", location="json", required=False, type=float, default = None),
-        Argument("persen_hr", location="json", required=False, type=float, default = None),
+        Argument("deviasi", location="json", required=False, type=float, default=None),
+        Argument("persen_hr", location="json", required=False, type=float, default=None),
     )
     @Transactional(propagation=Propagation.REQUIRED)
     def put(self, user_id, transaction_id, is_bulk, pareto_data, **inputs):
@@ -138,4 +142,5 @@ class DataListParetoResource(Resource):
                 },
             )
 
+        Cache.remove_by_prefix(f"data_pareto::{transaction_id}")
         return response(200, True, "Data Detail updated successfully")
