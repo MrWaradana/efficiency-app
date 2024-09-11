@@ -3,12 +3,12 @@ import pickle
 from typing import Any
 
 import ujson
-from redis import StrictRedis
+import redis
 
 from core.cache.base import BaseBackend
 from core.config import config
 
-redis = StrictRedis.from_url(config.REDIS_URL)
+redis = redis.Redis.from_url(config.REDIS_URL)
 
 logging.basicConfig(level=logging.ERROR)
 logger = logging.getLogger(__name__)
@@ -42,3 +42,6 @@ class RedisBackend(BaseBackend):
     def delete_startswith(self, value: str) -> None:
         for key in redis.scan_iter(f"{value}::*"):
             redis.delete(key)
+
+    def delete_by_key(self, value: str) -> None:
+        redis.delete(value)

@@ -11,7 +11,6 @@ def handle_exception(e):
         return response(e.code, False, e.description)
 
     if isinstance(e, SQLAlchemyError):
-        db.session.rollback()
         return response(500, False, str(e))
 
     return (

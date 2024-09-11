@@ -56,15 +56,25 @@ class CacheManager:
     def remove_by_prefix(self, prefix: str) -> None:
         self.backend.delete_startswith(value=prefix)
 
-    def get_by_key(self, key):
-        # key = self.key_maker.make(function=function, prefix=prefix)
+    def remove_by_key(self, key):
+        self.backend.delete_by_key(key)
+
+    def get_by_prefix(self, prefix, function: Callable[[Any], bool] = None) -> Any:
+        key = self.key_maker.make(
+            function=function if function else self.set_cache,
+            prefix=prefix
+        )
 
         response = self.backend.get(key)
 
         return response
 
-    def set_cache(self, response, key):
-        self.backend.set(response, key)
+    def set_cache(self, response, prefix: str):
+        key = self.key_maker.make(
+            function=self.set_cache,
+            prefix=prefix
+        )
+        self.backend.set(response=response, key=key)
 
 
 Cache = CacheManager()

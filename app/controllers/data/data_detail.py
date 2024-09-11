@@ -27,16 +27,14 @@ class DataDetailController(BaseController[EfficiencyDataDetail]):
         self.data_detail_repository = data_detail_repository
 
     def get_data_pareto(self, transaction_id, percent_threshold):
-
         # Calculate total biaya for the transaction
-        pareto_cache_data = Cache.get_by_key(f"data_pareto::{transaction_id}")
+        pareto_cache_data = Cache.get_by_prefix(f"data_calculated_data_by_category_{transaction_id}")
         result = []
         total_persen = 0
 
         if pareto_cache_data:
-            calculated_data_by_category, aggregated_persen_losses = pareto_cache_data
-
-            for category, losses in aggregated_persen_losses.items():
+            # raise Exception(pareto_cache_data['aggregated_persen_losses'], "cachheheheh")
+            for category, losses in pareto_cache_data['aggregated_persen_losses'].items():
                 total_persen += losses
                 if percent_threshold and total_persen >= percent_threshold:
                     break
@@ -46,13 +44,14 @@ class DataDetailController(BaseController[EfficiencyDataDetail]):
                         "category": category,
                         "total_persen_losses": losses,
                         "total_nilai_losses": (losses / 100) * 1000,
-                        "data": calculated_data_by_category[category],
+                        "data": pareto_cache_data['data'][category],
                     }
                 )
+            
+            
             return result
 
         data = data_detail_repository.get_data_pareto(transaction_id)
-        # target_data = data_detail_repository.get_data_pareto(transaction_id, False)
 
         if data is None:
             return response(404, False, "Data is not available")
@@ -61,14 +60,18 @@ class DataDetailController(BaseController[EfficiencyDataDetail]):
         aggregated_persen_losses = defaultdict(float)
 
         for current_data, target_data, total_cost in data:
-            gap, persen_losses, nilai_losses = calculate_pareto(target_data, current_data)
+            gap = calculate_gap(target_data.nilai, current_data.nilai)
+            persen_losses = calculate_persen_losses(
+                gap, target_data.deviasi, current_data.persen_hr
+            )
+            nilai_losses = (persen_losses / 100) * 1000
 
             category = current_data.variable.category
             aggregated_persen_losses[category] += persen_losses or 0
 
             calculated_data_by_category[category].append(
                 {
-                    "id": current_data.id,
+                    "id": str(current_data.id),
                     "variable": variable_schema.dump(current_data.variable),
                     "existing_data": current_data.nilai,
                     "reference_data": target_data.nilai,
@@ -82,26 +85,30 @@ class DataDetailController(BaseController[EfficiencyDataDetail]):
                 }
             )
 
-            # Sort aggregated losses only once, limit looping
-            aggregated_persen_losses = dict(
-                sorted(aggregated_persen_losses.items(), key=lambda x: x[1], reverse=True)
+        # Sort aggregated losses only once, limit looping
+        aggregated_persen_losses = dict(
+            sorted(aggregated_persen_losses.items(), key=lambda x: x[1], reverse=True)
+        )
+
+        Cache.set_cache(response={
+            "aggregated_persen_losses": aggregated_persen_losses,
+            "data": calculated_data_by_category,
+        }, prefix=f"data_calculated_data_by_category_{transaction_id}")
+
+        for category, losses in aggregated_persen_losses.items():
+            total_persen += losses
+            if percent_threshold and total_persen >= percent_threshold:
+                break
+
+            result.append(
+                {
+                    "category": category,
+                    "total_persen_losses": losses,
+                    "total_nilai_losses": (losses / 100) * 1000,
+                    "data": calculated_data_by_category[category],
+                }
             )
 
-            Cache.set_cache((calculated_data_by_category, aggregated_persen_losses), f"data_pareto::{transaction_id}")
-
-            for category, losses in aggregated_persen_losses.items():
-                total_persen += losses
-                if percent_threshold and total_persen >= percent_threshold:
-                    break
-
-                result.append(
-                    {
-                        "category": category,
-                        "total_persen_losses": losses,
-                        "total_nilai_losses": (losses / 100) * 1000,
-                        "data": calculated_data_by_category[category],
-                    }
-                )
         return result
 
 

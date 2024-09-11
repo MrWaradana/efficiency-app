@@ -11,3 +11,6 @@ class BaseBackend(ABC):
 
     @abstractmethod
     def delete_startswith(self, value: str) -> None: ...
+
+    @abstractmethod
+    def delete_by_key(self, value: str) -> None: ...
