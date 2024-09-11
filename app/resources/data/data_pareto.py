@@ -90,8 +90,8 @@ class DataListParetoResource(Resource):
             "pareto_data", location="json", type=list, required=False, default=None
         ),
         Argument("detail_id", location="json", type=str, required=False),
-        Argument("deviasi", location="json", required=False, type=float),
-        Argument("persen_hr", location="json", required=False, type=float),
+        Argument("deviasi", location="json", required=False, type=float, default = None),
+        Argument("persen_hr", location="json", required=False, type=float, default = None),
     )
     @Transactional(propagation=Propagation.REQUIRED)
     def put(self, user_id, transaction_id, is_bulk, pareto_data, **inputs):
