@@ -5,12 +5,12 @@ from typing import Optional
 
 from digital_twin_migration.database import Propagation, Transactional
 from digital_twin_migration.models import db
-from digital_twin_migration.models.efficiency_app import EfficiencyTransaction
-from sqlalchemy import Select, func
+from digital_twin_migration.models.efficiency_app import EfficiencyTransaction, EfficiencyDataDetail, Variable
+from sqlalchemy import Select, and_, func
 from sqlalchemy.orm.query import Query
+from sqlalchemy.orm import joinedload, subqueryload, contains_eager
 
 from core.repository import BaseRepository
-
 
 
 class DataRepository(BaseRepository[EfficiencyTransaction]):
@@ -82,3 +82,38 @@ class DataRepository(BaseRepository[EfficiencyTransaction]):
 
         # Return the query object
         return query
+
+    def get_data_trending(self, start_date, end_date, variable_id):
+
+        if isinstance(start_date, str):
+            start_date = datetime.fromisoformat(start_date)  # Convert from ISO string to datetime
+        if isinstance(end_date, str):
+            end_date = datetime.fromisoformat(end_date)  # Convert from ISO string to datetime
+
+        query = self.session.query(EfficiencyTransaction) \
+            .join(EfficiencyTransaction.efficiency_transaction_details) \
+            .filter(
+                and_(
+                    EfficiencyTransaction.periode.between(start_date, end_date),
+                    EfficiencyDataDetail.variable_id == variable_id,
+                )
+        ).options(contains_eager(EfficiencyTransaction.efficiency_transaction_details))
+            
+
+        return query.all()
+
+    def get_target_data_by_variable(self, variable_id):
+
+        query = self.session.query(EfficiencyTransaction) \
+            .join(EfficiencyTransaction.efficiency_transaction_details) \
+            .filter(
+                and_(
+                    EfficiencyTransaction.jenis_parameter == "Target",
+                    EfficiencyDataDetail.variable_id == variable_id
+                )
+        ).options(contains_eager(EfficiencyTransaction.efficiency_transaction_details))
+
+        return query.first()
+
+    def _join_data_details(self, query: Select) -> Select:
+        return query.join(EfficiencyDataDetail)

@@ -3,8 +3,8 @@ from typing import Any, Callable, Type
 
 from .base import BaseBackend, BaseKeyMaker
 from .cache_tag import CacheTag
-from .redis_backend import RedisBackend
 from .custom_key_maker import CustomKeyMaker
+from .redis_backend import RedisBackend
 
 
 class CacheManager:
@@ -44,8 +44,6 @@ class CacheManager:
                 response = function(*args, **kwargs)
                 self.backend.set(response=response, key=key, ttl=ttl)
 
-                
-                
                 return response
 
             return __cached
@@ -58,15 +56,15 @@ class CacheManager:
     def remove_by_prefix(self, prefix: str) -> None:
         self.backend.delete_startswith(value=prefix)
 
-    def get_by_key(self, function, prefix):
-        key = self.key_maker.make(
-            function=function,
-            prefix=prefix
-        )
+    def get_by_key(self, key):
+        # key = self.key_maker.make(function=function, prefix=prefix)
 
         response = self.backend.get(key)
 
         return response
+
+    def set_cache(self, response, key):
+        self.backend.set(response, key)
 
 
 Cache = CacheManager()

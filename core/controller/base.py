@@ -1,12 +1,12 @@
 from typing import Any, Generic, Type, TypeVar
 from uuid import UUID
 
+from digital_twin_migration.database import Propagation, Transactional
+from digital_twin_migration.models.abc import BaseModel
 from pydantic import BaseModel
 
-from digital_twin_migration.database import Propagation, Transactional
 from core.exceptions import NotFoundException
 from core.repository import BaseRepository
-from digital_twin_migration.models.abc import BaseModel
 
 ModelType = TypeVar("ModelType", bound=BaseModel)
 

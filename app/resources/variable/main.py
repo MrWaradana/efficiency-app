@@ -1,18 +1,21 @@
+import random
+
 from digital_twin_migration.database import Propagation, Transactional
 from digital_twin_migration.models import db
-from digital_twin_migration.models.efficiency_app import Variable, VariableCause
+from digital_twin_migration.models.efficiency_app import (Variable,
+                                                          VariableCause)
 from flask import Response, request
 from flask_restful import Resource
 from flask_restful.reqparse import Argument
 
 from app.repositories import VariablesRepository
 from app.resources.excels import excel_repository
-from app.schemas import VariableCauseSchema, VariableHeaderSchema, VariableSchema
+from app.schemas import (VariableCauseSchema, VariableHeaderSchema,
+                         VariableSchema)
 from core.config import config
 from core.security.jwt_verif import token_required
 from core.utils import parse_params, response
 from core.utils.util import fetch_data_from_api
-import random
 
 variable_schema = VariableSchema()
 variable_repository = VariablesRepository(Variable)

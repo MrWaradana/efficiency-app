@@ -1,17 +1,15 @@
-from app.controllers import data_controller
 import random
 from datetime import datetime
 
 import requests
 from digital_twin_migration.database import Propagation, Transactional
 from digital_twin_migration.models.efficiency_app import (
-    EfficiencyDataDetail,
-    EfficiencyTransaction,
-)
+    EfficiencyDataDetail, EfficiencyTransaction)
 from flask_restful import Resource
 from flask_restful.reqparse import Argument
 from sqlalchemy.orm import joinedload
 
+from app.controllers import data_controller
 from app.repositories import DataRepository, VariablesRepository
 from app.resources.excels import excel_repository
 from app.resources.variable.main import variable_repository
@@ -39,30 +37,10 @@ class DataListResource(Resource):
         Argument("end_date", location="args", type=str, required=False, default=None),
     )
     def get(self, user_id, page, size, all, start_date, end_date):
-        if all:
-            # Retrieve all transactions without pagination
-            data = data_controller.paginated_list_data(page, size, all, start_date, end_date)
-            return response(
-                200,
-                True,
-                "Data transactions retrieved successfully",
-                {
-                    "current_page": None,
-                    "total_pages": None,
-                    "page_size": None,
-                    "has_next_page": None,
-                    "has_previous_page": None,
-                    "transactions": data_schema.dump(data[0], many=True),
-                    "total_items": data[1],
-                },
-            )
-
         # Apply pagination
-        data = data_controller.paginated_list_data(page, size, all, start_date, end_date)
-        
-        # raise Exception(print(data))
-
-        # Construct response
+        data = data_controller.paginated_list_data(
+            page, size, all, start_date, end_date
+        )
         return response(
             200,
             True,
@@ -97,131 +75,14 @@ class DataListResource(Resource):
         Argument("inputs", location="json", required=True, type=dict),
     )
     @token_required
-    @Transactional(propagation=Propagation.REQUIRED)
     def post(self, jenis_parameter, excel_id, inputs, user_id, name):
-        # Get variable mappings
-        # Fetch all variables associated with the given excel_id
-        excel = excel_repository.get_by_uuid(excel_id)
+        data = data_controller.create_data(jenis_parameter, excel_id, inputs, user_id, name)
 
-        if not excel:
-            print(f"Excel {excel_id} not found")
-            return response(404, False, "Excel not found")
-
-        variables = variable_repository.get_by_excel_id(excel_id)
-
-        # Create a dictionary of variable mappings where the keys are the variable IDs
-        # and the values are dictionaries containing the variable name and category
-        variable_mappings = {
-            str(var.id): {"name": var.input_name, "category": var.category}
-            for var in variables
-        }
-
-        # # Check if a transaction with the same periode already exists
-        # is_periode_exist = data_repository.get_by_multiple(
-        #     None, True, {"periode": periode, "jenis_parameter": "Current"}
-        # )
-
-        # if is_periode_exist:
-        #     # If a transaction with the same periode already exists, return an error response
-        #     return response(
-        #         400, False, "Data Transaction for this periode already exist", None
-        #     )
-
-        # Initialize empty dictionaries to store input data and transaction records
-        input_data = {}
-        transaction_records = []
-
-        # Create a new parent transaction
-        transaction_parent = data_repository.create(
-            {
-                "name": name,
-                "jenis_parameter": jenis_parameter,
-                "excel_id": excel_id,
-                "created_by": user_id,
-                "sequence": data_repository.get_daily_increment(),
-            }
-        )
-
-        # Get the filename of the Excel file associated with the transaction
-        excel = excel_repository.get_by_uuid(excel_id).excel_filename
-
-        # Iterate over the inputs dictionary
-        for key, value in inputs.items():
-            variable_input = variable_mappings.get(key)
-
-            # If the variable ID exists in the variable mappings dictionary
-            if variable_input:
-
-                # Construct the variable string based on the category and name of the variable
-                variable_string = (
-                    f"{variable_input['category']}: {variable_input['name']}"
-                    if variable_input["category"]
-                    else variable_input["name"]
-                )
-
-                # Add the input value to the input_data dictionary with the variable string as the key
-                input_data[variable_string] = value
-
-                # Create a new transaction record with the input value and associated variable ID
-                transaction_records.append(
-                    EfficiencyDataDetail(
-                        variable_id=key,
-                        nilai=float(value),
-                        nilai_string=None,
-                        efficiency_transaction_id=transaction_parent.id,
-                        created_by=user_id,
-                    )
-                )
-
-        # Send the input data to the Windows Efficiency API
-        try:
-            res = requests.post(
-                f"{config.WINDOWS_EFFICIENCY_APP_API}/{excel}",
-                json={"inputs": input_data},
-            )
-            res.raise_for_status()  # Raise an error if the API request fails
-        except requests.exceptions.RequestException as e:
-            # Handle error, e.g., logging or retry mechanism
-            print(f"API request failed: {e}")
-            return response(500, False, "Failed to create transaction")
-
-        # Get the output data from the API response
-        outputs = res.json()
-
-        # Iterate over the output data
-        for variable_title, input_value in outputs["data"].items():
-            variable_id = get_key_by_value(variable_mappings, variable_title)
-            value_float, value_string = None, None
-
-            try:
-                value_float = float(input_value)
-                if config.ENVIRONMENT == EnvironmentType.DEVELOPMENT:
-                    value_float -= random.uniform(0.5, 7.5)
-
-            except ValueError:
-                value_string = value
-
-            if variable_id:
-                # Create a new transaction record with the output value and associated variable ID
-                transaction_records.append(
-                    EfficiencyDataDetail(
-                        variable_id=variable_id,
-                        efficiency_transaction_id=transaction_parent.id,
-                        nilai=value_float,
-                        nilai_string=value_string,
-                        created_by=user_id,
-                    )
-                )
-
-        # Bulk create the transaction records
-        data_repository.create_bulk(transaction_records)
-
-        # Return a success response
         return response(
             200,
             True,
             "Transaction created successfully",
-            {"data_id": transaction_parent.id},
+            {"data_id": data},
         )
 
 

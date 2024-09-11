@@ -1,14 +1,15 @@
+import math
 from collections import defaultdict
 
 from digital_twin_migration.database import Propagation, Transactional, db
 from flask_restful import Resource
 from flask_restful.reqparse import Argument
 
-from app.resources.data.data_details import data_detail_repository
+from app.controllers.data.data_detail import data_detail_repository
 from app.schemas import EfficiencyDataDetailSchema, VariableSchema
 from core.security import token_required
-from core.utils import calculate_gap, calculate_persen_losses, parse_params, response
-import math
+from core.utils import (calculate_gap, calculate_persen_losses, parse_params,
+                        response)
 
 variable_schema = VariableSchema()
 data_details_schema = EfficiencyDataDetailSchema()
@@ -18,95 +19,67 @@ class DataListParetoResource(Resource):
 
     @token_required
     @parse_params(
-        Argument("percent_threshold", location="args", type=int, required=False, default=None),
+        Argument(
+            "percent_threshold", location="args", type=int, required=False, default=None
+        ),
     )
     def get(self, user_id, transaction_id, percent_threshold):
-        current_data = data_detail_repository.get_data_pareto(transaction_id, True)
-        target_data = data_detail_repository.get_data_pareto(transaction_id, False)
+        data = data_detail_repository.get_data_pareto(transaction_id)
+        # target_data = data_detail_repository.get_data_pareto(transaction_id, False)
 
-        if current_data is None or target_data is None:
-            return response(
-                404,
-                False,
-                "Data is not available"
-            )
+        if data is None:
+            return response(404, False, "Data is not available")
 
-        current_dict = {
-            item.variable_id: (item, total_cost) for item, total_cost in current_data
-        }
-        target_dict = {item.variable_id: item for item in target_data}
-
-        calculated_data = []
+        calculated_data_by_category = defaultdict(list)
         aggregated_persen_losses = defaultdict(float)
 
-        for variable_id, (current_item, total_cost) in current_dict.items():
-            target_item = target_dict.get(variable_id)
-            
-
-            if target_item:
-                gap = calculate_gap(target_item.nilai, current_item.nilai)
-
-                if gap is None:
-                    raise Exception(gap, target_item.nilai_string, current_item.nilai)
-                
-
-                persen_losses = calculate_persen_losses(
-                    gap, current_item.deviasi, current_item.persen_hr
-                )
-
-                nilai_losses = (persen_losses / 100) * 1000
-
-                aggregated_persen_losses[current_item.variable.category] += (
-                    persen_losses if persen_losses is not None else 0
-                )
-
-                calculated_data.append(
-                    {
-                        "id": current_item.id,
-                        "variable": variable_schema.dump(current_item.variable),
-                        "existing_data": current_item.nilai,
-                        "reference_data": target_item.nilai,
-                        "deviasi": current_item.deviasi,
-                        "persen_hr": current_item.persen_hr,
-                        "persen_losses": persen_losses,
-                        "nilai_losses": nilai_losses,
-                        "gap": gap,
-                        "total_biaya": total_cost,
-                        # "symptoms": "Higher" if gap > 0 else "Lower",
-                    }
-                )
-
-        result = []
         total_persen = 0
-        # sorted aggregated_nilai_losses
+        result = []
+
+        for current_data, target_data, total_cost in data:
+            gap = calculate_gap(target_data.nilai, current_data.nilai)
+            persen_losses = calculate_persen_losses(
+                gap, target_data.deviasi, current_data.persen_hr
+            )
+            nilai_losses = (persen_losses / 100) * 1000
+
+            category = current_data.variable.category
+            aggregated_persen_losses[category] += persen_losses or 0
+
+            calculated_data_by_category[category].append(
+                {
+                    "id": current_data.id,
+                    "variable": variable_schema.dump(current_data.variable),
+                    "existing_data": current_data.nilai,
+                    "reference_data": target_data.nilai,
+                    "deviasi": current_data.deviasi,
+                    "persen_hr": current_data.persen_hr,
+                    "persen_losses": persen_losses,
+                    "nilai_losses": nilai_losses,
+                    "gap": gap,
+                    "total_biaya": total_cost,
+                    "symptoms": "Higher" if gap > 0 else "Lower",
+                }
+            )
+
+        # Sort aggregated losses only once, limit looping
         aggregated_persen_losses = dict(
             sorted(aggregated_persen_losses.items(), key=lambda x: x[1], reverse=True)
         )
 
-        max_persen_losses = max(aggregated_persen_losses.values())
-        
-
         for category, losses in aggregated_persen_losses.items():
-            
-            # normalize_losses_persen = (losses / max_persen_losses) * 100
-         
-            category_data = {
-                "category": category,
-                "total_persen_losses": losses,
-                "total_nilai_losses": (losses / 100) * 1000,
-                "data": [
-                    item
-                    for item in calculated_data
-                    if item["variable"]["category"] == category
-                ],
-            }
-            
             total_persen += losses
-        
             if percent_threshold and total_persen >= percent_threshold:
                 break
 
-            result.append(category_data)
+            result.append(
+                {
+                    "category": category,
+                    "total_persen_losses": losses,
+                    "total_nilai_losses": (losses / 100) * 1000,
+                    "data": calculated_data_by_category[category],
+                }
+            )
 
         return response(200, True, "Data retrieved successfully", result)
 

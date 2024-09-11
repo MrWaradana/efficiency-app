@@ -5,14 +5,9 @@ Defines the blueprint for the variables
 from flask import Blueprint
 from flask_restful import Api
 
-from app.resources import (
-    VariableCauseResource,
-    VariableCausesResource,
-    VariableHeaderResource,
-    VariableHeadersResource,
-    VariableResource,
-    VariablesResource,
-)
+from app.resources import (VariableCauseResource, VariableCausesResource,
+                           VariableHeaderResource, VariableHeadersResource,
+                           VariableResource, VariablesResource)
 
 VARIABLES_BLUEPRINT = Blueprint("variables", __name__)
 

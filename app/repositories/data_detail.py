@@ -5,11 +5,8 @@ from typing import Optional
 from digital_twin_migration.database import Propagation, Transactional
 from digital_twin_migration.models import db
 from digital_twin_migration.models.efficiency_app import (
-    EfficiencyDataDetail,
-    EfficiencyDataDetailRootCause,
-    EfficiencyTransaction,
-    Variable,
-)
+    EfficiencyDataDetail, EfficiencyDataDetailRootCause, EfficiencyTransaction,
+    Variable)
 from sqlalchemy import Select, and_, func, select
 from sqlalchemy.orm import joinedload
 
@@ -39,35 +36,37 @@ class DataDetailRepository(BaseRepository[EfficiencyDataDetail]):
     def _join_variable(self, query: Select) -> Select:
         return query.join(Variable)
 
-    def get_data_pareto(self, data_id: str, with_total_cost: bool = False):
-        if with_total_cost:
-            query = (
-                db.session.query(
-                    EfficiencyDataDetail, EfficiencyDataDetail.total_cost()
-                )
-                .join(EfficiencyTransaction)
-                .join(Variable)
-                .filter(
-                    and_(
-                        EfficiencyDataDetail.efficiency_transaction_id == data_id,
-                        Variable.in_out == "out",
-                    )
-                )
-                .all()
-            )
+    def get_data_pareto(self, data_id: str):
+        query = (
+            db.session.query(EfficiencyDataDetail, EfficiencyDataDetail.total_cost())
+            .join(EfficiencyTransaction)
+            .join(Variable)
+        )
 
-            return query
-
-        else:
-            query = select(self.model_class)
-            query = self._maybe_join(query, {"variable", "data"})
-            query = query.filter(
-                and_(
-                    EfficiencyTransaction.jenis_parameter == "Target",
-                    Variable.in_out == "out",
-                )
+        current_query = query.filter(
+            and_(
+                EfficiencyDataDetail.efficiency_transaction_id == data_id,
+                Variable.in_out == "out",
             )
-            return self._all(query)
+        ).all()
+
+        target_query = query.filter(
+            and_(
+                EfficiencyTransaction.jenis_parameter == "Target",
+                Variable.in_out == "out",
+            )
+        ).all()
+
+        target_mapping = {item.variable_id: item for item, total_cost in target_query}
+
+        paired_data = []
+        for current_item, total_cost in current_query:
+            if current_item.variable_id in target_mapping:
+                paired_data.append(
+                    (current_item, target_mapping[current_item.variable_id], total_cost)
+                )
+
+        return paired_data
 
     def _join_data(self, query: Select) -> Select:
         return query.join(EfficiencyTransaction)

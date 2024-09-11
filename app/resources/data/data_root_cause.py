@@ -3,28 +3,21 @@ from uuid import UUID
 
 from digital_twin_migration.database import Propagation, Transactional, db
 from digital_twin_migration.models.efficiency_app import (
-    EfficiencyDataDetail,
-    EfficiencyDataDetailRootCause,
-    EfficiencyTransaction,
-    Variable,
-    VariableCause,
-)
+    EfficiencyDataDetail, EfficiencyDataDetailRootCause, EfficiencyTransaction,
+    Variable, VariableCause)
 from flask_restful import Resource
 from flask_restful.reqparse import Argument
 from sqlalchemy import and_, func
 
-from app.repositories.data_detail_root_cause import DataDetailRootCauseRepository
-from app.resources.data.data_details import data_detail_repository, data_details_schema
+from app.repositories.data_detail_root_cause import \
+    DataDetailRootCauseRepository
+from app.resources.data.data_details import data_details_schema
+from app.controllers.data.data_detail import data_detail_repository
 from app.resources.variable.main import variable_repository
-from app.resources.variable.variable_causes import (
-    variable_cause_repository,
-    variable_cause_schema,
-)
-from app.schemas import (
-    EfficiencyDataDetailRootCauseSchema,
-    EfficiencyDataDetailSchema,
-    VariableSchema,
-)
+from app.resources.variable.variable_causes import (variable_cause_repository,
+                                                    variable_cause_schema)
+from app.schemas import (EfficiencyDataDetailRootCauseSchema,
+                         EfficiencyDataDetailSchema, VariableSchema)
 from core.security import token_required
 from core.utils import calculate_gap, parse_params, response
 

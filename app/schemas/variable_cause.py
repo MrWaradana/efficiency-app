@@ -1,11 +1,8 @@
+from digital_twin_migration.models.efficiency_app import VariableCause
 from marshmallow import fields
 
 from app.schemas.data import EfficiencyDataDetailRootCauseSchema as root
 from core.schema import ma
-
-from digital_twin_migration.models.efficiency_app import (
-    VariableCause,
-)
 
 
 class VariableCauseSchema(ma.SQLAlchemyAutoSchema):

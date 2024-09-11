@@ -5,14 +5,10 @@ Defines the blueprint for the variables
 from flask import Blueprint
 from flask_restful import Api
 
-from app.resources import (
-    DataDetailListResource,
-    DataDetailResource,
-    DataListParetoResource,
-    DataListResource,
-    DataResource,
-    DataRootCausesListResource,
-)
+from app.resources import (DataDetailListResource, DataDetailResource,
+                           DataListParetoResource, DataListResource,
+                           DataResource, DataRootCausesListResource)
+from app.resources.data.data_hl_trending import DataTrendingListResource
 
 TRANSACTION_BLUEPRIENT = Blueprint("data", __name__)
 
@@ -34,4 +30,8 @@ Api(TRANSACTION_BLUEPRIENT).add_resource(
 
 Api(TRANSACTION_BLUEPRIENT).add_resource(
     DataRootCausesListResource, "/data/<transaction_id>/root/<detail_id>"
+)
+
+Api(TRANSACTION_BLUEPRIENT).add_resource(
+    DataTrendingListResource, "/data/trending"
 )

@@ -1,13 +1,12 @@
+import logging
 import pickle
 from typing import Any
 
-from redis import StrictRedis
 import ujson
+from redis import StrictRedis
 
 from core.cache.base import BaseBackend
 from core.config import config
-
-import logging
 
 redis = StrictRedis.from_url(config.REDIS_URL)
 
