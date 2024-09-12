@@ -14,6 +14,7 @@ from app.repositories import DataRepository, VariablesRepository
 from app.resources.excels import excel_repository
 from app.resources.variable.main import variable_repository
 from app.schemas.data import EfficiencyTransactionSchema
+from core.cache.cache_manager import Cache
 from core.config import EnvironmentType, config
 from core.security.jwt_verif import token_required
 from core.utils import get_key_by_value, parse_params, response
@@ -130,6 +131,8 @@ class DataResource(Resource):
         # If the transaction is found, delete it from the database
         # by calling the `delete` method of the transaction object.
         transaction.delete()
+        
+        Cache.remove_by_prefix("get_data_paginated")
 
         # After the transaction is deleted, return a response with a 200 status code,
         # a success message, and a success flag.
