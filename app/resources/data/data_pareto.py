@@ -100,6 +100,8 @@ class DataListParetoResource(Resource):
     )
     @Transactional(propagation=Propagation.REQUIRED)
     def put(self, user_id, transaction_id, is_bulk, pareto_data, **inputs):
+        Cache.remove_by_prefix(f"data_calculated_data_by_category_{transaction_id}")
+        
         if is_bulk:
             if not pareto_data:
                 return response(
@@ -143,5 +145,4 @@ class DataListParetoResource(Resource):
                 },
             )
 
-        Cache.remove_by_prefix(f"data_calculated_data_by_category_{transaction_id}")
         return response(200, True, "Data Detail updated successfully")
