@@ -32,24 +32,24 @@ class DataDetailController(BaseController[EfficiencyDataDetail]):
         result = []
         total_persen = 0
 
-        if pareto_cache_data:
-            # raise Exception(pareto_cache_data['aggregated_persen_losses'], "cachheheheh")
-            for category, losses in pareto_cache_data['aggregated_persen_losses'].items():
-                total_persen += losses
-                if percent_threshold and total_persen >= percent_threshold:
-                    break
+        # if pareto_cache_data:
+        #     # raise Exception(pareto_cache_data['aggregated_persen_losses'], "cachheheheh")
+        #     for category, losses in pareto_cache_data['aggregated_persen_losses'].items():
+        #         total_persen += losses
+        #         if percent_threshold and total_persen >= percent_threshold:
+        #             break
 
-                result.append(
-                    {
-                        "category": category,
-                        "total_persen_losses": losses,
-                        "total_nilai_losses": (losses / 100) * 1000,
-                        "data": pareto_cache_data['data'][category],
-                    }
-                )
+        #         result.append(
+        #             {
+        #                 "category": category,
+        #                 "total_persen_losses": losses,
+        #                 "total_nilai_losses": (losses / 100) * 1000,
+        #                 "data": pareto_cache_data['data'][category],
+        #             }
+        #         )
             
             
-            return result
+        #     return result
 
         data = data_detail_repository.get_data_pareto(transaction_id)
 
