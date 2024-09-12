@@ -84,7 +84,6 @@ class DataListParetoResource(Resource):
         #             "data": calculated_data_by_category[category],
         #         }
         #     )
-        
 
         return response(200, True, "Data retrieved successfully", result)
 
@@ -101,7 +100,7 @@ class DataListParetoResource(Resource):
     @Transactional(propagation=Propagation.REQUIRED)
     def put(self, user_id, transaction_id, is_bulk, pareto_data, **inputs):
         Cache.remove_by_prefix(f"data_calculated_data_by_category_{transaction_id}")
-        
+
         if is_bulk:
             if not pareto_data:
                 return response(
@@ -115,23 +114,13 @@ class DataListParetoResource(Resource):
                 data_detail_repository.update(
                     data_detail,
                     {
-                        "deviasi": pareto["deviasi"],
-                        "persen_hr": pareto["persen_hr"],
+                        "deviasi": pareto["deviasi"] if "deviasi" in pareto else data_detail.deviasi,
+                        "persen_hr": pareto["persen_hr"] if "persen_hr" in pareto else data_detail.persen_hr,
                         "updated_by": user_id,
                     },
                 )
 
         else:
-            missing_input = next(
-                (name for name, input in inputs.items() if not input), None
-            )
-            if missing_input:
-                return response(
-                    400,
-                    False,
-                    f"'{missing_input}' is required when 'is_bulk' is not set",
-                )
-
             data_detail = data_detail_repository.get_by_uuid(inputs["detail_id"])
             if not data_detail:
                 return response(404, False, "Data Detail not found")
@@ -139,8 +128,8 @@ class DataListParetoResource(Resource):
             data_detail_repository.update(
                 data_detail,
                 {
-                    "deviasi": inputs["deviasi"],
-                    "persen_hr": inputs["persen_hr"],
+                    "deviasi": inputs["deviasi"] if "deviasi" in inputs else data_detail.deviasi,
+                    "persen_hr": inputs["persen_hr"] if "persen_hr" in inputs else data_detail.persen_hr,
                     "updated_by": user_id,
                 },
             )

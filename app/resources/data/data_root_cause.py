@@ -31,18 +31,20 @@ data_detail_root_cause_repository = DataDetailRootCauseRepository(
 class DataRootCausesListResource(Resource):
     @token_required
     def get(self, user_id, transaction_id, detail_id):
-        variable_id = data_detail_repository.get_by_uuid(detail_id).variable_id
+        # variable_id = data_detail_repository.get_by_uuid(detail_id).variable_id
 
-        causes = variable_cause_repository.get_by_variable_id(
-            variable_id, {"children", "root_causes"}
-        )
-        result = [process_root_causes(cause, UUID(detail_id)) for cause in causes]
+        # causes = variable_cause_repository.get_by_variable_id(
+        #     variable_id, {"children", "root_causes"}
+        # )
+        # result = [process_root_causes(cause, UUID(detail_id)) for cause in causes]
+
+        root_causes = data_detail_root_cause_repository.get_by_detail_id(detail_id)
 
         return response(
             200,
             True,
             "Data root causes retrieved successfully",
-            result,
+            data_detail_root_cause_schema.dump(root_causes, many=True)
         )
 
     @token_required
