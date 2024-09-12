@@ -44,6 +44,7 @@ class VariableHeadersResource(Resource):
             help="Name of the header is required",
         ),
     )
+    
     def post(self, variable_id: str, user_id: str, **inputs) -> Response:
         variable = variable_repository.get_by_uuid(variable_id)
 
@@ -51,14 +52,14 @@ class VariableHeadersResource(Resource):
             return response(404, False, "Variable not found")
 
         header = variable_header_repository.create(
-            {**inputs, "variable_id": variable_id, "created_by": user_id}
+            {"variable_id": variable_id, "created_by": user_id, **inputs}
         )
 
         return response(
             201,
             True,
             "Header created successfully",
-            variable_header_schema.exclude("variable").dump(header),
+            variable_header_schema.dump(header),
         )
 
 

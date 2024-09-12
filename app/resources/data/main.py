@@ -129,7 +129,7 @@ class DataResource(Resource):
 
         # If the transaction is found, delete it from the database
         # by calling the `delete` method of the transaction object.
-        data_repository.delete(transaction)
+        transaction.delete()
 
         # After the transaction is deleted, return a response with a 200 status code,
         # a success message, and a success flag.
@@ -139,8 +139,9 @@ class DataResource(Resource):
     @Transactional(propagation=Propagation.REQUIRED)
     @parse_params(
         Argument("inputs", type=dict, required=True),
+        Argument("name", type=str, required=True),
     )
-    def put(self, transaction_id, user_id, inputs):
+    def put(self, transaction_id, user_id, inputs, name):
         """
         This method updates the transaction data with the specified ID.
 
@@ -162,13 +163,6 @@ class DataResource(Resource):
         # Fetch the transaction and its details by ID
         transaction = data_repository.get_by_uuid(transaction_id)
 
-        return response(
-            200,
-            True,
-            "Transaction retrieved successfully",
-            data_schema.dump(transaction),
-        )
-
         if not transaction:
             return response(404, False, "Transaction not found")
 
@@ -186,8 +180,6 @@ class DataResource(Resource):
             detail.variable_id: detail
             for detail in transaction.efficiency_transaction_details
         }
-
-        raise Exception(existing_details)
 
         input_data = {}  # Initialize empty dictionary to store input data
         transaction_records = (
@@ -219,9 +211,6 @@ class DataResource(Resource):
                     transaction_data.updated_by = (
                         user_id  # Update updated_by of existing data detail
                     )
-                    transaction_data.updated_at = datetime.now(
-                        config.TIMEZONE
-                    )  # Update updated_at of existing data detail
                 else:
                     transaction_records.append(
                         EfficiencyDataDetail(  # Create new data detail
@@ -280,9 +269,9 @@ class DataResource(Resource):
                         )
                     )
 
-        if transaction_records:  # If there are new transaction records
-            TransactionRepository.bulk_create(
-                transaction_records
-            )  # Create new data details in the database
+        # if transaction_records:  # If there are new transaction records
+        #     TransactionRepository.bulk_create(
+        #         transaction_records
+        #     )  # Create new data details in the database
 
         return response(200, True, "Transaction updated successfully")
