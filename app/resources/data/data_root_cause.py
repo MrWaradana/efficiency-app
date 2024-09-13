@@ -77,8 +77,8 @@ class DataRootCausesListResource(Resource):
                 EfficiencyDataDetailRootCause(
                     data_detail_id=detail_id,
                     cause_id=root_cause["cause_id"],
-                    is_repair=root_cause["is_repair"],
-                    biaya=root_cause["biaya"],
+                    is_repair=root_cause["is_repair"] if "is_repair" in root_cause else False,
+                    biaya=root_cause["biaya"] if "biaya" in root_cause else 0,
                     variable_header_value=root_cause["variable_header_value"],
                     created_by=user_id,
                 )

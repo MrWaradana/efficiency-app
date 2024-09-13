@@ -32,24 +32,23 @@ class DataDetailController(BaseController[EfficiencyDataDetail]):
         result = []
         total_persen = 0
 
-        # if pareto_cache_data:
-        #     # raise Exception(pareto_cache_data['aggregated_persen_losses'], "cachheheheh")
-        #     for category, losses in pareto_cache_data['aggregated_persen_losses'].items():
-        #         total_persen += losses
-        #         if percent_threshold and total_persen >= percent_threshold:
-        #             break
+        if pareto_cache_data:
+            # raise Exception(pareto_cache_data['aggregated_persen_losses'], "cachheheheh")
+            for category, losses in pareto_cache_data['aggregated_persen_losses'].items():
+                total_persen += losses
+                if percent_threshold and total_persen >= percent_threshold:
+                    break
 
-        #         result.append(
-        #             {
-        #                 "category": category,
-        #                 "total_persen_losses": losses,
-        #                 "total_nilai_losses": (losses / 100) * 1000,
-        #                 "data": pareto_cache_data['data'][category],
-        #             }
-        #         )
-            
-            
-        #     return result
+                result.append(
+                    {
+                        "category": category,
+                        "total_persen_losses": losses,
+                        "total_nilai_losses": (losses / 100) * 1000,
+                        "data": pareto_cache_data['data'][category],
+                    }
+                )
+
+            return result
 
         data = data_detail_repository.get_data_pareto(transaction_id)
 
@@ -100,12 +99,14 @@ class DataDetailController(BaseController[EfficiencyDataDetail]):
             if percent_threshold and total_persen >= percent_threshold:
                 break
 
+            sorted_calculated_data = sorted(calculated_data_by_category[category], key=lambda x: x['persen_losses'], reverse=True)
+
             result.append(
                 {
                     "category": category,
                     "total_persen_losses": losses,
                     "total_nilai_losses": (losses / 100) * 1000,
-                    "data": calculated_data_by_category[category],
+                    "data": sorted_calculated_data,
                 }
             )
 
