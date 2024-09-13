@@ -73,6 +73,17 @@ class DataRootCausesListResource(Resource):
                 return response(
                     400, False, "data_root_causes is required when 'is_bulk' is set"
                 )
+            # Check if data with cause_id already exists
+            # Step 1: Collect all root cause IDs to delete
+            root_cause_ids = [root_cause["cause_id"] for root_cause in data_root_causes]
+
+            # Step 2: Fetch all records to delete in a single query
+            data_roots = data_detail_root_cause_repository.get_by_detail_id_cause_ids(detail_id, root_cause_ids)
+            
+            if data_roots:
+                # Step 3: Delete all records
+                data_detail_root_cause_repository.delete_bulk(data_roots)
+
             data_root_causes_records = [
                 EfficiencyDataDetailRootCause(
                     data_detail_id=detail_id,
