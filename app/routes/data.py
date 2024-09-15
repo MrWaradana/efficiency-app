@@ -32,6 +32,4 @@ Api(TRANSACTION_BLUEPRIENT).add_resource(
     DataRootCausesListResource, "/data/<transaction_id>/root/<detail_id>"
 )
 
-Api(TRANSACTION_BLUEPRIENT).add_resource(
-    DataTrendingListResource, "/data/trending"
-)
+Api(TRANSACTION_BLUEPRIENT).add_resource(DataTrendingListResource, "/data/trending")

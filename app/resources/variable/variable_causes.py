@@ -53,7 +53,7 @@ class VariableCausesResource(Resource):
             return response(404, False, "Variable not found")
 
         cause = variable_cause_repository.create(
-             {"created_by": user_id, "variable_id": variable_id, **inputs}
+            {"created_by": user_id, "variable_id": variable_id, **inputs}
         )
 
         return response(

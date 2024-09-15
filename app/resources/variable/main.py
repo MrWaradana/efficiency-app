@@ -44,7 +44,6 @@ class VariablesResource(Resource):
         variables = variable_repository.get_by_multiple(
             attributes={"excel_id": excel_id, "is_pareto": True, "in_out": type}
         )
-        
 
         variables_base_case = [
             {**variable_schema.dump(variable), "base_case": random.randint(7, 20)}

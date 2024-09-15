@@ -61,8 +61,7 @@ class CacheManager:
 
     def get_by_prefix(self, prefix, function: Callable[[Any], bool] = None) -> Any:
         key = self.key_maker.make(
-            function=function if function else self.set_cache,
-            prefix=prefix
+            function=function if function else self.set_cache, prefix=prefix
         )
 
         response = self.backend.get(key)
@@ -70,10 +69,7 @@ class CacheManager:
         return response
 
     def set_cache(self, response, prefix: str):
-        key = self.key_maker.make(
-            function=self.set_cache,
-            prefix=prefix
-        )
+        key = self.key_maker.make(function=self.set_cache, prefix=prefix)
         self.backend.set(response=response, key=key)
 
 

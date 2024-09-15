@@ -2,8 +2,8 @@ import logging
 import pickle
 from typing import Any
 
-import ujson
 import redis
+import ujson
 
 from core.cache.base import BaseBackend
 from core.config import config

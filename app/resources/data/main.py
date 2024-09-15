@@ -77,7 +77,9 @@ class DataListResource(Resource):
     )
     @token_required
     def post(self, jenis_parameter, excel_id, inputs, user_id, name):
-        data = data_controller.create_data(jenis_parameter, excel_id, inputs, user_id, name)
+        data = data_controller.create_data(
+            jenis_parameter, excel_id, inputs, user_id, name
+        )
 
         return response(
             200,
@@ -131,7 +133,7 @@ class DataResource(Resource):
         # If the transaction is found, delete it from the database
         # by calling the `delete` method of the transaction object.
         transaction.delete()
-        
+
         Cache.remove_by_prefix("get_data_paginated")
 
         # After the transaction is deleted, return a response with a 200 status code,

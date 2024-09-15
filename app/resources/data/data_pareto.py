@@ -5,7 +5,8 @@ from digital_twin_migration.database import Propagation, Transactional, db
 from flask_restful import Resource
 from flask_restful.reqparse import Argument
 
-from app.controllers.data.data_detail import data_detail_repository, data_detail_controller
+from app.controllers.data.data_detail import (data_detail_controller,
+                                              data_detail_repository)
 from app.schemas import EfficiencyDataDetailSchema, VariableSchema
 from core.cache.cache_manager import Cache
 from core.security import token_required
@@ -26,7 +27,9 @@ class DataListParetoResource(Resource):
     )
     def get(self, user_id, transaction_id, percent_threshold):
 
-        result = data_detail_controller.get_data_pareto(transaction_id, percent_threshold)
+        result = data_detail_controller.get_data_pareto(
+            transaction_id, percent_threshold
+        )
 
         # data = data_detail_repository.get_data_pareto(transaction_id)
         # # target_data = data_detail_repository.get_data_pareto(transaction_id, False)
@@ -95,7 +98,9 @@ class DataListParetoResource(Resource):
         ),
         Argument("detail_id", location="json", type=str, required=False),
         Argument("deviasi", location="json", required=False, type=float, default=None),
-        Argument("persen_hr", location="json", required=False, type=float, default=None),
+        Argument(
+            "persen_hr", location="json", required=False, type=float, default=None
+        ),
     )
     @Transactional(propagation=Propagation.REQUIRED)
     def put(self, user_id, transaction_id, is_bulk, pareto_data, **inputs):
@@ -114,8 +119,16 @@ class DataListParetoResource(Resource):
                 data_detail_repository.update(
                     data_detail,
                     {
-                        "deviasi": pareto["deviasi"] if "deviasi" in pareto else data_detail.deviasi,
-                        "persen_hr": pareto["persen_hr"] if "persen_hr" in pareto else data_detail.persen_hr,
+                        "deviasi": (
+                            pareto["deviasi"]
+                            if "deviasi" in pareto
+                            else data_detail.deviasi
+                        ),
+                        "persen_hr": (
+                            pareto["persen_hr"]
+                            if "persen_hr" in pareto
+                            else data_detail.persen_hr
+                        ),
                         "updated_by": user_id,
                     },
                 )
@@ -128,8 +141,16 @@ class DataListParetoResource(Resource):
             data_detail_repository.update(
                 data_detail,
                 {
-                    "deviasi": inputs["deviasi"] if "deviasi" in inputs else data_detail.deviasi,
-                    "persen_hr": inputs["persen_hr"] if "persen_hr" in inputs else data_detail.persen_hr,
+                    "deviasi": (
+                        inputs["deviasi"]
+                        if "deviasi" in inputs
+                        else data_detail.deviasi
+                    ),
+                    "persen_hr": (
+                        inputs["persen_hr"]
+                        if "persen_hr" in inputs
+                        else data_detail.persen_hr
+                    ),
                     "updated_by": user_id,
                 },
             )

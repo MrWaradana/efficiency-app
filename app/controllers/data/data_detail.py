@@ -1,20 +1,18 @@
 from collections import defaultdict
 
 from digital_twin_migration.database import Propagation, Transactional, db
-from flask_restful import Resource
-from flask_restful.reqparse import Argument
 from digital_twin_migration.models.efficiency_app import (
     EfficiencyDataDetail, EfficiencyTransaction)
-
+from flask_restful import Resource
+from flask_restful.reqparse import Argument
 
 from app.repositories.data_detail import DataDetailRepository
 from app.schemas import EfficiencyDataDetailSchema, VariableSchema
+from core.cache import Cache
 from core.controller.base import BaseController
 from core.security import token_required
-from core.utils import (calculate_gap, calculate_persen_losses, parse_params,
-                        response, calculate_pareto)
-
-from core.cache import Cache
+from core.utils import (calculate_gap, calculate_pareto,
+                        calculate_persen_losses, parse_params, response)
 
 variable_schema = VariableSchema()
 data_details_schema = EfficiencyDataDetailSchema()
@@ -22,13 +20,17 @@ data_detail_repository = DataDetailRepository(EfficiencyDataDetail)
 
 
 class DataDetailController(BaseController[EfficiencyDataDetail]):
-    def __init__(self, data_detail_repository: DataDetailRepository = data_detail_repository):
+    def __init__(
+        self, data_detail_repository: DataDetailRepository = data_detail_repository
+    ):
         super().__init__(model=EfficiencyTransaction, repository=data_detail_repository)
         self.data_detail_repository = data_detail_repository
 
     def get_data_pareto(self, transaction_id, percent_threshold):
         # Calculate total biaya for the transaction
-        pareto_cache_data = Cache.get_by_prefix(f"data_calculated_data_by_category_{transaction_id}")
+        pareto_cache_data = Cache.get_by_prefix(
+            f"data_calculated_data_by_category_{transaction_id}"
+        )
         result = []
         total_persen = 0
 
@@ -89,17 +91,24 @@ class DataDetailController(BaseController[EfficiencyDataDetail]):
             sorted(aggregated_persen_losses.items(), key=lambda x: x[1], reverse=True)
         )
 
-        Cache.set_cache(response={
-            "aggregated_persen_losses": aggregated_persen_losses,
-            "data": calculated_data_by_category,
-        }, prefix=f"data_calculated_data_by_category_{transaction_id}")
+        Cache.set_cache(
+            response={
+                "aggregated_persen_losses": aggregated_persen_losses,
+                "data": calculated_data_by_category,
+            },
+            prefix=f"data_calculated_data_by_category_{transaction_id}",
+        )
 
         for category, losses in aggregated_persen_losses.items():
             total_persen += losses
             if percent_threshold and total_persen >= percent_threshold:
                 break
 
-            sorted_calculated_data = sorted(calculated_data_by_category[category], key=lambda x: x['persen_losses'], reverse=True)
+            sorted_calculated_data = sorted(
+                calculated_data_by_category[category],
+                key=lambda x: x["persen_losses"],
+                reverse=True,
+            )
 
             result.append(
                 {

@@ -44,7 +44,6 @@ class VariableHeadersResource(Resource):
             help="Name of the header is required",
         ),
     )
-    
     def post(self, variable_id: str, user_id: str, **inputs) -> Response:
         variable = variable_repository.get_by_uuid(variable_id)
 

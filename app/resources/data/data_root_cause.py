@@ -9,10 +9,10 @@ from flask_restful import Resource
 from flask_restful.reqparse import Argument
 from sqlalchemy import and_, func
 
+from app.controllers.data.data_detail import data_detail_repository
 from app.repositories.data_detail_root_cause import \
     DataDetailRootCauseRepository
 from app.resources.data.data_details import data_details_schema
-from app.controllers.data.data_detail import data_detail_repository
 from app.resources.variable.main import variable_repository
 from app.resources.variable.variable_causes import (variable_cause_repository,
                                                     variable_cause_schema)
@@ -44,7 +44,7 @@ class DataRootCausesListResource(Resource):
             200,
             True,
             "Data root causes retrieved successfully",
-            data_detail_root_cause_schema.dump(root_causes, many=True)
+            data_detail_root_cause_schema.dump(root_causes, many=True),
         )
 
     @token_required
@@ -76,12 +76,12 @@ class DataRootCausesListResource(Resource):
             # Check if data with cause_id already exists
             # Step 1: Collect all root cause IDs to delete
             root_cause_ids = [root_cause["cause_id"] for root_cause in data_root_causes]
-            
 
             # Step 2: Fetch all records to delete in a single query
-            data_roots = data_detail_root_cause_repository.get_by_detail_id_cause_ids(root_cause_ids, detail_id)
-            
-            
+            data_roots = data_detail_root_cause_repository.get_by_detail_id_cause_ids(
+                root_cause_ids, detail_id
+            )
+
             if data_roots:
                 # Step 3: Delete all records
                 data_detail_root_cause_repository.delete_bulk(data_roots)
@@ -90,9 +90,15 @@ class DataRootCausesListResource(Resource):
                 EfficiencyDataDetailRootCause(
                     data_detail_id=detail_id,
                     cause_id=root_cause["cause_id"],
-                    is_repair=root_cause["is_repair"] if "is_repair" in root_cause else False,
+                    is_repair=(
+                        root_cause["is_repair"] if "is_repair" in root_cause else False
+                    ),
                     biaya=root_cause["biaya"] if "biaya" in root_cause else 0,
-                    variable_header_value=root_cause["variable_header_value"] if "variable_header_value" in root_cause else None,
+                    variable_header_value=(
+                        root_cause["variable_header_value"]
+                        if "variable_header_value" in root_cause
+                        else None
+                    ),
                     created_by=user_id,
                 )
                 for root_cause in data_root_causes

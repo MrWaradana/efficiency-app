@@ -20,7 +20,9 @@ class DataDetailRootCauseRepository(BaseRepository[EfficiencyDataDetailRootCause
 
     def get_by_detail_id_cause_ids(self, cause_ids: list, detail_id: str):
         if not cause_ids:
-            return []  # Or handle the case as needed (e.g., return None or raise an exception)
+            return (
+                []
+            )  # Or handle the case as needed (e.g., return None or raise an exception)
 
         # Construct the base query
         query = self._query()
@@ -29,7 +31,7 @@ class DataDetailRootCauseRepository(BaseRepository[EfficiencyDataDetailRootCause
         query = query.filter(
             and_(
                 EfficiencyDataDetailRootCause.data_detail_id == detail_id,
-                EfficiencyDataDetailRootCause.cause_id.in_(cause_ids)
+                EfficiencyDataDetailRootCause.cause_id.in_(cause_ids),
             )
         )
 

@@ -208,9 +208,9 @@ class DataController(BaseController[EfficiencyTransaction]):
             current_data_detail = item.efficiency_transaction_details[0]
             target_data_detail = data_target.efficiency_transaction_details[0]
 
-            gap, persen_losses, nilai_losses = calculate_pareto(target_data_detail, current_data_detail)
-            
-            
+            gap, persen_losses, nilai_losses = calculate_pareto(
+                target_data_detail, current_data_detail
+            )
 
             pareto = {
                 "id": current_data_detail.id,
@@ -220,11 +220,8 @@ class DataController(BaseController[EfficiencyTransaction]):
                 "nilai_losses": nilai_losses,
                 "gap": gap,
             }
-            
-            result.append({
-                **data_schema.dump(item),
-                "pareto": pareto
-            })
+
+            result.append({**data_schema.dump(item), "pareto": pareto})
 
         return result
 
