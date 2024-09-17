@@ -1,7 +1,7 @@
 import math
 from collections import defaultdict
 
-from digital_twin_migration.database import Propagation, Transactional, db
+from digital_twin_migration.database import Propagation, Transactional
 from flask_restful import Resource
 from flask_restful.reqparse import Argument
 
@@ -10,13 +10,14 @@ from app.controllers.data.data_detail import (data_detail_controller,
 from app.schemas import EfficiencyDataDetailSchema, VariableSchema
 from core.cache.cache_manager import Cache
 from core.security import token_required
-from core.utils import (calculate_gap, calculate_persen_losses, parse_params,
-                        response)
+from core.utils import (parse_params, response)
 
 variable_schema = VariableSchema()
 data_details_schema = EfficiencyDataDetailSchema()
 
 
+# This class likely represents a resource for handling data lists with Pareto analysis functionality.
+# This class likely represents a resource for handling data lists with Pareto analysis functionality.
 class DataListParetoResource(Resource):
 
     @token_required
@@ -27,7 +28,7 @@ class DataListParetoResource(Resource):
     )
     def get(self, user_id, transaction_id, percent_threshold):
 
-        result = data_detail_controller.get_data_pareto(
+        result, total_persen, total_losses = data_detail_controller.get_data_pareto(
             transaction_id, percent_threshold
         )
 
@@ -88,7 +89,11 @@ class DataListParetoResource(Resource):
         #         }
         #     )
 
-        return response(200, True, "Data retrieved successfully", result)
+        return response(200, True, "Data retrieved successfully", {
+            "pareto_result": result,
+            "total_persen": total_persen,
+            "total_nilai": total_losses,
+        })
 
     @token_required
     @parse_params(

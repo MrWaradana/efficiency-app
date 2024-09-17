@@ -84,7 +84,7 @@ class DataRepository(BaseRepository[EfficiencyTransaction]):
         # Return the query object
         return query
 
-    def get_data_trending(self, start_date, end_date, variable_id):
+    def get_data_trending(self, start_date: str, end_date: str, variable_ids: list):
 
         if isinstance(start_date, str):
             start_date = datetime.fromisoformat(
@@ -101,7 +101,7 @@ class DataRepository(BaseRepository[EfficiencyTransaction]):
             .filter(
                 and_(
                     EfficiencyTransaction.periode.between(start_date, end_date),
-                    EfficiencyDataDetail.variable_id == variable_id,
+                    EfficiencyDataDetail.variable_id.in_(variable_ids)
                 )
             )
             .options(
@@ -111,7 +111,7 @@ class DataRepository(BaseRepository[EfficiencyTransaction]):
 
         return query.all()
 
-    def get_target_data_by_variable(self, variable_id):
+    def get_target_data_by_variable(self, variable_ids):
 
         query = (
             self.session.query(EfficiencyTransaction)
@@ -119,7 +119,7 @@ class DataRepository(BaseRepository[EfficiencyTransaction]):
             .filter(
                 and_(
                     EfficiencyTransaction.jenis_parameter == "Target",
-                    EfficiencyDataDetail.variable_id == variable_id,
+                    EfficiencyDataDetail.variable_id.in_(variable_ids),
                 )
             )
             .options(

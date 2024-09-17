@@ -6,7 +6,7 @@ from digital_twin_migration.database import Propagation, Transactional
 from digital_twin_migration.models.efficiency_app import (
     EfficiencyDataDetail, EfficiencyTransaction)
 
-from app.repositories import DataRepository, VariablesRepository
+from app.repositories import DataRepository
 from app.resources.excels import excel_repository
 from app.resources.variable.main import variable_repository
 from app.schemas.data import EfficiencyTransactionSchema
@@ -75,6 +75,16 @@ class DataController(BaseController[EfficiencyTransaction]):
 
     @Transactional(propagation=Propagation.REQUIRED)
     def create_data(self, jenis_parameter, excel_id, inputs, user_id, name):
+
+        # Check connection to Excel Server
+        try:
+            res = requests.get(f"{config.WINDOWS_EFFICIENCY_APP_API}", timeout=5)
+            res.raise_for_status()  # Raise an error if the API request fails
+        except requests.exceptions.RequestException as e:
+            # Handle error, e.g., logging or retry mechanism
+            print(f"API request failed: {e}")
+            return response(500, False, "Connection to Excel Server failed")
+
         # Get variable mappings
         # Fetch all variables associated with the given excel_id
         excel = excel_repository.get_by_uuid(excel_id)
@@ -197,29 +207,58 @@ class DataController(BaseController[EfficiencyTransaction]):
 
         return transaction_parent.id
 
-    def get_data_trending(self, start_date, end_date, variable_id):
+    def get_data_trending(self, start_date: str, end_date: str, variable_ids: str):
+        """
+        This function retrieves trending data for specified variable IDs within a specified date range.
 
-        data = data_repository.get_data_trending(start_date, end_date, variable_id)
-        data_target = data_repository.get_target_data_by_variable(variable_id)
+        :param start_date: The `start_date` parameter is a string that represents the beginning date of
+        the time period for which you want to retrieve trending data. This date is typically in a
+        specific format, such as "YYYY-MM-DD", to indicate the year, month, and day
+        :type start_date: str
+        :param end_date: The `end_date` parameter is a string that represents the end date for the data
+        you want to retrieve. It is used to specify the date up to which you want to fetch the data
+        :type end_date: str
+        :param variable_ids: A list of variable IDs that you want to retrieve data for. These IDs could
+        represent different metrics or data points that you are interested in analyzing
+        :type variable_ids: str
+        """
+
+        # check if variable id contains (,)
+        if ',' in variable_ids:
+            variable_ids_list = variable_ids.split(',')
+        else:
+            variable_ids_list = [variable_ids]
+
+        data = data_repository.get_data_trending(start_date, end_date, variable_ids_list)
+        data_target = data_repository.get_target_data_by_variable(variable_ids_list)
 
         result = []
 
         for item in data:
-            current_data_detail = item.efficiency_transaction_details[0]
-            target_data_detail = data_target.efficiency_transaction_details[0]
+            pareto = []
+            current_data_details = item.efficiency_transaction_details
+            target_data_details = data_target.efficiency_transaction_details
 
-            gap, persen_losses, nilai_losses = calculate_pareto(
-                target_data_detail, current_data_detail
-            )
-
-            pareto = {
-                "id": current_data_detail.id,
-                "existing_data": current_data_detail.nilai,
-                "reference_data": target_data_detail.nilai,
-                "persen_losses": persen_losses,
-                "nilai_losses": nilai_losses,
-                "gap": gap,
+            target_mapping = {
+                efficiency_transaction_detail.variable_id : efficiency_transaction_detail
+                for efficiency_transaction_detail in target_data_details
             }
+
+            for current_detail in current_data_details:
+                target_detail = target_mapping.get(current_detail.variable_id)
+                
+                gap, persen_losses, nilai_losses = calculate_pareto(
+                    target_detail, current_detail
+                )
+
+                pareto.append({
+                    "id": current_detail.id,
+                    "existing_data": current_detail.nilai,
+                    "reference_data": target_detail.nilai,
+                    "persen_losses": persen_losses,
+                    "nilai_losses": nilai_losses,
+                    "gap": gap,
+                })
 
             result.append({**data_schema.dump(item), "pareto": pareto})
 

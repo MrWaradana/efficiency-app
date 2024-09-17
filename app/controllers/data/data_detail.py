@@ -90,6 +90,9 @@ class DataDetailController(BaseController[EfficiencyDataDetail]):
         aggregated_persen_losses = dict(
             sorted(aggregated_persen_losses.items(), key=lambda x: x[1], reverse=True)
         )
+        
+        total_persen_losses = sum(aggregated_persen_losses.values())
+        total_nilai_losses = sum([(losses / 100) * 1000 for losses in aggregated_persen_losses.values()])
 
         Cache.set_cache(
             response={
@@ -119,7 +122,7 @@ class DataDetailController(BaseController[EfficiencyDataDetail]):
                 }
             )
 
-        return result
+        return result, total_persen_losses, total_nilai_losses
 
 
 data_detail_controller = DataDetailController()
