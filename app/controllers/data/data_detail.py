@@ -6,6 +6,7 @@ from digital_twin_migration.models.efficiency_app import (
 from flask_restful import Resource
 from flask_restful.reqparse import Argument
 
+from app.controllers.data.data import data_repository
 from app.repositories.data_detail import DataDetailRepository
 from app.schemas import EfficiencyDataDetailSchema, VariableSchema
 from core.cache import Cache
@@ -26,11 +27,12 @@ class DataDetailController(BaseController[EfficiencyDataDetail]):
         super().__init__(model=EfficiencyTransaction, repository=data_detail_repository)
         self.data_detail_repository = data_detail_repository
 
+    @Transactional(propagation=Propagation.REQUIRED)
     def get_data_pareto(self, transaction_id, percent_threshold):
         # Calculate total biaya for the transaction
-        pareto_cache_data = Cache.get_by_prefix(
-            f"data_calculated_data_by_category_{transaction_id}"
-        )
+        # pareto_cache_data = Cache.get_by_prefix(
+        #     f"data_calculated_data_by_category_{transaction_id}"
+        # )
         result = []
         total_persen = 0
 
@@ -51,6 +53,9 @@ class DataDetailController(BaseController[EfficiencyDataDetail]):
         #         )
 
         #     return result
+        transaction_data = data_repository.get_by_uuid(transaction_id)
+        if not transaction_data:
+            return response(404, False, "Data is not available")
 
         data = data_detail_repository.get_data_pareto(transaction_id)
 
@@ -90,17 +95,17 @@ class DataDetailController(BaseController[EfficiencyDataDetail]):
         aggregated_persen_losses = dict(
             sorted(aggregated_persen_losses.items(), key=lambda x: x[1], reverse=True)
         )
-        
+
         total_persen_losses = sum(aggregated_persen_losses.values())
         total_nilai_losses = sum([(losses / 100) * 1000 for losses in aggregated_persen_losses.values()])
 
-        Cache.set_cache(
-            response={
-                "aggregated_persen_losses": aggregated_persen_losses,
-                "data": calculated_data_by_category,
-            },
-            prefix=f"data_calculated_data_by_category_{transaction_id}",
-        )
+        # Cache.set_cache(
+        #     response={
+        #         "aggregated_persen_losses": aggregated_persen_losses,
+        #         "data": calculated_data_by_category,
+        #     },
+        #     prefix=f"data_calculated_data_by_category_{transaction_id}",
+        # )
 
         for category, losses in aggregated_persen_losses.items():
             total_persen += losses
@@ -122,7 +127,10 @@ class DataDetailController(BaseController[EfficiencyDataDetail]):
                 }
             )
 
-        return result, total_persen_losses, total_nilai_losses
+        # update persen_threshold
+        transaction_data.persen_threshold = percent_threshold
+
+        return result, total_persen_losses, total_nilai_losses, transaction_data.persen_threshold
 
 
 data_detail_controller = DataDetailController()

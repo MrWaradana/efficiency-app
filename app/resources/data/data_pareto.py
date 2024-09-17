@@ -28,7 +28,7 @@ class DataListParetoResource(Resource):
     )
     def get(self, user_id, transaction_id, percent_threshold):
 
-        result, total_persen, total_losses = data_detail_controller.get_data_pareto(
+        result, total_persen, total_losses, percent_threshold = data_detail_controller.get_data_pareto(
             transaction_id, percent_threshold
         )
 
@@ -93,6 +93,7 @@ class DataListParetoResource(Resource):
             "pareto_result": result,
             "total_persen": total_persen,
             "total_nilai": total_losses,
+            "percent_threshold": percent_threshold,
         })
 
     @token_required

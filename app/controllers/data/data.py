@@ -246,18 +246,21 @@ class DataController(BaseController[EfficiencyTransaction]):
 
             for current_detail in current_data_details:
                 target_detail = target_mapping.get(current_detail.variable_id)
-                
+
                 gap, persen_losses, nilai_losses = calculate_pareto(
                     target_detail, current_detail
                 )
 
                 pareto.append({
                     "id": current_detail.id,
+                    "variable_name": current_detail.variable.input_name,
+                    "variable_category": current_detail.variable.category,
                     "existing_data": current_detail.nilai,
                     "reference_data": target_detail.nilai,
                     "persen_losses": persen_losses,
                     "nilai_losses": nilai_losses,
                     "gap": gap,
+
                 })
 
             result.append({**data_schema.dump(item), "pareto": pareto})
