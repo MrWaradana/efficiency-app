@@ -55,12 +55,12 @@ class DataDetailController(BaseController[EfficiencyDataDetail]):
         #     return result
         transaction_data = data_repository.get_by_uuid(transaction_id)
         if not transaction_data:
-            return response(404, False, "Data is not available")
+            raise Exception("Transaction data not found")
 
         data = data_detail_repository.get_data_pareto(transaction_id)
 
         if data is None:
-            return response(404, False, "Data is not available")
+            raise Exception("Transaction data not found")
 
         calculated_data_by_category = defaultdict(list)
         aggregated_persen_losses = defaultdict(float)
@@ -99,14 +99,6 @@ class DataDetailController(BaseController[EfficiencyDataDetail]):
         total_persen_losses = sum(aggregated_persen_losses.values())
         total_nilai_losses = sum([(losses / 100) * 1000 for losses in aggregated_persen_losses.values()])
 
-        # Cache.set_cache(
-        #     response={
-        #         "aggregated_persen_losses": aggregated_persen_losses,
-        #         "data": calculated_data_by_category,
-        #     },
-        #     prefix=f"data_calculated_data_by_category_{transaction_id}",
-        # )
-
         for category, losses in aggregated_persen_losses.items():
             total_persen += losses
             if percent_threshold and total_persen >= percent_threshold:
@@ -129,6 +121,7 @@ class DataDetailController(BaseController[EfficiencyDataDetail]):
 
         # update persen_threshold
         transaction_data.persen_threshold = percent_threshold
+    
 
         return result, total_persen_losses, total_nilai_losses, transaction_data.persen_threshold
 

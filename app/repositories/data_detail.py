@@ -52,7 +52,7 @@ class DataDetailRepository(BaseRepository[EfficiencyDataDetail]):
 
         target_query = query.filter(
             and_(
-                EfficiencyTransaction.jenis_parameter == "Target",
+                EfficiencyTransaction.jenis_parameter == "target",
                 Variable.in_out == "out",
             )
         ).all()
