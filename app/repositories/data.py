@@ -118,7 +118,7 @@ class DataRepository(BaseRepository[EfficiencyTransaction]):
             .join(EfficiencyTransaction.efficiency_transaction_details)
             .filter(
                 and_(
-                    EfficiencyTransaction.jenis_parameter == "Target",
+                    EfficiencyTransaction.jenis_parameter == "target",
                     EfficiencyDataDetail.variable_id.in_(variable_ids),
                 )
             )
