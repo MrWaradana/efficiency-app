@@ -122,8 +122,9 @@ class DataDetailController(BaseController[EfficiencyDataDetail]):
         # update persen_threshold
         transaction_data.persen_threshold = percent_threshold
     
+    
 
-        return result, total_persen_losses, total_nilai_losses, transaction_data.persen_threshold
+        return result, total_persen_losses, total_nilai_losses, transaction_data.persen_threshold if transaction_data.persen_threshold else percent_threshold
 
 
 data_detail_controller = DataDetailController()
