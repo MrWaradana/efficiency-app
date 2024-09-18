@@ -7,3 +7,4 @@ from .data_detail import DataDetailRepository
 from .excels import ExcelsRepository
 from .headers import HeadersRepository
 from .variables import VariablesRepository
+from .data_detail_root_cause import DataDetailRootCauseRepository

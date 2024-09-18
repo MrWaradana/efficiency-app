@@ -5,7 +5,7 @@ from flask_restful import Resource
 from flask_restful.reqparse import Argument
 
 from app.repositories.headers import HeadersRepository
-from app.resources.variable.main import variable_repository
+from app.resources.variable.variable import variable_repository
 from app.schemas.variable import VariableHeaderSchema
 from core.security.jwt_verif import token_required
 from core.utils import parse_params, response

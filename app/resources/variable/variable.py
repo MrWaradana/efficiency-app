@@ -9,7 +9,7 @@ from flask_restful import Resource
 from flask_restful.reqparse import Argument
 
 from app.repositories import VariablesRepository
-from app.resources.excels import excel_repository
+from app.controllers.excels import excel_repository
 from app.schemas import (VariableCauseSchema, VariableHeaderSchema,
                          VariableSchema)
 from core.config import config

@@ -1,4 +1,3 @@
-import random
 from datetime import datetime
 
 import requests
@@ -7,15 +6,12 @@ from digital_twin_migration.models.efficiency_app import (
     EfficiencyDataDetail, EfficiencyTransaction)
 from flask_restful import Resource
 from flask_restful.reqparse import Argument
-from sqlalchemy.orm import joinedload
 
 from app.controllers import data_controller
 from app.repositories import DataRepository, VariablesRepository
-from app.resources.excels import excel_repository
-from app.resources.variable.main import variable_repository
 from app.schemas.data import EfficiencyTransactionSchema
 from core.cache.cache_manager import Cache
-from core.config import EnvironmentType, config
+from core.config import config
 from core.security.jwt_verif import token_required
 from core.utils import get_key_by_value, parse_params, response
 

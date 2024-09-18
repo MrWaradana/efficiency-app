@@ -13,7 +13,7 @@ from app.controllers.data.data_detail import data_detail_repository
 from app.repositories.data_detail_root_cause import \
     DataDetailRootCauseRepository
 from app.resources.data.data_details import data_details_schema
-from app.resources.variable.main import variable_repository
+from app.resources.variable.variable import variable_repository
 from app.resources.variable.variable_causes import (variable_cause_repository,
                                                     variable_cause_schema)
 from app.schemas import (EfficiencyDataDetailRootCauseSchema,

@@ -7,8 +7,8 @@ from digital_twin_migration.models.efficiency_app import (
     EfficiencyDataDetail, EfficiencyTransaction)
 
 from app.repositories import DataRepository
-from app.resources.excels import excel_repository
-from app.resources.variable.main import variable_repository
+from app.controllers.excels import excel_repository
+from app.resources.variable.variable import variable_repository
 from app.schemas.data import EfficiencyTransactionSchema
 from app.schemas.variable import VariableSchema
 from core.cache import Cache

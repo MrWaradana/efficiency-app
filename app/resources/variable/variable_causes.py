@@ -5,7 +5,7 @@ from flask_restful import Resource
 from flask_restful.reqparse import Argument
 
 from app.repositories import CausesRepository
-from app.resources.variable.main import variable_repository
+from app.resources.variable.variable import variable_repository
 from app.schemas import VariableCauseSchema
 from core.security import token_required
 from core.utils import parse_params, response
