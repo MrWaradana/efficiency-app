@@ -33,7 +33,8 @@ class DataDetailController(BaseController[EfficiencyDataDetail]):
         # pareto_cache_data = Cache.get_by_prefix(
         #     f"data_calculated_data_by_category_{transaction_id}"
         # )
-        result = []
+        result_pareto = []
+        result_chart = []
         total_persen = 0
 
         # if pareto_cache_data:
@@ -103,6 +104,15 @@ class DataDetailController(BaseController[EfficiencyDataDetail]):
 
         for category, losses in aggregated_persen_losses.items():
             total_persen += losses
+
+            result_chart.append(
+                {
+                    "category": category,
+                    "total_persen_losses": losses,
+                    "total_nilai_losses": (losses / 100) * 1000,
+                }
+            )
+
             if percent_threshold and total_persen >= percent_threshold:
                 total_persen -= losses
                 break
@@ -113,7 +123,7 @@ class DataDetailController(BaseController[EfficiencyDataDetail]):
                 reverse=True,
             )
 
-            result.append(
+            result_pareto.append(
                 {
                     "category": category,
                     "total_persen_losses": losses,
@@ -127,7 +137,7 @@ class DataDetailController(BaseController[EfficiencyDataDetail]):
 
         total_losses = (total_persen / 100) * 1000
 
-        return result, total_persen, total_losses, transaction_data.persen_threshold if transaction_data.persen_threshold else percent_threshold
+        return result_pareto,result_chart, total_persen, total_losses, transaction_data.persen_threshold if transaction_data.persen_threshold else percent_threshold
 
 
 data_detail_controller = DataDetailController()
