@@ -102,6 +102,7 @@ class DataDetailController(BaseController[EfficiencyDataDetail]):
         for category, losses in aggregated_persen_losses.items():
             total_persen += losses
             if percent_threshold and total_persen >= percent_threshold:
+                total_persen -= losses
                 break
 
             sorted_calculated_data = sorted(
