@@ -137,7 +137,7 @@ class DataDetailController(BaseController[EfficiencyDataDetail]):
 
         total_losses = (total_persen / 100) * 1000
 
-        return result_pareto,result_chart, total_persen, total_losses, transaction_data.persen_threshold if transaction_data.persen_threshold else percent_threshold
+        return result_pareto, aggregated_persen_losses, total_persen, total_losses, transaction_data.persen_threshold if transaction_data.persen_threshold else percent_threshold
 
 
 data_detail_controller = DataDetailController()
