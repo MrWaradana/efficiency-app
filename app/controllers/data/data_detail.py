@@ -74,6 +74,7 @@ class DataDetailController(BaseController[EfficiencyDataDetail]):
 
             category = current_data.variable.category
             aggregated_persen_losses[category] += persen_losses or 0
+            hasCause = True if current_data.variable.causes else False
 
             calculated_data_by_category[category].append(
                 {
@@ -88,6 +89,7 @@ class DataDetailController(BaseController[EfficiencyDataDetail]):
                     "gap": gap,
                     "total_biaya": total_cost,
                     "symptoms": "Higher" if gap > 0 else "Lower",
+                    "has_cause" : hasCause
                 }
             )
 

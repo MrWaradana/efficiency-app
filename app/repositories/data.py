@@ -106,7 +106,7 @@ class DataRepository(BaseRepository[EfficiencyTransaction]):
             )
             .options(
                 contains_eager(EfficiencyTransaction.efficiency_transaction_details)
-            )
+            ).order_by(EfficiencyTransaction.periode.desc())
         )
 
         return query.all()
