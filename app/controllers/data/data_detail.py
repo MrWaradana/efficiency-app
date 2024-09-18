@@ -96,8 +96,11 @@ class DataDetailController(BaseController[EfficiencyDataDetail]):
             sorted(aggregated_persen_losses.items(), key=lambda x: x[1], reverse=True)
         )
 
-        total_persen_losses = sum(aggregated_persen_losses.values())
-        total_nilai_losses = sum([(losses / 100) * 1000 for losses in aggregated_persen_losses.values()])
+        # total_persen_losses = sum(aggregated_persen_losses.values())
+        # total_nilai_losses = sum([(losses / 100) * 1000 for losses in aggregated_persen_losses.values()])
+        
+        total_persen_losses = 0
+        total_nilai_losses = 0
 
         for category, losses in aggregated_persen_losses.items():
             total_persen += losses
@@ -118,6 +121,9 @@ class DataDetailController(BaseController[EfficiencyDataDetail]):
                     "data": sorted_calculated_data,
                 }
             )
+            
+            total_persen_losses += losses
+            total_nilai_losses += (losses / 100) * 1000
 
         # update persen_threshold
         transaction_data.persen_threshold = percent_threshold

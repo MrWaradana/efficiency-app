@@ -32,62 +32,6 @@ class DataListParetoResource(Resource):
             transaction_id, percent_threshold
         )
 
-        # data = data_detail_repository.get_data_pareto(transaction_id)
-        # # target_data = data_detail_repository.get_data_pareto(transaction_id, False)
-
-        # if data is None:
-        #     return response(404, False, "Data is not available")
-
-        # calculated_data_by_category = defaultdict(list)
-        # aggregated_persen_losses = defaultdict(float)
-
-        # total_persen = 0
-        # result = []
-
-        # for current_data, target_data, total_cost in data:
-        #     gap = calculate_gap(target_data.nilai, current_data.nilai)
-        #     persen_losses = calculate_persen_losses(
-        #         gap, target_data.deviasi, current_data.persen_hr
-        #     )
-        #     nilai_losses = (persen_losses / 100) * 1000
-
-        #     category = current_data.variable.category
-        #     aggregated_persen_losses[category] += persen_losses or 0
-
-        #     calculated_data_by_category[category].append(
-        #         {
-        #             "id": current_data.id,
-        #             "variable": variable_schema.dump(current_data.variable),
-        #             "existing_data": current_data.nilai,
-        #             "reference_data": target_data.nilai,
-        #             "deviasi": current_data.deviasi,
-        #             "persen_hr": current_data.persen_hr,
-        #             "persen_losses": persen_losses,
-        #             "nilai_losses": nilai_losses,
-        #             "gap": gap,
-        #             "total_biaya": total_cost,
-        #             "symptoms": "Higher" if gap > 0 else "Lower",
-        #         }
-        #     )
-
-        # # Sort aggregated losses only once, limit looping
-        # aggregated_persen_losses = dict(
-        #     sorted(aggregated_persen_losses.items(), key=lambda x: x[1], reverse=True)
-        # )
-
-        # for category, losses in aggregated_persen_losses.items():
-        #     total_persen += losses
-        #     if percent_threshold and total_persen >= percent_threshold:
-        #         break
-
-        #     result.append(
-        #         {
-        #             "category": category,
-        #             "total_persen_losses": losses,
-        #             "total_nilai_losses": (losses / 100) * 1000,
-        #             "data": calculated_data_by_category[category],
-        #         }
-        #     )
 
         return response(200, True, "Data retrieved successfully", {
             "pareto_result": result,
