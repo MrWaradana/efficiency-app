@@ -24,3 +24,8 @@ def calculate_pareto(target_data, current_data):
     nilai_losses = (persen_losses / 100) * 1000
 
     return gap, persen_losses, nilai_losses
+
+
+def calculate_cost_benefit(netto, heatRate, nilai_losses):
+    cost_benefit = nilai_losses * (netto * heatRate)
+    return cost_benefit

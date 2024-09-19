@@ -2,14 +2,14 @@ from digital_twin_migration.models.efficiency_app import EfficiencyDataDetail
 from flask_restful import Resource
 from flask_restful.reqparse import Argument
 
-from app.controllers.data.data_detail import data_detail_repository
-from app.repositories import DataDetailRepository
+from app.controllers.data.data_details import data_detail_controller
 from app.schemas import EfficiencyDataDetailSchema, VariableSchema
 from core.security.jwt_verif import token_required
 from core.utils import parse_params, response
+from core.factory import data_detail_factory, variable_factory
 
-variable_schema = VariableSchema()
-data_details_schema = EfficiencyDataDetailSchema()
+variable_schema = variable_factory.variable_schema
+data_details_schema = data_detail_factory.data_detail_schema
 
 
 class DataDetailListResource(Resource):
@@ -21,9 +21,7 @@ class DataDetailListResource(Resource):
     def get(self, user_id, transaction_id, type):
         """Get all transaction data by transaction id"""
 
-        data_details = data_detail_repository.get_by_data_id_and_variable_type(
-            transaction_id, type
-        )
+        data_details = data_detail_controller.get_data_details(transaction_id, type)
 
         return response(
             200,
@@ -38,11 +36,7 @@ class DataDetailResource(Resource):
     @token_required
     def get(self, user_id, transaction_id, detail_id):
         """Get transaction data by transaction id and variable id"""
-
-        data_detail = data_detail_repository.get_by_uuid(detail_id)
-
-        if not data_detail:
-            return response(404, False, "Data detail not found")
+        data_detail = data_detail_controller.get_data_detail(detail_id)
 
         return response(
             200,

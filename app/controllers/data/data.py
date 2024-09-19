@@ -16,10 +16,12 @@ from core.config import EnvironmentType, config
 from core.controller import BaseController
 from core.utils import get_key_by_value, response
 from core.utils.formula import calculate_pareto
+from core.factory import data_factory, variable_factory
+from werkzeug import exceptions
 
-data_repository = DataRepository(EfficiencyTransaction)
-data_schema = EfficiencyTransactionSchema(exclude=["efficiency_transaction_details"])
-variable_schema = VariableSchema()
+data_repository = data_factory.data_repository
+data_schema = data_factory.exclude_schema(["efficiency_transaction_details"])
+variable_schema = variable_factory.variable_schema
 
 
 class DataController(BaseController[EfficiencyTransaction]):
@@ -81,37 +83,19 @@ class DataController(BaseController[EfficiencyTransaction]):
             res = requests.get(f"{config.WINDOWS_EFFICIENCY_APP_API}", timeout=5)
             res.raise_for_status()  # Raise an error if the API request fails
         except requests.exceptions.RequestException as e:
-            # Handle error, e.g., logging or retry mechanism
-            print(f"API request failed: {e}")
-            return response(500, False, "Connection to Excel Server failed")
+            raise exceptions.InternalServerError("Failed to connect to Excel Server")
 
-        # Get variable mappings
-        # Fetch all variables associated with the given excel_id
         excel = excel_repository.get_by_uuid(excel_id)
 
         if not excel:
-            print(f"Excel {excel_id} not found")
-            return response(404, False, "Excel not found")
+            raise exceptions.NotFound("Excel not found")
 
         variables = variable_repository.get_by_excel_id(excel_id)
 
-        # Create a dictionary of variable mappings where the keys are the variable IDs
-        # and the values are dictionaries containing the variable name and category
         variable_mappings = {
             str(var.id): {"name": var.input_name, "category": var.category}
             for var in variables
         }
-
-        # # Check if a transaction with the same periode already exists
-        # is_periode_exist = data_repository.get_by_multiple(
-        #     None, True, {"periode": periode, "jenis_parameter": "Current"}
-        # )
-
-        # if is_periode_exist:
-        #     # If a transaction with the same periode already exists, return an error response
-        #     return response(
-        #         400, False, "Data Transaction for this periode already exist", None
-        #     )
 
         # Initialize empty dictionaries to store input data and transaction records
         input_data = {}
@@ -207,66 +191,119 @@ class DataController(BaseController[EfficiencyTransaction]):
 
         return transaction_parent.id
 
-    def get_data_trending(self, start_date: str, end_date: str, variable_ids: str):
-        """
-        This function retrieves trending data for specified variable IDs within a specified date range.
+    @Transactional(propagation=Propagation.REQUIRED)
+    def delete_data(self, transaction_id):
 
-        :param start_date: The `start_date` parameter is a string that represents the beginning date of
-        the time period for which you want to retrieve trending data. This date is typically in a
-        specific format, such as "YYYY-MM-DD", to indicate the year, month, and day
-        :type start_date: str
-        :param end_date: The `end_date` parameter is a string that represents the end date for the data
-        you want to retrieve. It is used to specify the date up to which you want to fetch the data
-        :type end_date: str
-        :param variable_ids: A list of variable IDs that you want to retrieve data for. These IDs could
-        represent different metrics or data points that you are interested in analyzing
-        :type variable_ids: str
-        """
+        data = data_repository.get_by_uuid(transaction_id)
 
-        # check if variable id contains (,)
-        if ',' in variable_ids:
-            variable_ids_list = variable_ids.split(',')
-        else:
-            variable_ids_list = [variable_ids]
+        if not data:
+            raise exceptions.NotFound("Data not found")
 
-        data = data_repository.get_data_trending(start_date, end_date, variable_ids_list)
-        data_target = data_repository.get_target_data_by_variable(variable_ids_list)
+        data_repository.delete(data)
+        Cache.remove_by_prefix("get_data_paginated")
 
-        result = []
+        return data
 
-        for item in data:
-            pareto = []
-            current_data_details = item.efficiency_transaction_details
-            target_data_details = data_target.efficiency_transaction_details
+    @Transactional(propagation=Propagation.REQUIRED)
+    def update_data(self, transaction_id, user_id, inputs, name):
+        transaction = data_repository.get_by_uuid(transaction_id)
 
-            target_mapping = {
-                efficiency_transaction_detail.variable_id : efficiency_transaction_detail
-                for efficiency_transaction_detail in target_data_details
-            }
+        if not transaction:
+            raise exceptions.NotFound("Data not found")
 
-            for current_detail in current_data_details:
-                target_detail = target_mapping.get(current_detail.variable_id)
+        if name:
+            transaction.name = name
 
-                gap, persen_losses, nilai_losses = calculate_pareto(
-                    target_detail, current_detail
+        variables = variable_repository.get_by_excel_id(transaction.excel_id)
+
+        variable_mappings = {
+            str(var.id): {"name": var.input_name, "category": var.category}
+            for var in variables
+        }
+
+        existing_details = {
+            detail.variable_id: detail
+            for detail in transaction.efficiency_transaction_details
+        }
+
+        input_data = {}  # Initialize empty dictionary to store input data
+        transaction_records = (
+            []
+        )  # Initialize empty list to store new transaction records
+
+        for key, value in inputs.items():
+            variable_input = variable_mappings.get(key)
+
+            if variable_input:
+                variable_string = (
+                    f"{variable_input['category']}: {variable_input['name']}"
+                    if variable_input["category"]
+                    else variable_input["name"]
                 )
 
-                pareto.append({
-                    "id": current_detail.id,
-                    "variable_id": current_detail.variable_id,
-                    "variable_name": current_detail.variable.input_name,
-                    "variable_category": current_detail.variable.category,
-                    "existing_data": current_detail.nilai,
-                    "reference_data": target_detail.nilai,
-                    "persen_losses": persen_losses,
-                    "nilai_losses": nilai_losses,
-                    "gap": gap,
+                input_data[variable_string] = value
 
-                })
+                existing_detail = existing_details.get(key)
 
-            result.append({**data_schema.dump(item), "pareto": pareto})
+                if existing_detail:
+                    existing_detail.nilai = float(value)
+                    existing_detail.nilai_string = None
 
-        return result
+                else:
+                    transaction_records.append(
+                        EfficiencyDataDetail(
+                            variable_id=key,
+                            nilai=float(value),
+                            nilai_string=None,
+                            efficiency_transaction_id=transaction.id,
+                            created_by=user_id,
+                        )
+                    )
+
+        try:
+            res = requests.get(f"{config.WINDOWS_EFFICIENCY_APP_API}", timeout=5)
+            res.raise_for_status()  # Raise an error if the API request fails
+
+        except requests.exceptions.RequestException as e:
+            raise exceptions.InternalServerError(str(e))
+
+        outputs = res.json()
+
+        for variable_title, input_value in outputs["data"].items():
+            variable_id = get_key_by_value(variable_mappings, variable_title)
+            value_float, value_string = None, None
+
+            try:
+                value_float = float(input_value)
+                if config.ENVIRONMENT == EnvironmentType.DEVELOPMENT:
+                    value_float -= random.uniform(0.5, 7.5)
+
+            except ValueError:
+                value_string = value
+
+            if variable_id:
+                existing_detail = existing_details.get(variable_id)
+
+                if existing_detail:
+                    existing_detail.nilai = value_float
+                    existing_detail.nilai_string = value_string
+                else:
+                    transaction_records.append(
+                        EfficiencyDataDetail(
+                            variable_id=variable_id,
+                            efficiency_transaction_id=transaction.id,
+                            nilai=value_float,
+                            nilai_string=value_string,
+                            created_by=user_id,
+                        )
+                    )
+
+        if transaction_records:
+            data_repository.create_bulk(transaction_records)
+
+        Cache.remove_by_prefix("get_data_paginated")
+        
+        return transaction
 
 
 data_controller = DataController()
