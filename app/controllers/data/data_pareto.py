@@ -84,7 +84,7 @@ class DataParetoController(BaseController[EfficiencyDataDetail]):
                     "nilai_losses": nilai_losses,
                     "cost_benefit": cost_benefit,
                     "gap": gap,
-                    "cost_gap": total_cost,
+                    "total_biaya": total_cost,
                     "symptoms": "Higher" if gap > 0 else "Lower",
                     "has_cause" : hasCause
                 }
