@@ -7,7 +7,7 @@ from flask_restful import Api
 
 from app.resources import (DataDetailListResource, DataDetailResource,
                            DataListParetoResource, DataListResource,
-                           DataResource, DataRootCausesListResource)
+                           DataResource, DataRootCausesListResource, DataListCostBenefit)
 from app.resources.data.data_hl_trending import DataTrendingListResource
 
 TRANSACTION_BLUEPRIENT = Blueprint("data", __name__)
@@ -33,3 +33,5 @@ Api(TRANSACTION_BLUEPRIENT).add_resource(
 )
 
 Api(TRANSACTION_BLUEPRIENT).add_resource(DataTrendingListResource, "/data/trending")
+
+Api(TRANSACTION_BLUEPRIENT).add_resource(DataListCostBenefit, "/data/cost-benefit")

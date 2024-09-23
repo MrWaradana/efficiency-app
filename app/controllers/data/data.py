@@ -304,6 +304,10 @@ class DataController(BaseController[EfficiencyTransaction]):
         Cache.remove_by_prefix("get_data_paginated")
         
         return transaction
+    
+    
+    def get_newest_data(self):
+        return self.data_repository.get_newest_data()
 
 
 data_controller = DataController()

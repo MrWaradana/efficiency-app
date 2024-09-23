@@ -15,11 +15,11 @@ class DataListParetoResource(Resource):
     @token_required
     @parse_params(
         Argument(
-            "percent_threshold", location="args", type=int, required=False, default=None
+            "percent_threshold", location="args", type=int, required=False, default=None,
         ),
     )
     def get(self, user_id, transaction_id, percent_threshold):
-
+        
         result_pareto, result_chart, total_persen, total_losses, total_biaya, total_cost_benefit = data_pareto_controller.get_data_pareto(
             transaction_id, percent_threshold
         )

@@ -25,6 +25,11 @@ class DataRepository(BaseRepository[EfficiencyTransaction]):
 
         return self._one_or_none(query)
 
+    def get_newest_data(self):
+        query = self.model_class.query
+        query = query.order_by(EfficiencyTransaction.created_at.desc())
+        return query.first()
+
     def get_daily_increment(self):
         today = date.today()
 

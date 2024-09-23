@@ -28,12 +28,18 @@ class DataParetoController(BaseController[EfficiencyDataDetail]):
         super().__init__(model=EfficiencyTransaction, repository=data_detail_repository)
         self.data_detail_repository = data_detail_repository
 
+    def get_newest_transaction_id(self):
+        transaction = data_repository.get_newest_transaction()
+        return transaction.id
+
     @Transactional(propagation=Propagation.REQUIRED)
-    def get_data_pareto(self, transaction_id, percent_threshold):
+    def get_data_pareto(self, transaction_id, percent_threshold=None):
         result_pareto = []
         total_persen = 0
         total_biaya = 0
         total_cost_benefit = 0
+
+        is_cost_benefit = percent_threshold is None
 
         transaction_data = data_repository.get_by_uuid(transaction_id)
         if not transaction_data:
@@ -45,7 +51,7 @@ class DataParetoController(BaseController[EfficiencyDataDetail]):
             raise exceptions.NotFound("Data not found")
 
         calculated_data_by_category = defaultdict(list)
-        aggregated_value = defaultdict(lambda:{
+        aggregated_value = defaultdict(lambda: {
             'persen_losses': 0,
             'total_biaya': 0,
             'cost_benefit': 0
@@ -89,13 +95,11 @@ class DataParetoController(BaseController[EfficiencyDataDetail]):
                     "has_cause" : hasCause
                 }
             )
-            
 
         # Sort aggregated losses only once, limit looping
         sorted_aggregated_value = dict(
             sorted(aggregated_value.items(), key=lambda x: x[1]['persen_losses'], reverse=True)
         )
-        
 
         result_chart = [{"category": category, "total_persen_losses": value['persen_losses']} for category, value in sorted_aggregated_value.items()]
 
@@ -104,31 +108,33 @@ class DataParetoController(BaseController[EfficiencyDataDetail]):
             if percent_threshold and total_persen >= percent_threshold:
                 total_persen -= value['persen_losses']
                 break
-            
 
-            
             total_biaya += value['total_biaya']
             total_cost_benefit += value['cost_benefit']
-            
+
             sorted_calculated_data = sorted(
                 calculated_data_by_category[category],
                 key=lambda x: x["persen_losses"],
                 reverse=True,
             )
 
-            result_pareto.append(
-                {
-                    "category": category,
-                    "total_persen_losses": value['persen_losses'],
-                    "total_nilai_losses": (value['persen_losses'] / 100) * 1000,
-                    "total_cost_gap": value['total_biaya'],
-                    "total_cost_benefit": value['cost_benefit'],
-                    "data": sorted_calculated_data,
-                }
-            )
+            payload = {
+                "category": category,
+                "total_persen_losses": value['persen_losses'],
+                "total_nilai_losses": (value['persen_losses'] / 100) * 1000,
+                "total_cost_gap": value['total_biaya'],
+                "total_cost_benefit": value['cost_benefit'],
+                "data": sorted_calculated_data,
+            } if not is_cost_benefit else {
+                "category": category,
+                "total_cost_benefit": value['cost_benefit'],
+            }
+
+            result_pareto.append(payload)
 
         # update persen_threshold
-        transaction_data.persen_threshold = percent_threshold
+        if not is_cost_benefit:
+            transaction_data.persen_threshold = percent_threshold
 
         total_losses = (total_persen / 100) * 1000
 
