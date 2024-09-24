@@ -9,6 +9,7 @@ from app.resources import (DataDetailListResource, DataDetailResource,
                            DataListParetoResource, DataListResource,
                            DataResource, DataRootCausesListResource, DataListCostBenefit)
 from app.resources.data.data_hl_trending import DataTrendingListResource
+from app.resources.data.data_nphr import DataNPHRResource
 
 TRANSACTION_BLUEPRIENT = Blueprint("data", __name__)
 
@@ -35,3 +36,5 @@ Api(TRANSACTION_BLUEPRIENT).add_resource(
 Api(TRANSACTION_BLUEPRIENT).add_resource(DataTrendingListResource, "/data/trending")
 
 Api(TRANSACTION_BLUEPRIENT).add_resource(DataListCostBenefit, "/data/cost-benefit")
+
+Api(TRANSACTION_BLUEPRIENT).add_resource(DataNPHRResource, "/data/<data_id>/nphr")

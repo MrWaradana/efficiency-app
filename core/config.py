@@ -47,6 +47,7 @@ class Config:
     CELERY_BACKEND_URL: str = "redis://localhost:6379/0"
     WINDOWS_EFFICIENCY_APP_API = os.getenv("WINDOWS_EFFICIENCY_APP_API")
     AUTH_SERVICE_API = os.getenv("AUTH_SERVICE_API")
+    NPHR_VARIABLE_NAME = "Plant net heat rate (HHV)"
 
 
 logging.basicConfig(

@@ -136,3 +136,5 @@ class DataRepository(BaseRepository[EfficiencyTransaction]):
 
     def _join_data_details(self, query: Select) -> Select:
         return query.join(EfficiencyDataDetail)
+    
+ 

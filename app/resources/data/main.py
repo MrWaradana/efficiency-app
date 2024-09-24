@@ -70,6 +70,7 @@ class DataListResource(Resource):
         ),
         Argument("excel_id", location="json", required=True, type=str),
         Argument("inputs", location="json", required=True, type=dict),
+        Argument("is_perfomance_test", location="json", required=False, type=bool, default=False),
     )
     @token_required
     def post(self, jenis_parameter, excel_id, inputs, user_id, name):

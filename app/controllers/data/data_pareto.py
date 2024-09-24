@@ -101,7 +101,7 @@ class DataParetoController(BaseController[EfficiencyDataDetail]):
             sorted(aggregated_value.items(), key=lambda x: x[1]['persen_losses'], reverse=True)
         )
 
-        result_chart = [{"category": category, "total_persen_losses": value['persen_losses']} for category, value in sorted_aggregated_value.items()]
+        result_chart = [{"category": category, "total_persen_losses": value['persen_losses'], "total_nilai_losses": (value['persen_losses'] / 100) * 1000} for category, value in sorted_aggregated_value.items()]
 
         for category, value in sorted_aggregated_value.items():
             total_persen += value['persen_losses']

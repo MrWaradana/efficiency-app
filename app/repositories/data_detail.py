@@ -11,6 +11,8 @@ from sqlalchemy import Select, and_, func, select
 from sqlalchemy.orm import joinedload
 
 from core.repository import BaseRepository
+from core.config import config
+
 
 
 class DataDetailRepository(BaseRepository[EfficiencyDataDetail]):
@@ -67,6 +69,28 @@ class DataDetailRepository(BaseRepository[EfficiencyDataDetail]):
                 )
 
         return paired_data
+
+    def get_data_nphr(self, data_id: str = None, is_target: bool = False, is_kpi: bool = False):
+        query = self._query({"variable", "data"})
+        nphr_input_name = config.NPHR_VARIABLE_NAME
+
+        if is_target or is_kpi:
+            query = query.filter(
+                and_(
+                    EfficiencyTransaction.jenis_parameter == ("target" if is_target else "kpi"),
+                    Variable.input_name == nphr_input_name,
+                )
+            )
+
+        else:
+            query = query.filter(
+                and_(
+                    EfficiencyDataDetail.efficiency_transaction_id == data_id,
+                    Variable.input_name == nphr_input_name,
+                )
+            )
+
+        return self._one_or_none(query)
 
     def _join_data(self, query: Select) -> Select:
         return query.join(EfficiencyTransaction)

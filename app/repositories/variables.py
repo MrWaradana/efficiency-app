@@ -28,3 +28,12 @@ class VariablesRepository(BaseRepository[Variable]):
             return self._all_unique(query)
 
         return self._all(query)
+
+    def get_by_input_name(self, input_name: str, join_: set[str] | None = None):
+        query = self._query(join_)
+        query = query.filter(Variable.input_name == input_name)
+
+        if join_ is not None:
+            return self._all_unique(query)
+
+        return self._one_or_none(query)
