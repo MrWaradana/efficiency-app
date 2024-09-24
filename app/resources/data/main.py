@@ -19,7 +19,7 @@ data_schema = EfficiencyTransactionSchema(exclude=["efficiency_transaction_detai
 data_schema_with_rel = EfficiencyTransactionSchema()
 data_repository = DataRepository(EfficiencyTransaction)
 
-
+from digital_twin_migration.models.pfi_app import PFICategory, PFIEquipment
 class DataListResource(Resource):
     """
     Resource for retrieving and creating Transactions.
@@ -32,12 +32,16 @@ class DataListResource(Resource):
         Argument("all", location="args", type=bool, required=False, default=False),
         Argument("start_date", location="args", type=str, required=False, default=None),
         Argument("end_date", location="args", type=str, required=False, default=None),
+        Argument("is_performance_test", location="args", type=bool, required=False, default=False),
     )
-    def get(self, user_id, page, size, all, start_date, end_date):
+    def get(self, user_id, page, size, all, start_date, end_date, is_perfomance_test):
+        test = PFICategory.query.all()
+        
+        
         # Apply pagination
         data = data_controller.paginated_list_data(
             page, size, all, start_date, end_date
-        )
+        ) if not is_perfomance_test else data_controller.paginated_performance_test_data(page, size, all, start_date, end_date, is_perfomance_test)
         return response(
             200,
             True,
@@ -60,7 +64,7 @@ class DataListResource(Resource):
             location="json",
             required=False,
             type=str,
-            default="Current",
+            default="current",
         ),
         Argument(
             "name",
@@ -70,12 +74,14 @@ class DataListResource(Resource):
         ),
         Argument("excel_id", location="json", required=True, type=str),
         Argument("inputs", location="json", required=True, type=dict),
-        Argument("is_perfomance_test", location="json", required=False, type=bool, default=False),
+        Argument("is_performance_test", location="json", required=False, type=bool, default=False),
+        Argument("performance_test_weight", location="json", required=False, type=int, default=100),
     )
     @token_required
-    def post(self, jenis_parameter, excel_id, inputs, user_id, name):
+    def post(self, jenis_parameter, excel_id, inputs, user_id, name, is_perfomance_test, performace_test_weight):
+
         data = data_controller.create_data(
-            jenis_parameter, excel_id, inputs, user_id, name
+            jenis_parameter, excel_id, inputs, user_id, name, is_perfomance_test, performace_test_weight
         )
 
         return response(
@@ -88,7 +94,7 @@ class DataListResource(Resource):
 
 class DataResource(Resource):
 
-    @token_required
+    @ token_required
     def get(self, transaction_id, user_id):
         if not transaction_id:
             return response(400, False, "Transaction ID is required")
@@ -108,14 +114,14 @@ class DataResource(Resource):
             data_schema_with_rel.dump(transaction),
         )
 
-    @token_required
+    @ token_required
     def delete(self, user_id, transaction_id):
         data = data_controller.delete_data(transaction_id)
 
         return response(200, True, "Transaction deleted successfully", data_schema.dump(data))
 
-    @token_required
-    @parse_params(
+    @ token_required
+    @ parse_params(
         Argument("inputs", type=dict, required=True),
         Argument("name", type=str, required=False, default=None),
     )

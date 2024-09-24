@@ -6,6 +6,8 @@ from digital_twin_migration.database import Propagation, Transactional
 from digital_twin_migration.models.efficiency_app import (
     EfficiencyDataDetail, EfficiencyTransaction)
 
+
+
 from app.repositories import DataRepository
 from app.controllers.excels import excel_repository
 from app.resources.variable.variable import variable_repository
@@ -53,7 +55,7 @@ class DataController(BaseController[EfficiencyTransaction]):
         end_date = datetime.strptime(end_date, "%Y-%m-%d").date() if end_date else None
 
         # Build the query based on the date range
-        query = self.data_repository.get_query(start_date=start_date, end_date=end_date)
+        query = self.data_repository.get_query(start_date=start_date, end_date=end_date, is_perfomance_test=False)
 
         # Get the total count of records
         count = data_repository._count(query)
@@ -75,14 +77,33 @@ class DataController(BaseController[EfficiencyTransaction]):
 
         return paginated_option, items
 
+    @Cache.cached(prefix="get_performance_test_data_paginated")
+    def paginated_performance_test_data(self, page, size, start_date, end_date):
+        # Parse start and end dates if provided
+        start_date = (
+            datetime.strptime(start_date, "%Y-%m-%d").date() if start_date else None
+        )
+        end_date = datetime.strptime(end_date, "%Y-%m-%d").date() if end_date else None
+
+        # Build the query based on the date range
+        query = self.data_repository.get_query(start_date=start_date, end_date=end_date, is_perfomance_test=True)
+
+        # Get the total count of records
+        count = data_repository._count(query)
+
+        # Apply pagination
+        paginated_option, items = data_repository.paginate(query, page, size)
+
+        return paginated_option, items
+
     @Transactional(propagation=Propagation.REQUIRED)
-    def create_data(self, jenis_parameter, excel_id, inputs, user_id, name):
+    def create_data(self, jenis_parameter, excel_id, inputs, user_id, name, is_perfomance_test, performace_test_weight):
 
         # Check connection to Excel Server
         try:
             res = requests.get(f"{config.WINDOWS_EFFICIENCY_APP_API}", timeout=5)
             res.raise_for_status()  # Raise an error if the API request fails
-        except requests.exceptions.RequestException as e:
+        except Exception as e:
             raise exceptions.InternalServerError("Failed to connect to Excel Server")
 
         excel = excel_repository.get_by_uuid(excel_id)
@@ -109,6 +130,8 @@ class DataController(BaseController[EfficiencyTransaction]):
                 "excel_id": excel_id,
                 "created_by": user_id,
                 "sequence": data_repository.get_daily_increment(),
+                "is_perfomance_test": is_perfomance_test,
+                "performance_test_weight": performace_test_weight,
             }
         )
 
@@ -302,10 +325,9 @@ class DataController(BaseController[EfficiencyTransaction]):
             data_repository.create_bulk(transaction_records)
 
         Cache.remove_by_prefix("get_data_paginated")
-        
+
         return transaction
-    
-    
+
     def get_newest_data(self):
         return self.data_repository.get_newest_data()
 
