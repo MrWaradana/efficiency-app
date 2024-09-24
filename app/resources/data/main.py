@@ -34,7 +34,7 @@ class DataListResource(Resource):
         Argument("end_date", location="args", type=str, required=False, default=None),
         Argument("is_performance_test", location="args", type=bool, required=False, default=False),
     )
-    def get(self, user_id, page, size, all, start_date, end_date, is_perfomance_test):
+    def get(self, user_id, page, size, all, start_date, end_date, is_performance_test):
         test = PFICategory.query.all()
         
         
@@ -78,10 +78,10 @@ class DataListResource(Resource):
         Argument("performance_test_weight", location="json", required=False, type=int, default=100),
     )
     @token_required
-    def post(self, jenis_parameter, excel_id, inputs, user_id, name, is_perfomance_test, performace_test_weight):
+    def post(self, jenis_parameter, excel_id, inputs, user_id, name, is_performance_test, performance_test_weight):
 
         data = data_controller.create_data(
-            jenis_parameter, excel_id, inputs, user_id, name, is_perfomance_test, performace_test_weight
+            jenis_parameter, excel_id, inputs, user_id, name, is_performance_test, performance_test_weight
         )
 
         return response(
