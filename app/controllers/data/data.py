@@ -55,7 +55,7 @@ class DataController(BaseController[EfficiencyTransaction]):
         end_date = datetime.strptime(end_date, "%Y-%m-%d").date() if end_date else None
 
         # Build the query based on the date range
-        query = self.data_repository.get_query(start_date=start_date, end_date=end_date, is_perfomance_test=False)
+        query = self.data_repository.get_query(start_date=start_date, end_date=end_date, is_performance_test=False)
 
         # Get the total count of records
         count = data_repository._count(query)
@@ -86,7 +86,7 @@ class DataController(BaseController[EfficiencyTransaction]):
         end_date = datetime.strptime(end_date, "%Y-%m-%d").date() if end_date else None
 
         # Build the query based on the date range
-        query = self.data_repository.get_query(start_date=start_date, end_date=end_date, is_perfomance_test=True)
+        query = self.data_repository.get_query(start_date=start_date, end_date=end_date, is_performance_test=True)
 
         # Get the total count of records
         count = data_repository._count(query)
@@ -97,7 +97,7 @@ class DataController(BaseController[EfficiencyTransaction]):
         return paginated_option, items
 
     @Transactional(propagation=Propagation.REQUIRED)
-    def create_data(self, jenis_parameter, excel_id, inputs, user_id, name, is_perfomance_test, performace_test_weight):
+    def create_data(self, jenis_parameter, excel_id, inputs, user_id, name, is_performance_test, performace_test_weight):
 
         # Check connection to Excel Server
         try:
@@ -130,7 +130,7 @@ class DataController(BaseController[EfficiencyTransaction]):
                 "excel_id": excel_id,
                 "created_by": user_id,
                 "sequence": data_repository.get_daily_increment(),
-                "is_perfomance_test": is_perfomance_test,
+                "is_performance_test": is_performance_test,
                 "performance_test_weight": performace_test_weight,
             }
         )

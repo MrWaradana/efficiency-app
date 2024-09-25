@@ -41,7 +41,7 @@ class DataListResource(Resource):
         # Apply pagination
         data = data_controller.paginated_list_data(
             page, size, all, start_date, end_date
-        ) if not is_perfomance_test else data_controller.paginated_performance_test_data(page, size, all, start_date, end_date, is_perfomance_test)
+        ) if not is_performance_test else data_controller.paginated_performance_test_data(page, size, all, start_date, end_date)
         return response(
             200,
             True,
