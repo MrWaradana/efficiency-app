@@ -1,3 +1,4 @@
+from digital_twin_migration.models.pfi_app import PFICategory, PFIEquipment
 from datetime import datetime
 
 import requests
@@ -21,8 +22,6 @@ data_schema = EfficiencyTransactionSchema(exclude=["efficiency_transaction_detai
 data_schema_with_rel = EfficiencyTransactionSchema()
 data_repository = DataRepository(EfficiencyTransaction)
 
-from digital_twin_migration.models.pfi_app import PFICategory, PFIEquipment
-
 
 class DataListResource(Resource):
     """
@@ -39,9 +38,9 @@ class DataListResource(Resource):
         Argument(
             "is_performance_test",
             location="args",
-            type=bool,
+            type=int,
             required=False,
-            default=False,
+            default=0,
         ),
     )
     def get(self, user_id, page, size, all, start_date, end_date, is_performance_test):
