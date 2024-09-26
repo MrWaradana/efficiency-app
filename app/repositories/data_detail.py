@@ -79,6 +79,7 @@ class DataDetailRepository(BaseRepository[EfficiencyDataDetail]):
                 and_(
                     EfficiencyTransaction.jenis_parameter == ("target" if is_target else "kpi"),
                     Variable.input_name == nphr_input_name,
+                    EfficiencyDataDetail.nilai.isnot(None),
                 )
             )
 

@@ -6,6 +6,8 @@ from app.controllers.excels import excel_controller
 from core.security import token_required
 from core.utils import parse_params, response
 
+from digital_twin_migration.models.pfi_app import PFIEquipment
+
 excel_schema = ExcelSchema()
 
 class ExcelsResource(Resource):

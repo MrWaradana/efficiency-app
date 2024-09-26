@@ -7,7 +7,6 @@ from digital_twin_migration.models.efficiency_app import (
     EfficiencyDataDetail, EfficiencyTransaction)
 
 
-
 from app.repositories import DataRepository
 from app.controllers.excels import excel_repository
 from app.resources.variable.variable import variable_repository
@@ -97,7 +96,7 @@ class DataController(BaseController[EfficiencyTransaction]):
         return paginated_option, items
 
     @Transactional(propagation=Propagation.REQUIRED)
-    def create_data(self, jenis_parameter, excel_id, inputs, user_id, name, is_performance_test, performace_test_weight):
+    def create_data(self, jenis_parameter, excel_id, inputs, user_id, name, is_performance_test, performance_test_weight):
 
         # Check connection to Excel Server
         try:
@@ -131,7 +130,7 @@ class DataController(BaseController[EfficiencyTransaction]):
                 "created_by": user_id,
                 "sequence": data_repository.get_daily_increment(),
                 "is_performance_test": is_performance_test,
-                "performance_test_weight": performace_test_weight,
+                "performance_test_weight": performance_test_weight,
             }
         )
 
@@ -169,10 +168,9 @@ class DataController(BaseController[EfficiencyTransaction]):
         # Send the input data to the Windows Efficiency API
         try:
             res = requests.post(
-                f"{config.WINDOWS_EFFICIENCY_APP_API}/{excel}",
+                f"{config.WINDOWS_EFFICIENCY_APP_API}/excels",
                 json={"inputs": input_data},
             )
-            res.raise_for_status()  # Raise an error if the API request fails
         except requests.exceptions.RequestException as e:
             # Handle error, e.g., logging or retry mechanism
             print(f"API request failed: {e}")
@@ -185,11 +183,11 @@ class DataController(BaseController[EfficiencyTransaction]):
         for variable_title, input_value in outputs["data"].items():
             variable_id = get_key_by_value(variable_mappings, variable_title)
             value_float, value_string = None, None
-
             try:
-                value_float = float(input_value)
-                if config.ENVIRONMENT == EnvironmentType.DEVELOPMENT:
-                    value_float -= random.uniform(0.5, 7.5)
+                if input_value is not None:
+                    value_float = float(input_value)
+                # if config.ENVIRONMENT == EnvironmentType.DEVELOPMENT:
+                #     value_float -= random.uniform(0.5, 7.5)
 
             except ValueError:
                 value_string = value
