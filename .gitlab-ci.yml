@@ -1,0 +1,15 @@
+variables:
+  SSH_HOST: "192.168.1.51"
+  SSH_USER: "aimo"
+  SSH_PORT: "23"  # Default SSH port
+
+stages:
+  - test
+
+test_ssh_connection:
+  stage: test
+  script:
+    - mkdir -p ~/.ssh
+    - echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
+    - chmod 600 ~/.ssh/id_rsa
+    - ssh -p $SSH_PORT -o StrictHostKeyChecking=no $SSH_USER@$SSH_HOST "echo 'SSH connection successful!'"
