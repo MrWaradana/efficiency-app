@@ -170,3 +170,12 @@ class DataResource(Resource):
         return response(
             200, True, "Transaction updated successfully", data_schema.dump(data)
         )
+
+class DataOutputResource(Resource):
+    @parse_params(
+        Argument("outputs", type=dict, required=True),
+        Argument("unique_id", type=str, required=True),
+    )
+    def post(self, outputs, unique_id):
+        data = data_controller.create_data_output(outputs, unique_id)
+        return response(200, True, "Data retrieved successfully")

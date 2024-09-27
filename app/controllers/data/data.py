@@ -1,5 +1,6 @@
 import random
 from datetime import datetime
+import time
 
 import requests
 from digital_twin_migration.database import Propagation, Transactional
@@ -121,6 +122,10 @@ class DataController(BaseController[EfficiencyTransaction]):
         input_data = {}
         transaction_records = []
 
+        # Create Unique string for data transacntion identifier for execelAPI
+        timestamp = int(time.time())
+        unique_id = f"{name}_{timestamp}"
+
         # Create a new parent transaction
         transaction_parent = data_repository.create(
             {
@@ -131,6 +136,7 @@ class DataController(BaseController[EfficiencyTransaction]):
                 "sequence": data_repository.get_daily_increment(),
                 "is_performance_test": is_performance_test,
                 "performance_test_weight": performance_test_weight,
+                "unique_id": unique_id,
             }
         )
 
@@ -163,12 +169,17 @@ class DataController(BaseController[EfficiencyTransaction]):
                         efficiency_transaction_id=transaction_parent.id,
                         created_by=user_id,
                     )
+        
                 )
+        
 
+        data_repository.create_bulk(transaction_records)
+        
+        
         # Send the input data to the Windows Efficiency API
         try:
             res = requests.post(
-                f"{config.WINDOWS_EFFICIENCY_APP_API}/excels",
+                f"{config.WINDOWS_EFFICIENCY_APP_API}/excels/{unique_id}",
                 json={"inputs": input_data},
             )
         except requests.exceptions.RequestException as e:
@@ -205,12 +216,59 @@ class DataController(BaseController[EfficiencyTransaction]):
         #         )
 
         # Bulk create the transaction records
-        data_repository.create_bulk(transaction_records)
+        
 
         # Fetch data again for cahche
         Cache.remove_by_prefix("get_data_paginated")
 
         return transaction_parent.id
+
+    def create_data_output(self, outputs, unique_id):
+        # Get Data based on uniqueId
+        transaction = data_repository.get_by_unique_id(unique_id)
+        transaction_records = []
+
+        excel = excel_repository.get_all()[0]
+
+        if not excel:
+            raise exceptions.NotFound("Excel not found")
+
+        variables = variable_repository.get_by_excel_id(excel.id)
+
+        variable_mappings = {
+            str(var.id): {"name": var.input_name, "category": var.category}
+            for var in variables
+        }
+
+        # Iterate over the output data
+        for variable_title, input_value in outputs.items():
+            variable_id = get_key_by_value(variable_mappings, variable_title)
+            value_float, value_string = None, None
+            try:
+                if input_value is not None:
+                    value_float = float(input_value)
+                # if config.ENVIRONMENT == EnvironmentType.DEVELOPMENT:
+                #     value_float -= random.uniform(0.5, 7.5)
+
+            except ValueError:
+                value_string = input_value
+
+            if variable_id:
+                # Create a new transaction record with the output value and associated variable ID
+                transaction_records.append(
+                    EfficiencyDataDetail(
+                        variable_id=variable_id,
+                        efficiency_transaction_id=transaction.id,
+                        nilai=value_float,
+                        nilai_string=value_string,
+                        created_by=transaction.created_by,
+                    )
+                )
+                
+        # Bulk create the transaction records
+        data_repository.create_bulk(transaction_records)
+        
+        return transaction.id
 
     @Transactional(propagation=Propagation.REQUIRED)
     def delete_data(self, transaction_id):

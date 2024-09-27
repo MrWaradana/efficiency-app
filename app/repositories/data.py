@@ -44,6 +44,9 @@ class DataRepository(BaseRepository[EfficiencyTransaction]):
             return 1
         else:
             return max_increment + 1
+        
+    def get_by_unique_id(self, unique_id):
+        return self.model_class.query.filter_by(unique_id=unique_id).first()
 
     def get_query(
         self, start_date, end_date, join_: set[str] | None = None, **kwargs
