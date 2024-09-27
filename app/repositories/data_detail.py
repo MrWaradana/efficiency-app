@@ -12,7 +12,7 @@ from sqlalchemy.orm import joinedload
 
 from core.repository import BaseRepository
 from core.config import config
-
+from werkzeug import exceptions
 
 
 class DataDetailRepository(BaseRepository[EfficiencyDataDetail]):
@@ -49,6 +49,7 @@ class DataDetailRepository(BaseRepository[EfficiencyDataDetail]):
             and_(
                 EfficiencyDataDetail.efficiency_transaction_id == data_id,
                 Variable.in_out == "out",
+                Variable.is_pareto == True,
             )
         ).all()
 
@@ -56,8 +57,12 @@ class DataDetailRepository(BaseRepository[EfficiencyDataDetail]):
             and_(
                 EfficiencyTransaction.jenis_parameter == "target",
                 Variable.in_out == "out",
+                Variable.is_pareto == True,
             )
         ).all()
+        
+        if not target_query:
+            raise exceptions.NotFound("Target data not found")
 
         target_mapping = {item.variable_id: item for item, total_cost in target_query}
 

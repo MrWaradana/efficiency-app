@@ -42,11 +42,11 @@ class VariablesResource(Resource):
             return response(404, False, "Excel not found")
 
         variables = variable_repository.get_by_multiple(
-            attributes={"excel_id": excel_id, "is_pareto": True, "in_out": type}
+            attributes={"excel_id": excel_id, "in_out": type}
         )
 
         variables_base_case = [
-            {**variable_schema.dump(variable), "base_case": random.randint(7, 20)}
+            {**variable_schema.dump(variable), "base_case": "N/A" if not variable.web_id else random.randint(7, 20)}
             for variable in variables
         ]
 
@@ -56,7 +56,6 @@ class VariablesResource(Resource):
             "Variables retrieved successfully",
             variables_base_case,
         )
-
 
     @token_required
     @parse_params(
@@ -152,3 +151,31 @@ class VariableResource(Resource):
         variable_repository.update(variable, {"updated_by": user_id, **inputs})
 
         return response(200, True, "Variable updated successfully")
+
+
+class VariableDataAddResource(Resource):
+    @token_required
+    @Transactional(propagation=Propagation.REQUIRED)
+    def get(self, user_id: str) -> Response:
+
+        data = fetch_data_from_api(f"{config.WINDOWS_EFFICIENCY_APP_API}/excels?type=all")
+        excel = "5c220f24-b7e4-410a-b52e-8ffe25047fb6"
+
+        variables_record = [Variable(
+            excel_id=excel,
+            category=variable['category'],
+            input_name=variable['short_name'],
+            excel_variable_name=variable['excel_name'],
+            satuan=variable['unit'],
+            is_pareto=True if (variable['type'] == 'out' and variable['short_name']) else False,
+            in_out=variable['type'],
+            is_nphr=variable['is_nphr'],
+            is_over_haul=variable['is_overhaul'],
+            web_id=variable['webId'],
+            created_by=user_id
+
+        ) for variable in data['data']]
+
+        variable_repository.create_bulk(variables_record)
+
+        return response(200, True, "Data add to DB")

@@ -1,3 +1,3 @@
-from .variable import VariableResource, VariablesResource
+from .variable import VariableResource, VariablesResource, VariableDataAddResource
 from .variable_causes import VariableCauseResource, VariableCausesResource
 from .variable_headers import VariableHeaderResource, VariableHeadersResource

@@ -176,33 +176,33 @@ class DataController(BaseController[EfficiencyTransaction]):
             print(f"API request failed: {e}")
             return response(500, False, "Failed to create transaction")
 
-        # Get the output data from the API response
-        outputs = res.json()
+        # # Get the output data from the API response
+        # outputs = res.json()
 
-        # Iterate over the output data
-        for variable_title, input_value in outputs["data"].items():
-            variable_id = get_key_by_value(variable_mappings, variable_title)
-            value_float, value_string = None, None
-            try:
-                if input_value is not None:
-                    value_float = float(input_value)
-                # if config.ENVIRONMENT == EnvironmentType.DEVELOPMENT:
-                #     value_float -= random.uniform(0.5, 7.5)
+        # # Iterate over the output data
+        # for variable_title, input_value in outputs["data"].items():
+        #     variable_id = get_key_by_value(variable_mappings, variable_title)
+        #     value_float, value_string = None, None
+        #     try:
+        #         if input_value is not None:
+        #             value_float = float(input_value)
+        #         # if config.ENVIRONMENT == EnvironmentType.DEVELOPMENT:
+        #         #     value_float -= random.uniform(0.5, 7.5)
 
-            except ValueError:
-                value_string = value
+        #     except ValueError:
+        #         value_string = value
 
-            if variable_id:
-                # Create a new transaction record with the output value and associated variable ID
-                transaction_records.append(
-                    EfficiencyDataDetail(
-                        variable_id=variable_id,
-                        efficiency_transaction_id=transaction_parent.id,
-                        nilai=value_float,
-                        nilai_string=value_string,
-                        created_by=user_id,
-                    )
-                )
+        #     if variable_id:
+        #         # Create a new transaction record with the output value and associated variable ID
+        #         transaction_records.append(
+        #             EfficiencyDataDetail(
+        #                 variable_id=variable_id,
+        #                 efficiency_transaction_id=transaction_parent.id,
+        #                 nilai=value_float,
+        #                 nilai_string=value_string,
+        #                 created_by=user_id,
+        #             )
+        #         )
 
         # Bulk create the transaction records
         data_repository.create_bulk(transaction_records)

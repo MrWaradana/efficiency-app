@@ -9,6 +9,8 @@ from app.resources import (VariableCauseResource, VariableCausesResource,
                            VariableHeaderResource, VariableHeadersResource,
                            VariableResource, VariablesResource)
 
+from app.resources.variable import VariableDataAddResource
+
 VARIABLES_BLUEPRINT = Blueprint("variables", __name__)
 
 Api(VARIABLES_BLUEPRINT).add_resource(VariablesResource, "/variables")
@@ -27,3 +29,5 @@ Api(VARIABLES_BLUEPRINT).add_resource(
 Api(VARIABLES_BLUEPRINT).add_resource(
     VariableCauseResource, "/variables/<variable_id>/causes/<cause_id>"
 )
+
+Api(VARIABLES_BLUEPRINT).add_resource(VariableDataAddResource, "/variables/data")
