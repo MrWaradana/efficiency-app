@@ -74,7 +74,7 @@ class VariablesResource(Resource):
         
         data = requests.get(f"https://10.47.0.54/piwebapi/streams/F1DPw1kUu10ziUaXEx2rIyo4pAXQ0AAAS1RKQi1LSTAwLVBJMVxUSkIzLkhQIEZXIEhUUiA3IElOTCBFWFRSU1RNIFBSRVNT/value", auth=(username, password), verify=False).json()
         
-        raise Exception(data) 
+        raise Exception(data.Value) 
 
         variables_base_case = [
             {**variable_schema.dump(variable),
