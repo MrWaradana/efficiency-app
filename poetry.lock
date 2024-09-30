@@ -554,7 +554,7 @@ dev = ["Sphinx (>=4.3.0,<7.1.0)", "black (>=23.0,<24.0)", "build", "furo (==2023
 type = "git"
 url = "https://github.com/Cizz22/digital-twin-migration"
 reference = "HEAD"
-resolved_reference = "01ed643c2e865bac65f3419d99af09fd790443ea"
+resolved_reference = "1d51625f1092e191bc85b8682d20e0ca0700a228"
 
 [[package]]
 name = "exceptiongroup"

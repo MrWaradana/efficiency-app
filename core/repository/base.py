@@ -91,9 +91,9 @@ class BaseRepository(Generic[ModelType]):
 
     def get_by_multiple(
         self,
+        attributes: dict[str, Any] = None,
         join_: set[str] | None = None,
         unique: bool = False,
-        attributes: dict[str, Any] = None,
     ):
         if attributes is None:
             attributes = {}
@@ -104,7 +104,7 @@ class BaseRepository(Generic[ModelType]):
         if join_ is not None:
             return self.all_unique(query)
         if unique:
-            return self._one(query)
+            return self._first(query)
 
         return self._all(query)
 

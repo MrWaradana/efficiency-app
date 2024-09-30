@@ -45,8 +45,17 @@ class VariablesResource(Resource):
             attributes={"excel_id": excel_id, "in_out": type}
         )
 
+        # variables_base_case = [
+        #     {**variable_schema.dump(variable),
+        #     "base_case": "N/A" if not variable.web_id else random.randint(7, 20)
+
+        #     } for variable in variables
+        # ]
+
         variables_base_case = [
-            {**variable_schema.dump(variable), "base_case": "N/A" if not variable.web_id else random.randint(7, 20)}
+            {**variable_schema.dump(variable),
+             "base_case": variable.konstanta if variable.konstanta else
+             (f"https://10.47.0.54/piwebapi/streams/{variable.web_id}/value" if variable.web_id else "N/A")}
             for variable in variables
         ]
 
@@ -158,24 +167,51 @@ class VariableDataAddResource(Resource):
     @Transactional(propagation=Propagation.REQUIRED)
     def get(self, user_id: str) -> Response:
 
-        data = fetch_data_from_api(f"{config.WINDOWS_EFFICIENCY_APP_API}/excels?type=all")
+        data = fetch_data_from_api(f"http://localhost:8001/excels?type=all")
         excel = "5c220f24-b7e4-410a-b52e-8ffe25047fb6"
 
-        variables_record = [Variable(
-            excel_id=excel,
-            category=variable['category'],
-            input_name=variable['short_name'],
-            excel_variable_name=variable['excel_name'],
-            satuan=variable['unit'],
-            is_pareto=True if (variable['type'] == 'out' and variable['short_name']) else False,
-            in_out=variable['type'],
-            is_nphr=variable['is_nphr'],
-            is_over_haul=variable['is_overhaul'],
-            web_id=variable['webId'],
-            created_by=user_id
+        variables_record = []
 
-        ) for variable in data['data']]
+        variables = variable_repository.get_by_multiple({"excel_id": excel})
 
+        variables_mapping = {
+            variable.excel_variable_name: variable
+            for variable in variables
+        }
+
+        for item in data['data']:
+            # Check if data already in db
+
+            variable = variables_mapping.get(item['excel_name'])
+
+            if not variable:
+                variables_record.append(Variable(
+                    excel_id=excel,
+                    category=item['category'],
+                    input_name=item['short_name'],
+                    excel_variable_name=item['excel_name'],
+                    satuan=item['unit'],
+                    is_pareto=True if (item['type'] == 'out' and item['short_name']) else False,
+                    in_out=item['type'],
+                    is_nphr=item['is_nphr'],
+                    is_over_haul=item['is_overhaul'],
+                    web_id=item['webId'],
+                    created_by=user_id)
+                )
+            else:
+                # Update dat
+                variable.in_out = item['type']
+                variable.is_pareto = True if (item['type'] == 'out' and item['short_name']) else False
+                variable.is_nphr = item['is_nphr']
+                variable.is_over_haul = item['is_overhaul']
+                variable.web_id = item['webId']
+                variable.updated_by = user_id
+                variable.category = item['category']
+                variable.input_name = item['short_name']
+                variable.excel_variable_name = item['excel_name']
+                variable.satuan = item['unit']
+
+        # Add new variables to db
         variable_repository.create_bulk(variables_record)
 
         return response(200, True, "Data add to DB")

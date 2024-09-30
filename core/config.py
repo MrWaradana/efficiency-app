@@ -48,6 +48,7 @@ class Config:
     WINDOWS_EFFICIENCY_APP_API = os.getenv("WINDOWS_EFFICIENCY_APP_API")
     AUTH_SERVICE_API = os.getenv("AUTH_SERVICE_API")
     NPHR_VARIABLE_NAME = "Plant net heat rate (HHV)"
+    EXCEL_DATA_API = os.getenv("EXCEL_DATA_API")
 
 
 logging.basicConfig(
