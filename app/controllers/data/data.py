@@ -161,7 +161,7 @@ class DataController(BaseController[EfficiencyTransaction]):
                 transaction_records.append(
                     EfficiencyDataDetail(
                         variable_id=key,
-                        nilai=float(value) if value != "N/A" else value,
+                        nilai=float(value) if value != "N/A" else None,
                         nilai_string=None,
                         efficiency_transaction_id=transaction_parent.id,
                         created_by=user_id,
