@@ -97,13 +97,12 @@ class DataController(BaseController[EfficiencyTransaction]):
         return paginated_option, items
 
     @Transactional(propagation=Propagation.REQUIRED)
-    def create_data(self, jenis_parameter, excel_id, inputs, user_id, name, is_performance_test, performance_test_weight):
+    def create_data(self, jenis_parameter, excel_id, inputs, user_id, name:str, is_performance_test, performance_test_weight):
 
         # Check connection to Excel Server
         try:
-            res = requests.get(f"{config.WINDOWS_EFFICIENCY_APP_API}", timeout=5)
-            res.raise_for_status()  # Raise an error if the API request fails
-        except Exception as e:
+            res = requests.get(f"{config.WINDOWS_EFFICIENCY_APP_API}", timeout=2)
+        except requests.exceptions.RequestException:
             raise exceptions.InternalServerError("Failed to connect to Excel Server")
 
         excel = excel_repository.get_by_uuid(excel_id)
@@ -114,7 +113,7 @@ class DataController(BaseController[EfficiencyTransaction]):
         variables = variable_repository.get_by_excel_id(excel_id)
 
         variable_mappings = {
-            str(var.id): {"name": var.input_name, "category": var.category}
+            str(var.id): {"name": var.excel_variable_name}
             for var in variables
         }
 
@@ -124,7 +123,7 @@ class DataController(BaseController[EfficiencyTransaction]):
 
         # Create Unique string for data transacntion identifier for execelAPI
         timestamp = int(time.time())
-        unique_id = f"{name}_{timestamp}"
+        unique_id = f"{name.replace(" ", "-")}_{timestamp}"
 
         # Create a new parent transaction
         transaction_parent = data_repository.create(
@@ -139,6 +138,8 @@ class DataController(BaseController[EfficiencyTransaction]):
                 "unique_id": unique_id,
             }
         )
+        
+        
 
         # Get the filename of the Excel file associated with the transaction
         excel = excel_repository.get_by_uuid(excel_id).excel_filename
@@ -151,11 +152,7 @@ class DataController(BaseController[EfficiencyTransaction]):
             if variable_input:
 
                 # Construct the variable string based on the category and name of the variable
-                variable_string = (
-                    f"{variable_input['category']}: {variable_input['name']}"
-                    if variable_input["category"]
-                    else variable_input["name"]
-                )
+                variable_string = variable_input["name"]
 
                 # Add the input value to the input_data dictionary with the variable string as the key
                 input_data[variable_string] = value
@@ -174,7 +171,7 @@ class DataController(BaseController[EfficiencyTransaction]):
         
 
         data_repository.create_bulk(transaction_records)
-        
+
         
         # Send the input data to the Windows Efficiency API
         try:
@@ -186,6 +183,8 @@ class DataController(BaseController[EfficiencyTransaction]):
             # Handle error, e.g., logging or retry mechanism
             print(f"API request failed: {e}")
             return response(500, False, "Failed to create transaction")
+        
+        
 
         # # Get the output data from the API response
         # outputs = res.json()
@@ -223,12 +222,15 @@ class DataController(BaseController[EfficiencyTransaction]):
 
         return transaction_parent.id
 
+    @Transactional(propagation=Propagation.REQUIRED)    
     def create_data_output(self, outputs, unique_id):
         # Get Data based on uniqueId
         transaction = data_repository.get_by_unique_id(unique_id)
         transaction_records = []
+        
 
         excel = excel_repository.get_all()[0]
+        
 
         if not excel:
             raise exceptions.NotFound("Excel not found")
@@ -236,7 +238,7 @@ class DataController(BaseController[EfficiencyTransaction]):
         variables = variable_repository.get_by_excel_id(excel.id)
 
         variable_mappings = {
-            str(var.id): {"name": var.input_name, "category": var.category}
+            str(var.id): {"name": var.excel_variable_name}
             for var in variables
         }
 

@@ -31,9 +31,7 @@ def get_key_by_value(variable_mapping, value):
 
     for key, val in variable_mapping.items():
 
-        variable_string = (
-            f"{val['category']}: {val['name']}" if val["category"] else val["name"]
-        )
+        variable_string = val["name"]
 
         if variable_string == value:
             return key
