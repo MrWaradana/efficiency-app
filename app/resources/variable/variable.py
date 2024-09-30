@@ -71,11 +71,15 @@ class VariablesResource(Resource):
 
         #     } for variable in variables
         # ]
+        
+        data = requests.get(f"https://10.47.0.54/piwebapi/streams/F1DPw1kUu10ziUaXEx2rIyo4pAXQ0AAAS1RKQi1LSTAwLVBJMVxUSkIzLkhQIEZXIEhUUiA3IElOTCBFWFRSU1RNIFBSRVNT/value", auth=(username, password), verify=False).json()
+        
+        raise Exception(data) 
 
         variables_base_case = [
             {**variable_schema.dump(variable),
              "base_case": variable.konstanta if variable.konstanta else
-             (requests.get(f"https://10.47.0.54/piwebapi/streams/{variable.web_id}/value", auth=(username, password), verify=False).json()['Value'] if (is_connected_to_pi and variable.web_id and variable.web_id != "Not used") else "N/A")}
+             (requests.get(f"https://10.47.0.54/piwebapi/streams/F1DPw1kUu10ziUaXEx2rIyo4pAXQ0AAAS1RKQi1LSTAwLVBJMVxUSkIzLkhQIEZXIEhUUiA3IElOTCBFWFRSU1RNIFBSRVNT/value", auth=(username, password), verify=False).json()['Value'] if (is_connected_to_pi and variable.web_id and variable.web_id != "Not used") else "N/A")}
             for variable in variables
         ]
 
