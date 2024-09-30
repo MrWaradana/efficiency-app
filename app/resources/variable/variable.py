@@ -40,8 +40,13 @@ class VariablesResource(Resource):
         # Cek Koneksi Ke PI Server
         is_connected_to_pi = False
         
+        # Define your credentials
+        # Define your credentials
+        username = 'tjb.piwebapi'
+        password = 'PLNJepara@2024'
+        
         try:
-            res = requests.get(f"https://10.47.0.54", timeout=2)
+            res = requests.get(f"https://10.47.0.54/piwebapi",auth=(username, password) ,timeout=2, verify=False)
             
             if res.status_code == 200:
                 is_connected_to_pi = True
@@ -70,7 +75,7 @@ class VariablesResource(Resource):
         variables_base_case = [
             {**variable_schema.dump(variable),
              "base_case": variable.konstanta if variable.konstanta else
-             (requests.get(f"https://10.47.0.54/piwebapi/streams/{variable.web_id}/value").json() if (is_connected_to_pi and variable.web_id and variable.web_id != "Not used") else "N/A")}
+             (requests.get(f"https://10.47.0.54/piwebapi/streams/{variable.web_id}/value", auth=(username, password), verify=False).json().Value if (is_connected_to_pi and variable.web_id and variable.web_id != "Not used") else "N/A")}
             for variable in variables
         ]
 
