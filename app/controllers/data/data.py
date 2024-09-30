@@ -123,7 +123,7 @@ class DataController(BaseController[EfficiencyTransaction]):
 
         # Create Unique string for data transacntion identifier for execelAPI
         timestamp = int(time.time())
-        unique_id = f"{name.replace(" ", "-")}_{timestamp}"
+        unique_id = f"{name.replace(' ', '-')}_{timestamp}"
 
         # Create a new parent transaction
         transaction_parent = data_repository.create(
