@@ -75,7 +75,7 @@ class VariablesResource(Resource):
         variables_base_case = [
             {**variable_schema.dump(variable),
              "base_case": variable.konstanta if variable.konstanta else
-             (requests.get(f"https://10.47.0.54/piwebapi/streams/{variable.web_id}/value", auth=(username, password), verify=False).json().Value if (is_connected_to_pi and variable.web_id and variable.web_id != "Not used") else "N/A")}
+             (requests.get(f"https://10.47.0.54/piwebapi/streams/{variable.web_id}/value", auth=(username, password), verify=False).json()['Value'] if (is_connected_to_pi and variable.web_id and variable.web_id != "Not used") else "N/A")}
             for variable in variables
         ]
 
