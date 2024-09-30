@@ -16,7 +16,8 @@ from core.config import config
 from core.security.jwt_verif import token_required
 from core.utils import parse_params, response
 from core.utils.util import fetch_data_from_api
-
+import requests
+from werkzeug import exceptions
 variable_schema = VariableSchema()
 variable_repository = VariablesRepository(Variable)
 
@@ -35,6 +36,20 @@ class VariablesResource(Resource):
     )
     def get(self, excel_id: str, type: str, user_id) -> Response:
         """Retrieve all variable from API based on EXCEL NAME"""
+
+        # Cek Koneksi Ke PI Server
+        is_connected_to_pi = False
+        
+        try:
+            res = requests.get(f"https://10.47.0.54", timeout=2)
+            
+            if res.status_code == 200:
+                is_connected_to_pi = True
+            
+        except requests.exceptions.RequestException:
+            is_connected_to_pi = False
+
+
         excel = excel_repository.get_by_uuid(excel_id)
 
         if not excel:
@@ -55,7 +70,7 @@ class VariablesResource(Resource):
         variables_base_case = [
             {**variable_schema.dump(variable),
              "base_case": variable.konstanta if variable.konstanta else
-             (f"https://10.47.0.54/piwebapi/streams/{variable.web_id}/value" if variable.web_id else "N/A")}
+             (requests.get(f"https://10.47.0.54/piwebapi/streams/{variable.web_id}/value").json() if (is_connected_to_pi and variable.web_id and variable.web_id != "Not used") else "N/A")}
             for variable in variables
         ]
 
@@ -196,7 +211,9 @@ class VariableDataAddResource(Resource):
                     is_nphr=item['is_nphr'],
                     is_over_haul=item['is_overhaul'],
                     web_id=item['webId'],
-                    created_by=user_id)
+                    created_by=user_id,
+                    konsanta=item['constant']
+                )
                 )
             else:
                 # Update dat
@@ -210,6 +227,7 @@ class VariableDataAddResource(Resource):
                 variable.input_name = item['short_name']
                 variable.excel_variable_name = item['excel_name']
                 variable.satuan = item['unit']
+                variable.konstanta = item['constant']
 
         # Add new variables to db
         variable_repository.create_bulk(variables_record)
