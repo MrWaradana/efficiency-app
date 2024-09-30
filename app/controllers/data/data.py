@@ -110,7 +110,7 @@ class DataController(BaseController[EfficiencyTransaction]):
         if not excel:
             raise exceptions.NotFound("Excel not found")
 
-        variables = variable_repository.get_by_excel_id(excel_id)
+        variables = variable_repository.get_by_excel_id(excel_id, "in")
 
         variable_mappings = {
             str(var.id): {"name": var.excel_variable_name}
@@ -235,7 +235,7 @@ class DataController(BaseController[EfficiencyTransaction]):
         if not excel:
             raise exceptions.NotFound("Excel not found")
 
-        variables = variable_repository.get_by_excel_id(excel.id)
+        variables = variable_repository.get_by_excel_id(excel.id, "out")
 
         variable_mappings = {
             str(var.id): {"name": var.excel_variable_name}
