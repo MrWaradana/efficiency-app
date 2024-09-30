@@ -43,7 +43,7 @@ class DataTrendingController(BaseController[EfficiencyTransaction]):
                 pareto.append({
                     "id": current_detail.id,
                     "variable_id": current_detail.variable_id,
-                    "variable_name": current_detail.variable.input_name,
+                    "variable_name": current_detail.variable.excel_variable_name,
                     "variable_category": current_detail.variable.category,
                     "existing_data": current_detail.nilai,
                     "reference_data": target_detail.nilai,
