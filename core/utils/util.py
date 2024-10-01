@@ -1,9 +1,9 @@
 import random
-
+import aiohttp
 import requests
 
 
-def fetch_data_from_api(url):
+def fetch_data_from_api(url, username, password):
     """
     Fetch data from given API endpoint.
 
@@ -25,6 +25,13 @@ def fetch_data_from_api(url):
         return response.json()
     else:
         return None
+
+async def fetch_variable_data(session, url, username, password):
+    async with session.get(url, auth=aiohttp.BasicAuth(username, password), ssl=False) as response:
+        if response.ok:
+            json_response = await response.json()
+            return json_response.get('Value')
+        return "N/A"
 
 
 def get_key_by_value(variable_mapping, value):

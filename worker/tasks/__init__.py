@@ -1,0 +1,1 @@
+from .variable  import fetch_variable_data

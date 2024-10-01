@@ -43,8 +43,8 @@ class Config:
     SECRET_KEY = os.getenv("APPLICATION_SECRET_KEY")
     JWT_ALGORITHM: str = "HS256"
     JWT_EXPIRE_MINUTES: int = 60 * 24
-    CELERY_BROKER_URL: str = "amqp://rabbit:password@localhost:5672"
-    CELERY_BACKEND_URL: str = "redis://localhost:6379/0"
+    CELERY_BROKER_URL: str = "amqp://rabbit:password@192.168.1.51:5672"
+    CELERY_BACKEND_URL: str = "redis://192.168.1.51:6379/0"
     WINDOWS_EFFICIENCY_APP_API = os.getenv("WINDOWS_EFFICIENCY_APP_API")
     AUTH_SERVICE_API = os.getenv("AUTH_SERVICE_API")
     NPHR_VARIABLE_NAME = "Plant net heat rate (HHV)"

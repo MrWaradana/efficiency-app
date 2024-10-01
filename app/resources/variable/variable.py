@@ -18,6 +18,8 @@ from core.utils import parse_params, response
 from core.utils.util import fetch_data_from_api
 import requests
 from werkzeug import exceptions
+from app.controllers.variable import variable_controller
+
 variable_schema = VariableSchema()
 variable_repository = VariablesRepository(Variable)
 
@@ -37,57 +39,13 @@ class VariablesResource(Resource):
     def get(self, excel_id: str, type: str, user_id) -> Response:
         """Retrieve all variable from API based on EXCEL NAME"""
 
-        # Cek Koneksi Ke PI Server
-        is_connected_to_pi = False
+        data = variable_controller.get_all(excel_id, type)
         
-        # Define your credentials
-        # Define your credentials
-        username = 'tjb.piwebapi'
-        password = 'PLNJepara@2024'
-        
-        try:
-            res = requests.get(f"https://10.47.0.54/piwebapi",auth=(username, password) ,timeout=2, verify=False)
-            
-            if res.status_code == 200:
-                is_connected_to_pi = True
-            
-        except requests.exceptions.RequestException:
-            is_connected_to_pi = False
-
-
-        excel = excel_repository.get_by_uuid(excel_id)
-
-        if not excel:
-            print(f"Excel {excel_id} not found")
-            return response(404, False, "Excel not found")
-
-        variables = variable_repository.get_by_multiple(
-            attributes={"excel_id": excel_id, "in_out": type}
-        )
-
-        # variables_base_case = [
-        #     {**variable_schema.dump(variable),
-        #     "base_case": "N/A" if not variable.web_id else random.randint(7, 20)
-
-        #     } for variable in variables
-        # ]
-        
-        data = requests.get(f"https://10.47.0.54/piwebapi/streams/F1DPw1kUu10ziUaXEx2rIyo4pAXQ0AAAS1RKQi1LSTAwLVBJMVxUSkIzLkhQIEZXIEhUUiA3IElOTCBFWFRSU1RNIFBSRVNT/value", auth=(username, password), verify=False).json()
-        
-        raise Exception(data.Value) 
-
-        variables_base_case = [
-            {**variable_schema.dump(variable),
-             "base_case": variable.konstanta if variable.konstanta else
-             (requests.get(f"https://10.47.0.54/piwebapi/streams/F1DPw1kUu10ziUaXEx2rIyo4pAXQ0AAAS1RKQi1LSTAwLVBJMVxUSkIzLkhQIEZXIEhUUiA3IElOTCBFWFRSU1RNIFBSRVNT/value", auth=(username, password), verify=False).json()['Value'] if (is_connected_to_pi and variable.web_id and variable.web_id != "Not used") else "N/A")}
-            for variable in variables
-        ]
-
         return response(
             200,
             True,
             "Variables retrieved successfully",
-            variables_base_case,
+            data,
         )
 
     @token_required

@@ -13,6 +13,13 @@ install:
 run:
 	gunicorn -c gunicorn.py main:app
 
+.PHONY: celery-worker
+celery-worker: ## Start celery worker
+	$(eval include .env)
+	$(eval export $(sh sed 's/=.*//' .env))
+
+	poetry run celery -A worker worker --concurrency=10 --loglevel=info --queues=test-queue
+
 # Run tests
 test:
 	$(POETRY) run pytest
