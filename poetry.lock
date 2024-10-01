@@ -676,7 +676,7 @@ toml = ["tomli"]
 
 [[package]]
 name = "digital-twin-migration"
-version = "1.1.3"
+version = "1.1.5"
 description = ""
 optional = false
 python-versions = ">=3.8"
@@ -690,7 +690,7 @@ dev = ["Sphinx (>=4.3.0,<7.1.0)", "black (>=23.0,<24.0)", "build", "furo (==2023
 type = "git"
 url = "https://github.com/Cizz22/digital-twin-migration"
 reference = "HEAD"
-resolved_reference = "1d51625f1092e191bc85b8682d20e0ca0700a228"
+resolved_reference = "4443e0a57b5fbb43bb7844d012686b5c85025211"
 
 [[package]]
 name = "exceptiongroup"
@@ -918,6 +918,22 @@ files = [
 [package.dependencies]
 flask = ">=2.2.5"
 sqlalchemy = ">=2.0.16"
+
+[[package]]
+name = "flask-sse"
+version = "1.0.0"
+description = "Server-Sent Events for Flask"
+optional = false
+python-versions = "*"
+files = [
+    {file = "Flask-SSE-1.0.0.tar.gz", hash = "sha256:4f84714c2549a45e4f17bfc5f68ee8a9f298b22740a6844404d1c74551f2090d"},
+    {file = "Flask_SSE-1.0.0-py2.py3-none-any.whl", hash = "sha256:f86d7ecff0607333755c444130c395e7a133fb7ae6cf76fbd29b1da36d34776b"},
+]
+
+[package.dependencies]
+flask = ">=0.9"
+redis = "*"
+six = "*"
 
 [[package]]
 name = "flower"
@@ -2780,4 +2796,4 @@ test = ["big-O", "importlib-resources", "jaraco.functools", "jaraco.itertools", 
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.11,<4"
-content-hash = "6a85897f5255e799176566988dd178809f04ed0f15053a6e527447cab182d024"
+content-hash = "729fd71d28a69159652fae35ece4550fd6ea442dda5a56477e5e90d16224ae99"

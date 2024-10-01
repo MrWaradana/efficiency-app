@@ -6,7 +6,7 @@ from typing import Optional
 from digital_twin_migration.database import Propagation, Transactional
 from digital_twin_migration.models import db
 from digital_twin_migration.models.efficiency_app import (
-    EfficiencyDataDetail, EfficiencyTransaction, Variable)
+    EfficiencyDataDetail, EfficiencyTransaction, Variable, ThermoflowStatus)
 from sqlalchemy import Select, and_, func
 from sqlalchemy.orm import contains_eager, joinedload, subqueryload
 from sqlalchemy.orm.query import Query
@@ -44,7 +44,7 @@ class DataRepository(BaseRepository[EfficiencyTransaction]):
             return 1
         else:
             return max_increment + 1
-        
+
     def get_by_unique_id(self, unique_id):
         return self.model_class.query.filter_by(unique_id=unique_id).first()
 
@@ -137,7 +137,10 @@ class DataRepository(BaseRepository[EfficiencyTransaction]):
 
         return query.first()
 
+    def update_thermoflow_status(self, status: bool):
+        thermoflow_status = ThermoflowStatus.query.first()
+        thermoflow_status.is_running = status
+        db.session.commit()
+
     def _join_data_details(self, query: Select) -> Select:
         return query.join(EfficiencyDataDetail)
-    
- 

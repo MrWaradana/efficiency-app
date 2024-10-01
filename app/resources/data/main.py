@@ -6,6 +6,7 @@ from digital_twin_migration.database import Propagation, Transactional
 from digital_twin_migration.models.efficiency_app import (
     EfficiencyDataDetail,
     EfficiencyTransaction,
+    ThermoflowStatus
 )
 from flask_restful import Resource
 from flask_restful.reqparse import Argument
@@ -44,7 +45,9 @@ class DataListResource(Resource):
         ),
     )
     def get(self, user_id, page, size, all, start_date, end_date, is_performance_test):
-        test = PFICategory.query.all()
+        # Get Thermoflow status
+        thermoflow_status = ThermoflowStatus.query.first()
+        
 
         # Apply pagination
         data = (
@@ -59,6 +62,7 @@ class DataListResource(Resource):
             True,
             "Transactions retrieved successfully.",
             {
+                "thermo_status": thermoflow_status.is_running,
                 **data[0],
                 "transactions": [
                     {

@@ -14,6 +14,7 @@ from core.config import config
 from core.exceptions import handle_exception
 from core.schema import ma
 from core.utils import response
+from flask_sse import sse
 
 # Initialize extensions
 migrate = Migrate()
@@ -31,6 +32,7 @@ def create_app():
     app.config["SQLALCHEMY_DATABASE_URI"] = config.DB_URI
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = config.SQLALCHEMY_TRACK_MODIFICATIONS
     app.config["SECRET_KEY"] = config.SECRET_KEY
+    app.config["REDIS_URL"] = config.REDIS_URL
 
     # Bind extensions to the app
     db.init_app(app)
@@ -78,9 +80,14 @@ def create_app():
         # Define your custom error handling logic here
         return handle_exception(e)
 
+    app.register_blueprint(sse, url_prefix="/stream")
+    
     # Register Blueprints
     for blueprint in vars(routes).values():
         if isinstance(blueprint, Blueprint):
             app.register_blueprint(blueprint, url_prefix=config.APPLICATION_ROOT)
 
+    
+
+    
     return app

@@ -21,6 +21,8 @@ from core.utils.formula import calculate_pareto
 from core.factory import data_factory, variable_factory
 from werkzeug import exceptions
 
+from flask_sse import sse
+
 data_repository = data_factory.data_repository
 data_schema = data_factory.exclude_schema(["efficiency_transaction_details"])
 variable_schema = variable_factory.variable_schema
@@ -97,17 +99,20 @@ class DataController(BaseController[EfficiencyTransaction]):
         return paginated_option, items
 
     @Transactional(propagation=Propagation.REQUIRED)
-    def create_data(self, jenis_parameter, excel_id, inputs, user_id, name:str, is_performance_test, performance_test_weight):
+    def create_data(self, jenis_parameter, excel_id, inputs, user_id, name: str, is_performance_test, performance_test_weight):
+        data_repository.update_thermoflow_status(True)
 
         # Check connection to Excel Server
         try:
             res = requests.get(f"{config.WINDOWS_EFFICIENCY_APP_API}", timeout=2)
         except requests.exceptions.RequestException:
+            data_repository.update_thermoflow_status(False)
             raise exceptions.InternalServerError("Failed to connect to Excel Server")
 
         excel = excel_repository.get_by_uuid(excel_id)
 
         if not excel:
+            data_repository.update_thermoflow_status(False)
             raise exceptions.NotFound("Excel not found")
 
         variables = variable_repository.get_by_excel_id(excel_id, "in")
@@ -138,8 +143,6 @@ class DataController(BaseController[EfficiencyTransaction]):
                 "unique_id": unique_id,
             }
         )
-        
-        
 
         # Get the filename of the Excel file associated with the transaction
         excel = excel_repository.get_by_uuid(excel_id).excel_filename
@@ -166,13 +169,11 @@ class DataController(BaseController[EfficiencyTransaction]):
                         efficiency_transaction_id=transaction_parent.id,
                         created_by=user_id,
                     )
-        
+
                 )
-        
 
         data_repository.create_bulk(transaction_records)
 
-        
         # Send the input data to the Windows Efficiency API
         try:
             res = requests.post(
@@ -182,9 +183,8 @@ class DataController(BaseController[EfficiencyTransaction]):
         except requests.exceptions.RequestException as e:
             # Handle error, e.g., logging or retry mechanism
             print(f"API request failed: {e}")
+            data_repository.update_thermoflow_status(False)
             return response(500, False, "Failed to create transaction")
-        
-        
 
         # # Get the output data from the API response
         # outputs = res.json()
@@ -215,24 +215,23 @@ class DataController(BaseController[EfficiencyTransaction]):
         #         )
 
         # Bulk create the transaction records
-        
 
         # Fetch data again for cahche
         Cache.remove_by_prefix("get_data_paginated")
 
         return transaction_parent.id
 
-    @Transactional(propagation=Propagation.REQUIRED)    
+    @Transactional(propagation=Propagation.REQUIRED)
     def create_data_output(self, outputs, unique_id):
         # Get Data based on uniqueId
         transaction = data_repository.get_by_unique_id(unique_id)
         transaction_records = []
-        
 
         excel = excel_repository.get_all()[0]
-        
 
         if not excel:
+            data_repository.update_thermoflow_status(False)
+            sse.publish({"message": "Excel not found on Insert Outputs", "status": False}, type="data_outputs")
             raise exceptions.NotFound("Excel not found")
 
         variables = variable_repository.get_by_excel_id(excel.id, "out")
@@ -266,10 +265,21 @@ class DataController(BaseController[EfficiencyTransaction]):
                         created_by=transaction.created_by,
                     )
                 )
-                
+
         # Bulk create the transaction records
         data_repository.create_bulk(transaction_records)
-        
+        data_repository.update_thermoflow_status(False)
+
+        sse.publish({"message": "Output has been processed", "status": True}, type="data_outputs")
+
+        return transaction.id
+
+    def error_on_thermoflow(self, unique_id, message):
+        transaction = data_repository.get_by_unique_id(unique_id)
+
+        sse.publish({"message": message, "status": False}, type="data_outputs")
+
+        data_repository.update(transaction.id, transaction)
         return transaction.id
 
     @Transactional(propagation=Propagation.REQUIRED)
