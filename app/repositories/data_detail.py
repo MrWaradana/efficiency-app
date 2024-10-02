@@ -83,8 +83,7 @@ class DataDetailRepository(BaseRepository[EfficiencyDataDetail]):
             query = query.filter(
                 and_(
                     EfficiencyTransaction.jenis_parameter == ("target" if is_target else "kpi"),
-                    Variable.input_name == nphr_input_name,
-                    EfficiencyDataDetail.nilai.isnot(None),
+                    Variable.is_nphr == True,
                 )
             )
 
@@ -92,7 +91,7 @@ class DataDetailRepository(BaseRepository[EfficiencyDataDetail]):
             query = query.filter(
                 and_(
                     EfficiencyDataDetail.efficiency_transaction_id == data_id,
-                    Variable.input_name == nphr_input_name,
+                    Variable.is_nphr == True,
                 )
             )
 

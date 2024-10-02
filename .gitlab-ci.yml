@@ -9,9 +9,8 @@ stages:
 test_ssh_connection:
   stage: test
   script:
-    - mkdir -p $HOME/.ssh
-    - echo "$SSH_PRIVATE_KEY" > $HOME/.ssh/id_rsa
-    - chmod 600 $HOME/.ssh/id_rsa
-    - echo "$HOME"
+    - mkdir -p /root/.ssh
+    - echo "$SSH_PRIVATE_KEY" > /root/.ssh/id_rsa
+    - chmod 600 /root/.ssh/id_rsa
     - ssh -o IdentitiesOnly=yes -i $HOME/.ssh/id_rsa -p $SSH_PORT -o StrictHostKeyChecking=no $SSH_USER@$SSH_HOST "echo 'SSH connection successful!'"
 

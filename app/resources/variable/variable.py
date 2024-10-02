@@ -19,6 +19,7 @@ from core.utils.util import fetch_data_from_api
 import requests
 from werkzeug import exceptions
 from app.controllers.variable import variable_controller
+from digital_twin_migration.models.efficiency_app import Excel
 
 variable_schema = VariableSchema()
 variable_repository = VariablesRepository(Variable)
@@ -150,7 +151,7 @@ class VariableDataAddResource(Resource):
     def get(self, user_id: str) -> Response:
 
         data = fetch_data_from_api(f"http://localhost:8001/excels?type=all")
-        excel = "5c220f24-b7e4-410a-b52e-8ffe25047fb6"
+        excel = Excel.query.first().id
 
         variables_record = []
 
@@ -179,7 +180,7 @@ class VariableDataAddResource(Resource):
                     is_over_haul=item['is_overhaul'],
                     web_id=item['webId'],
                     created_by=user_id,
-                    konsanta=item['constant']
+                    konstanta=item['constant']
                 )
                 )
             else:

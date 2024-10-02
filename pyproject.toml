@@ -89,6 +89,7 @@ ujson = "^5.10.0"
 aiohttp = "^3.10.8"
 flower = "^2.0.1"
 flask-sse = "^1.0.0"
+testcontainers = "^4.8.1"
 
 
 [tool.poetry.group.dev.dependencies]

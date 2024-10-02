@@ -3,7 +3,7 @@ import aiohttp
 import requests
 
 
-def fetch_data_from_api(url, username, password):
+def fetch_data_from_api(url):
     """
     Fetch data from given API endpoint.
 
