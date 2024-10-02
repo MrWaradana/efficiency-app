@@ -49,7 +49,7 @@ class DataDetailRepository(BaseRepository[EfficiencyDataDetail]):
             and_(
                 EfficiencyDataDetail.efficiency_transaction_id == data_id,
                 Variable.in_out == "out",
-                Variable.is_pareto == True,
+                Variable.category.isnot(None),
             )
         ).all()
 
@@ -57,10 +57,10 @@ class DataDetailRepository(BaseRepository[EfficiencyDataDetail]):
             and_(
                 EfficiencyTransaction.jenis_parameter == "target",
                 Variable.in_out == "out",
-                Variable.is_pareto == True,
+                Variable.category.isnot(None),
             )
         ).all()
-        
+
         if not target_query:
             raise exceptions.NotFound("Target data not found")
 

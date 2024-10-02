@@ -1,6 +1,6 @@
 """ Defines the Variable repository """
 
-from typing import List
+from typing import Any, List
 
 from digital_twin_migration.models import db
 from digital_twin_migration.models.efficiency_app import Variable
@@ -43,3 +43,5 @@ class VariablesRepository(BaseRepository[Variable]):
             return self._all_unique(query)
 
         return self._one_or_none(query)
+    
+

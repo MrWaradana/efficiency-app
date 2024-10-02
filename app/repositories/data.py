@@ -142,5 +142,16 @@ class DataRepository(BaseRepository[EfficiencyTransaction]):
         thermoflow_status.is_running = status
         db.session.commit()
 
+    def get_performance_chart_data(self, variable_ids):
+
+        query = self.session.query(self.model_class).join(EfficiencyTransaction.efficiency_transaction_details)
+        query = query.filter(and_(
+            EfficiencyTransaction.is_performance_test == True,
+            EfficiencyDataDetail.variable_id.in_(variable_ids),
+        ))
+        query = query.distinct(EfficiencyTransaction.performance_test_weight).order_by(EfficiencyTransaction.performance_test_weight, EfficiencyTransaction.periode.desc())
+
+        return self._all_unique(query)
+
     def _join_data_details(self, query: Select) -> Select:
         return query.join(EfficiencyDataDetail)

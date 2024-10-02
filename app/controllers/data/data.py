@@ -399,5 +399,22 @@ class DataController(BaseController[EfficiencyTransaction]):
     def get_newest_data(self):
         return self.data_repository.get_newest_data()
 
+    def get_performance_test_chart_data(self):
+
+        variable_ids = [var.id for var in variable_repository.get_by("is_over_haul", True)]
+
+        chart_data = self.data_repository.get_performance_chart_data(variable_ids)
+
+        if not chart_data:
+            return []
+
+        result_data = [
+            {"category": item.performance_test_weight,
+             **{var.variable.excel_variable_name: var.nilai for i, var in enumerate(item.efficiency_transaction_details)}}
+            for item in chart_data
+        ]
+
+        return result_data
+
 
 data_controller = DataController()

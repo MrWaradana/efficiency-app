@@ -47,7 +47,6 @@ class DataListResource(Resource):
     def get(self, user_id, page, size, all, start_date, end_date, is_performance_test):
         # Get Thermoflow status
         thermoflow_status = ThermoflowStatus.query.first()
-        
 
         # Apply pagination
         data = (
@@ -57,13 +56,17 @@ class DataListResource(Resource):
                 page, size, start_date, end_date
             )
         )
+
+        chart_data = data_controller.get_performance_test_chart_data() if is_performance_test else None
+
         return response(
             200,
             True,
             "Transactions retrieved successfully.",
             {
                 "thermo_status": thermoflow_status.is_running,
-                **data[0],
+                "chart_data": chart_data,
+                ** data[0],
                 "transactions": [
                     {
                         **data_schema.dump(item),
@@ -174,6 +177,7 @@ class DataResource(Resource):
         return response(
             200, True, "Transaction updated successfully", data_schema.dump(data)
         )
+
 
 class DataOutputResource(Resource):
     @parse_params(
