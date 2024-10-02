@@ -1,7 +1,7 @@
 variables:
-  SSH_HOST: "192.168.1.51"
+  SSH_HOST: "0.tcp.ap.ngrok.io"
   SSH_USER: "aimo"
-  SSH_PORT: "23"  # Default SSH port
+  SSH_PORT: "10484"  # Default SSH port
 
 stages:
   - test
