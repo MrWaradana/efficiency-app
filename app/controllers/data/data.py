@@ -237,19 +237,31 @@ class DataController(BaseController[EfficiencyTransaction]):
         variables = variable_repository.get_by_excel_id(excel.id, "out")
 
         variable_mappings = {
-            str(var.id): {"name": var.excel_variable_name}
+            var.excel_variable_name: {"id": var.id, "web_id": var.web_id}
             for var in variables
         }
 
         # Iterate over the output data
         for variable_title, input_value in outputs.items():
-            variable_id = get_key_by_value(variable_mappings, variable_title)
+            variable = variable_mappings.get(variable_title)
+
+            variable_id = variable.get("id")
+            web_id = variable.get("web_id")
+
+            if web_id:
+                # Get Data from PI
+                pass
+
+            # if have formula
+            if True:
+                pass
+
             value_float, value_string = None, None
             try:
-                if input_value is not None:
+                if web_id:
+                    value_float = web_id
+                elif input_value is not None:
                     value_float = float(input_value)
-                # if config.ENVIRONMENT == EnvironmentType.DEVELOPMENT:
-                #     value_float -= random.uniform(0.5, 7.5)
 
             except ValueError:
                 value_string = input_value
@@ -401,9 +413,11 @@ class DataController(BaseController[EfficiencyTransaction]):
 
     def get_performance_test_chart_data(self):
 
-        variable_ids = [var.id for var in variable_repository.get_by("is_over_haul", True)]
+        variable_ids = [str(var.id) for var in variable_repository.get_by("is_over_haul", True)]
 
         chart_data = self.data_repository.get_performance_chart_data(variable_ids)
+
+        raise Exception(chart_data[0].efficiency_transaction_details)
 
         if not chart_data:
             return []

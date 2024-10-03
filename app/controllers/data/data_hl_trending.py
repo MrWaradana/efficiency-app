@@ -17,9 +17,12 @@ class DataTrendingController(BaseController[EfficiencyTransaction]):
             variable_ids_list = variable_ids.split(',')
         else:
             variable_ids_list = [variable_ids]
+            
 
         data = self.data_repository.get_data_trending(start_date, end_date, variable_ids_list)
-        data_target = self.data_repository.get_target_data_by_variable(variable_ids_list)
+        data_target = self.data_repository.get_target_data_by_variable(variable_ids_list, "target", True)
+        
+        raise Exception(data_target.efficiency_transaction_details)
 
         result = []
 

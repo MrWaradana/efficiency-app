@@ -119,15 +119,15 @@ class DataRepository(BaseRepository[EfficiencyTransaction]):
 
         return query.all()
 
-    def get_target_data_by_variable(self, variable_ids):
+    def get_target_data_by_variable(self, variable_ids, type=None, is_unique=False):
 
         query = (
             self.session.query(EfficiencyTransaction)
             .join(EfficiencyTransaction.efficiency_transaction_details)
             .filter(
                 and_(
-                    EfficiencyTransaction.jenis_parameter == "target",
                     EfficiencyDataDetail.variable_id.in_(variable_ids),
+                    EfficiencyTransaction.jenis_parameter == "target"
                 )
             )
             .options(
@@ -135,23 +135,25 @@ class DataRepository(BaseRepository[EfficiencyTransaction]):
             )
         )
 
-        return query.first()
+        return query.first() if is_unique else query.all()
 
     def update_thermoflow_status(self, status: bool):
         thermoflow_status = ThermoflowStatus.query.first()
         thermoflow_status.is_running = status
         db.session.commit()
 
-    def get_performance_chart_data(self, variable_ids):
+    def get_performance_chart_data(self, variable_ids: list):
 
-        query = self.session.query(self.model_class).join(EfficiencyTransaction.efficiency_transaction_details)
+        query = self.session.query(EfficiencyTransaction).join(EfficiencyTransaction.efficiency_transaction_details)
+
         query = query.filter(and_(
-            EfficiencyTransaction.is_performance_test == True,
             EfficiencyDataDetail.variable_id.in_(variable_ids),
-        ))
-        query = query.distinct(EfficiencyTransaction.performance_test_weight).order_by(EfficiencyTransaction.performance_test_weight, EfficiencyTransaction.periode.desc())
+            EfficiencyTransaction.performance_test_weight < 100
+        )).options(
+            contains_eager(EfficiencyTransaction.efficiency_transaction_details)
+        )
 
-        return self._all_unique(query)
+        return query.all()
 
     def _join_data_details(self, query: Select) -> Select:
         return query.join(EfficiencyDataDetail)

@@ -13,6 +13,7 @@ def postgres_container():
 def app(postgres_container):
     """Create Flask test app using Testcontainer Postgres DB"""
     app = create_app()
+    db.init_app(app)
 
     # Configure the app to use the test database
     app.config["SQLALCHEMY_DATABASE_URI"] = postgres_container.get_connection_url()
