@@ -417,7 +417,6 @@ class DataController(BaseController[EfficiencyTransaction]):
 
         chart_data = self.data_repository.get_performance_chart_data(variable_ids)
 
-        raise Exception(chart_data[0].efficiency_transaction_details)
 
         if not chart_data:
             return []
