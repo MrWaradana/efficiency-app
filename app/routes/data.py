@@ -10,11 +10,12 @@ from app.resources import (DataDetailListResource, DataDetailResource,
                            DataResource, DataRootCausesListResource, DataListCostBenefit)
 from app.resources.data.data_hl_trending import DataTrendingListResource
 from app.resources.data.data_nphr import DataNPHRResource
-from app.resources.data import DataOutputResource
+from app.resources.data import DataOutputResource, DataPerformanceResource
 
 TRANSACTION_BLUEPRIENT = Blueprint("data", __name__)
 
 Api(TRANSACTION_BLUEPRIENT).add_resource(DataListResource, "/data")
+Api(TRANSACTION_BLUEPRIENT).add_resource(DataPerformanceResource, "/data/charts/performance")
 Api(TRANSACTION_BLUEPRIENT).add_resource(DataOutputResource, "/data/output")
 
 Api(TRANSACTION_BLUEPRIENT).add_resource(DataResource, "/data/<transaction_id>")

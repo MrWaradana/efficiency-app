@@ -10,7 +10,7 @@ from digital_twin_migration.models.efficiency_app import (
 from sqlalchemy import Select, and_, func
 from sqlalchemy.orm import contains_eager, joinedload, subqueryload
 from sqlalchemy.orm.query import Query
-
+from sqlalchemy.orm import aliased
 from core.repository import BaseRepository
 
 
@@ -144,14 +144,59 @@ class DataRepository(BaseRepository[EfficiencyTransaction]):
 
     def get_performance_chart_data(self, variable_ids: list):
 
-        query = self.session.query(EfficiencyTransaction).options(
-            contains_eager(EfficiencyTransaction.efficiency_transaction_details)
-        ).join(EfficiencyTransaction.efficiency_transaction_details).filter(and_(
-            EfficiencyDataDetail.variable_id.in_(variable_ids),
-            EfficiencyTransaction.performance_test_weight < 100
-        ))
+        # query = self.session.query(EfficiencyTransaction).options(
+        #     contains_eager(EfficiencyTransaction.efficiency_transaction_details)
+        # ).join(EfficiencyTransaction.efficiency_transaction_details).filter(EfficiencyDataDetail.variable_id.in_(variable_ids))
 
-        return query.all()
+        # one = query.where(EfficiencyTransaction.performance_test_weight == 50).all()
+        # two = query.where(EfficiencyTransaction.performance_test_weight == 60).all()
+        # three = query.where(EfficiencyTransaction.performance_test_weight == 70).all()
+        # four = query.where(EfficiencyTransaction.performance_test_weight == 80).all()
+
+        # return query.all()
+
+        # Create an alias for the joined table to use in the contains_eager
+        # First, get the latest transaction IDs for each test weight
+# This code snippet is performing a query to retrieve the latest transaction IDs for each unique
+# `performance_test_weight` value in the `EfficiencyTransaction` table. It then uses these IDs to
+# fetch all the details for these transactions, specifically for the `variable_ids` provided.
+        latest_transaction_subquery = (
+            self.session.query(
+                EfficiencyTransaction.id,
+                EfficiencyTransaction.performance_test_weight
+            )
+            .filter(EfficiencyTransaction.performance_test_weight < 100)
+            .distinct(EfficiencyTransaction.performance_test_weight)
+            .order_by(
+                EfficiencyTransaction.performance_test_weight,
+                EfficiencyTransaction.created_at.desc()
+            )
+            .subquery()
+        )
+
+        # Then use these IDs to get all the details for these transactions
+        efficiency_details = aliased(EfficiencyDataDetail)
+
+        query = (
+            self.session.query(EfficiencyTransaction)
+            .join(latest_transaction_subquery,
+                EfficiencyTransaction.id == latest_transaction_subquery.c.id)
+            .join(
+                efficiency_details,
+                and_(
+                    EfficiencyTransaction.id == efficiency_details.efficiency_transaction_id,
+                    efficiency_details.variable_id.in_(variable_ids)
+                )
+            )
+            .options(
+                contains_eager(
+                    EfficiencyTransaction.efficiency_transaction_details,
+                    alias=efficiency_details
+                )
+            )
+        ).all()
+
+        return query
 
     def _join_data_details(self, query: Select) -> Select:
         return query.join(EfficiencyDataDetail)

@@ -57,15 +57,12 @@ class DataListResource(Resource):
             )
         )
 
-        chart_data = data_controller.get_performance_test_chart_data() if is_performance_test else None
-
         return response(
             200,
             True,
             "Transactions retrieved successfully.",
             {
                 "thermo_status": thermoflow_status.is_running,
-                "chart_data": chart_data,
                 ** data[0],
                 "transactions": [
                     {
@@ -187,3 +184,11 @@ class DataOutputResource(Resource):
     def post(self, outputs, unique_id):
         data = data_controller.create_data_output(outputs, unique_id)
         return response(200, True, "Data retrieved successfully")
+
+
+class DataPerformanceResource(Resource):
+    
+    def get(self):
+        data = data_controller.get_performance_test_chart_data()
+        
+        return response(200, True, "Data retrieved successfully", data)
