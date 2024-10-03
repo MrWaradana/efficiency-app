@@ -144,14 +144,12 @@ class DataRepository(BaseRepository[EfficiencyTransaction]):
 
     def get_performance_chart_data(self, variable_ids: list):
 
-        query = self.session.query(EfficiencyTransaction).join(EfficiencyTransaction.efficiency_transaction_details)
-
-        query = query.filter(and_(
+        query = self.session.query(EfficiencyTransaction).options(
+            contains_eager(EfficiencyTransaction.efficiency_transaction_details)
+        ).join(EfficiencyTransaction.efficiency_transaction_details).filter(and_(
             EfficiencyDataDetail.variable_id.in_(variable_ids),
             EfficiencyTransaction.performance_test_weight < 100
-        )).options(
-            contains_eager(EfficiencyTransaction.efficiency_transaction_details)
-        )
+        ))
 
         return query.all()
 
