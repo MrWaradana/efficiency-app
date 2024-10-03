@@ -223,6 +223,20 @@ class DataController(BaseController[EfficiencyTransaction]):
 
     @Transactional(propagation=Propagation.REQUIRED)
     def create_data_output(self, outputs, unique_id):
+        
+        username = 'tjb.piwebapi'
+        password = 'PLNJepara@2024'
+        
+        is_connected_to_pi = False
+
+        try:
+            res = requests.get(f"https://10.47.0.54/piwebapi", auth=(username, password) , timeout=2, verify=False)
+            
+            is_connected_to_pi = True
+        except requests.exceptions.RequestException:
+            data_repository.update_thermoflow_status(False)
+            is_connected_to_pi = False
+        
         # Get Data based on uniqueId
         transaction = data_repository.get_by_unique_id(unique_id)
         transaction_records = []
@@ -250,6 +264,7 @@ class DataController(BaseController[EfficiencyTransaction]):
 
             if web_id:
                 # Get Data from PI
+                
                 pass
 
             # if have formula
@@ -259,7 +274,9 @@ class DataController(BaseController[EfficiencyTransaction]):
             value_float, value_string = None, None
             try:
                 if web_id:
-                    value_float = web_id
+                    res = requests.get(f"https://10.47.0.54/piwebapi/streams/{web_id}/value", auth=(username, password) , timeout=2, verify=False)
+                    data_json = res.json()
+                    value_float = data_json.get("Value")
                 elif input_value is not None:
                     value_float = float(input_value)
 
