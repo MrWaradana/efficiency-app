@@ -14,9 +14,9 @@ class DataDetailRootCauseController(BaseController[EfficiencyDataDetailRootCause
         self.data_detail_root_cause_repository = data_detail_root_cause_repository
 
     def get_by_detail_id(self, detail_id):
-        @Cache.cached(f"data_detail_root_cause_{detail_id}")
         def fetch_data_detail_root_cause():
             root_causes = self.data_detail_root_cause_repository.get_by_detail_id(detail_id)
+            
 
             return root_causes
 
@@ -42,13 +42,22 @@ class DataDetailRootCauseController(BaseController[EfficiencyDataDetailRootCause
                 self.data_detail_root_cause_repository.delete_bulk(data_roots)
 
             for root_cause in data_root_causes:
-                data_root_cause = EfficiencyDataDetailRootCause(
+
+                @Transactional(propagation=Propagation.REQUIRED)
+                def save_root_cause():
+                    data_root_cause = EfficiencyDataDetailRootCause(
                     data_detail_id=detail_id,
                     is_repair=root_cause["is_repair"],
                     biaya=0,
                     parent_cause_id=root_cause["parent_id"],
                     created_by=user_id
-                )
+                    )
+                    
+                    data =data_root_cause.save()
+                
+                    return data
+                
+                data_root_cause = save_root_cause()
 
                 root_cause_members = [
                     EfficiencyDataDetailRootCauseMember(
@@ -61,7 +70,7 @@ class DataDetailRootCauseController(BaseController[EfficiencyDataDetailRootCause
                     )for cause_id, is_checked in root_cause["root_causes"].items()
                 ]
                 
-                data_root_cause.save()
+                
                 self.data_detail_root_cause_repository.session.add_all(root_cause_members)
                 
 

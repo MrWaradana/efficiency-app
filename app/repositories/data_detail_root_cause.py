@@ -14,7 +14,7 @@ from core.repository import BaseRepository
 class DataDetailRootCauseRepository(BaseRepository[EfficiencyDataDetailRootCause]):
 
     def get_by_detail_id(self, detail_id: str):
-        query = self._query()
+        query = self._query({'members'})
         query = query.filter(EfficiencyDataDetailRootCause.data_detail_id == detail_id)
         return self._all_unique(query)
 
@@ -38,9 +38,11 @@ class DataDetailRootCauseRepository(BaseRepository[EfficiencyDataDetailRootCause
         # Retrieve unique records (assuming _all_unique applies distinct or similar)
         return self._all_unique(query)
     
+    def _join_members(self, query: Select) -> Select:
+        return query.options(joinedload(EfficiencyDataDetailRootCause.members))
+
     def get_by_detail_id_with_actions(self, detail_id: str):
         query = self._query()
-
 
     def delete_bulk(self, root_causes: list):
         for root_cause in root_causes:
