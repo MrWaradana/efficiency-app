@@ -20,6 +20,7 @@ from core.utils import get_key_by_value, response
 from core.utils.formula import calculate_pareto
 from core.factory import data_factory, variable_factory
 from werkzeug import exceptions
+import core.utils.formula as mainFormula
 
 from flask_sse import sse
 
@@ -223,20 +224,19 @@ class DataController(BaseController[EfficiencyTransaction]):
 
     @Transactional(propagation=Propagation.REQUIRED)
     def create_data_output(self, outputs, unique_id):
-        
+
         username = 'tjb.piwebapi'
         password = 'PLNJepara@2024'
-        
+
         is_connected_to_pi = False
 
         try:
             res = requests.get(f"https://10.47.0.54/piwebapi", auth=(username, password) , timeout=2, verify=False)
-            
+
             is_connected_to_pi = True
         except requests.exceptions.RequestException:
-            data_repository.update_thermoflow_status(False)
             is_connected_to_pi = False
-        
+
         # Get Data based on uniqueId
         transaction = data_repository.get_by_unique_id(unique_id)
         transaction_records = []
@@ -251,7 +251,7 @@ class DataController(BaseController[EfficiencyTransaction]):
         variables = variable_repository.get_by_excel_id(excel.id, "out")
 
         variable_mappings = {
-            var.excel_variable_name: {"id": var.id, "web_id": var.web_id}
+            var.excel_variable_name: {"id": var.id, "web_id": var.web_id, "formula": var.formula}
             for var in variables
         }
 
@@ -261,27 +261,33 @@ class DataController(BaseController[EfficiencyTransaction]):
 
             variable_id = variable.get("id")
             web_id = variable.get("web_id")
-
-            if web_id:
-                # Get Data from PI
-                
-                pass
-
-            # if have formula
-            if True:
-                pass
+            formula = variable.get("formula")
 
             value_float, value_string = None, None
+
             try:
-                if web_id:
+                if web_id and is_connected_to_pi:
+                    # Get Data from PI
                     res = requests.get(f"https://10.47.0.54/piwebapi/streams/{web_id}/value", auth=(username, password) , timeout=2, verify=False)
-                    data_json = res.json()
-                    value_float = data_json.get("Value")
+                    value_float = res.json().get("Value")
+                elif formula:
+                    # Calculate the output value based on the formula
+                    formulaFunc = getattr(mainFormula, formula)
+
+                    if callable(formulaFunc):
+                        value_float = formulaFunc(input_value)
+
                 elif input_value is not None:
                     value_float = float(input_value)
 
+            except requests.exceptions.RequestException as e:
+                # sse.publish({"message": str(e), "status": False}, type="data_outputs")
+                # data_repository.update_thermoflow_status(False)
+                # return transaction.id
+                value_float = None
             except ValueError:
                 value_string = input_value
+
 
             if variable_id:
                 # Create a new transaction record with the output value and associated variable ID
@@ -433,7 +439,6 @@ class DataController(BaseController[EfficiencyTransaction]):
         variable_ids = [str(var.id) for var in variable_repository.get_by("is_over_haul", True)]
 
         chart_data = self.data_repository.get_performance_chart_data(variable_ids)
-
 
         if not chart_data:
             return []
