@@ -21,6 +21,14 @@ class DataDetailRootCauseController(BaseController[EfficiencyDataDetailRootCause
             return root_causes
 
         return fetch_data_detail_root_cause()
+    
+    def get_root_actions_by_detail_id(self, detail_id):
+        
+        root_cause_actions = self.data_detail_root_cause_repository.get_root_actions_by_detail_id(detail_id)
+
+        return root_cause_actions
+
+        
 
     @Transactional(propagation=Propagation.REQUIRED)
     def create_data_detail_root_cause(self, user_id, transaction_id, detail_id, is_bulk, data_root_causes, **inputs):

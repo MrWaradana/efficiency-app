@@ -37,6 +37,10 @@ class DataDetailRootCauseRepository(BaseRepository[EfficiencyDataDetailRootCause
 
         # Retrieve unique records (assuming _all_unique applies distinct or similar)
         return self._all_unique(query)
+    
+    def get_by_detail_id_with_actions(self, detail_id: str):
+        query = self._query()
+
 
     def delete_bulk(self, root_causes: list):
         for root_cause in root_causes:
