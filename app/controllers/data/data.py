@@ -259,6 +259,9 @@ class DataController(BaseController[EfficiencyTransaction]):
         # Iterate over the output data
         for variable_title, input_value in outputs.items():
             variable = variable_mappings.get(variable_title)
+            
+            if not variable:
+                continue
 
             variable_id = variable.get("id")
             web_id = variable.get("web_id")
@@ -269,8 +272,12 @@ class DataController(BaseController[EfficiencyTransaction]):
             try:
                 if web_id and is_connected_to_pi:
                     # Get Data from PI
-                    res = requests.get(f"https://10.47.0.54/piwebapi/streams/{web_id}/value", auth=(username, password) , timeout=2, verify=False)
-                    value_float = res.json().get("Value")
+                    try:
+                        res = requests.get(f"https://10.47.0.54/piwebapi/streams/{web_id}/value", auth=(username, password) , timeout=2, verify=False)
+                        res.raise_for_status()  # Raise an error if the API request fails
+                        value_float = res.json().get("Value")
+                    except requests.exceptions.RequestException as e:
+                        value_float = None
                 elif formula:
                     # Calculate the output value based on the formula
                     formulaFunc = getattr(mainFormula, formula)
