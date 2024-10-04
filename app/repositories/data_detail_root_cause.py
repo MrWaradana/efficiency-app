@@ -18,8 +18,8 @@ class DataDetailRootCauseRepository(BaseRepository[EfficiencyDataDetailRootCause
         query = query.filter(EfficiencyDataDetailRootCause.data_detail_id == detail_id)
         return self._all_unique(query)
 
-    def get_by_detail_id_cause_ids(self, cause_ids: list, detail_id: str):
-        if not cause_ids:
+    def get_by_detail_id_parent_ids(self, parent_ids: list, detail_id: str):
+        if not parent_ids:
             return (
                 []
             )  # Or handle the case as needed (e.g., return None or raise an exception)
@@ -31,7 +31,7 @@ class DataDetailRootCauseRepository(BaseRepository[EfficiencyDataDetailRootCause
         query = query.filter(
             and_(
                 EfficiencyDataDetailRootCause.data_detail_id == detail_id,
-                EfficiencyDataDetailRootCause.cause_id.in_(cause_ids),
+                EfficiencyDataDetailRootCause.parent_cause_id.in_(parent_ids),
             )
         )
 

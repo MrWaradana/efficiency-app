@@ -1,7 +1,7 @@
 
 
 from core.controller.base import BaseController
-from digital_twin_migration.models.efficiency_app import EfficiencyDataDetailRootCause
+from digital_twin_migration.models.efficiency_app import EfficiencyDataDetailRootCause, EfficiencyDataDetailRootCauseMember
 from core.factory import data_detail_root_cause_factory
 from core.cache import Cache
 from werkzeug import exceptions as exc
@@ -21,14 +21,12 @@ class DataDetailRootCauseController(BaseController[EfficiencyDataDetailRootCause
             return root_causes
 
         return fetch_data_detail_root_cause()
-    
+
     def get_root_actions_by_detail_id(self, detail_id):
-        
+
         root_cause_actions = self.data_detail_root_cause_repository.get_root_actions_by_detail_id(detail_id)
 
         return root_cause_actions
-
-        
 
     @Transactional(propagation=Propagation.REQUIRED)
     def create_data_detail_root_cause(self, user_id, transaction_id, detail_id, is_bulk, data_root_causes, **inputs):
@@ -36,32 +34,56 @@ class DataDetailRootCauseController(BaseController[EfficiencyDataDetailRootCause
             if not data_root_causes:
                 return exc.BadRequest("Data root causes must be provided if is_bulk is True")
 
-            root_cause_ids = [root_cause["cause_id"] for root_cause in data_root_causes]
+            parent_ids = [root_cause["parent_id"] for root_cause in data_root_causes]
 
-            data_roots = self.data_detail_root_cause_repository.get_by_detail_id_cause_ids(root_cause_ids, detail_id)
+            data_roots = self.data_detail_root_cause_repository.get_by_detail_id_parent_ids(parent_ids, detail_id)
 
             if data_roots:
                 self.data_detail_root_cause_repository.delete_bulk(data_roots)
 
-            data_root_causes_records = [
-                EfficiencyDataDetailRootCause(
+            for root_cause in data_root_causes:
+                data_root_cause = EfficiencyDataDetailRootCause(
                     data_detail_id=detail_id,
-                    cause_id=root_cause["cause_id"],
-                    is_repair=(
-                        root_cause["is_repair"] if "is_repair" in root_cause else False
-                    ),
-                    biaya=root_cause["biaya"] if "biaya" in root_cause else 0,
-                    variable_header_value=(
-                        root_cause["variable_header_value"]
-                        if "variable_header_value" in root_cause
-                        else None
-                    ),
-                    created_by=user_id,
+                    is_repair=root_cause["is_repair"],
+                    biaya=0,
+                    parent_cause_id=root_cause["parent_id"],
+                    created_by=user_id
                 )
-                for root_cause in data_root_causes
-            ]
-            
-            self.data_detail_root_cause_repository.create_bulk(data_root_causes_records)
+
+                root_cause_members = [
+                    EfficiencyDataDetailRootCauseMember(
+                        root_cause_id=data_root_cause.id,
+                        cause_id=cause_id,
+                        is_parent=True if cause_id == root_cause["parent_id"] else False,
+                        is_checked=is_checked,
+                        biaya=0,
+                        created_by=user_id
+                    )for cause_id, is_checked in root_cause["root_causes"].items()
+                ]
+                
+                data_root_cause.save()
+                self.data_detail_root_cause_repository.session.add_all(root_cause_members)
+                
+
+            # data_root_causes_records = [
+            #     EfficiencyDataDetailRootCause(
+            #         data_detail_id=detail_id,
+            #         cause_id=root_cause["cause_id"],
+            #         is_repair=(
+            #             root_cause["is_repair"] if "is_repair" in root_cause else False
+            #         ),
+            #         biaya=root_cause["biaya"] if "biaya" in root_cause else 0,
+            #         variable_header_value=(
+            #             root_cause["variable_header_value"]
+            #             if "variable_header_value" in root_cause
+            #             else None
+            #         ),
+            #         created_by=user_id,
+            #     )
+            #     for root_cause in data_root_causes
+            # ]
+
+            # self.data_detail_root_cause_repository.create_bulk(data_root_causes_records)
 
         else:
             missing_input = next(
