@@ -2,16 +2,21 @@ from digital_twin_migration.models import db
 from flask import current_app
 from sqlalchemy.exc import SQLAlchemyError
 from werkzeug.exceptions import HTTPException
+from flask_sse import sse
 
 from core.utils import response
 
 
 def handle_exception(e):
+    sse.publish({"message": str(e)}, type="error")
+    
     if isinstance(e, HTTPException):
         return response(e.code, False, e.description)
 
     if isinstance(e, SQLAlchemyError):
         return response(500, False, str(e))
+    
+    
 
     return (
         response(500, False, str(e))

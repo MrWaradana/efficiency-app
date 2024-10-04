@@ -181,6 +181,7 @@ class DataController(BaseController[EfficiencyTransaction]):
                 f"{config.WINDOWS_EFFICIENCY_APP_API}/excels/{unique_id}",
                 json={"inputs": input_data},
             )
+            res.raise_for_status()  # Raise an error if the API request fails
         except requests.exceptions.RequestException as e:
             # Handle error, e.g., logging or retry mechanism
             print(f"API request failed: {e}")
