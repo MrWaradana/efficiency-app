@@ -1,7 +1,7 @@
 import random
 from datetime import datetime
 import time
-
+import json
 import requests
 from digital_twin_migration.database import Propagation, Transactional
 from digital_twin_migration.models.efficiency_app import (
@@ -224,7 +224,13 @@ class DataController(BaseController[EfficiencyTransaction]):
         return transaction_parent.id
 
     @Transactional(propagation=Propagation.REQUIRED)
-    def create_data_output(self, outputs, unique_id):
+    def create_data_output(self, outputs:dict, unique_id):
+        ##Write 
+        try:
+            with open("/app/output.json", 'w') as json_file:
+                json.dump(outputs, json_file, indent=4)
+        except Exception as e:
+            print(f"An error occurred: {e}")
 
         username = 'tjb.piwebapi'
         password = 'PLNJepara@2024'
@@ -257,57 +263,46 @@ class DataController(BaseController[EfficiencyTransaction]):
         }
 
         # Iterate over the output data
-        for variable_title, input_value in outputs.items():
-            variable = variable_mappings.get(variable_title)
-            
-            if not variable:
-                continue
-
-            variable_id = variable.get("id")
-            web_id = variable.get("web_id")
-            formula = variable.get("formula")
+        for variable_name, variable_data in variable_mappings.items():
+            output_var =  outputs.get(variable_name)
+            variable_id = variable_data.get("id")
+            web_id = variable_data.get("web_id")
+            formula = variable_data.get("formula")
 
             value_float, value_string = None, None
 
-            try:
-                if web_id and is_connected_to_pi:
-                    # Get Data from PI
-                    try:
-                        res = requests.get(f"https://10.47.0.54/piwebapi/streams/{web_id}/value", auth=(username, password) , timeout=2, verify=False)
-                        res.raise_for_status()  # Raise an error if the API request fails
-                        value_float = res.json().get("Value")
-                    except requests.exceptions.RequestException as e:
-                        value_float = None
-                elif formula:
-                    # Calculate the output value based on the formula
-                    formulaFunc = getattr(mainFormula, formula)
+            
+            if web_id and is_connected_to_pi:
+                # Get Data from PI
+                try:
+                    res = requests.get(f"https://10.47.0.54/piwebapi/streams/{web_id}/value", auth=(username, password) , timeout=2, verify=False)
+                    res.raise_for_status()  # Raise an error if the API request fails
+                    value_float = res.json().get("Value")
+                except requests.exceptions.RequestException as e:
+                    value_float = None
+            elif formula:
+                # Calculate the output value based on the formula
+                formulaFunc = getattr(mainFormula, formula)
 
-                    if callable(formulaFunc):
-                        value_float = formulaFunc(input_value)
+                if callable(formulaFunc):
+                    value_float = formulaFunc(output_var)
+            elif output_var:
+                try:
+                    value_float = float(output_var)
+                except ValueError:
+                    value_string = output_var            
 
-                elif input_value is not None:
-                    value_float = float(input_value)
-
-            except requests.exceptions.RequestException as e:
-                # sse.publish({"message": str(e), "status": False}, type="data_outputs")
-                # data_repository.update_thermoflow_status(False)
-                # return transaction.id
-                value_float = None
-            except ValueError:
-                value_string = input_value
-
-
-            if variable_id:
-                # Create a new transaction record with the output value and associated variable ID
-                transaction_records.append(
-                    EfficiencyDataDetail(
-                        variable_id=variable_id,
-                        efficiency_transaction_id=transaction.id,
-                        nilai=value_float,
-                        nilai_string=value_string,
-                        created_by=transaction.created_by,
-                    )
+            
+            # Create a new transaction record with the output value and associated variable ID
+            transaction_records.append(
+                EfficiencyDataDetail(
+                    variable_id=variable_id,
+                    efficiency_transaction_id=transaction.id,
+                    nilai=value_float,
+                    nilai_string=value_string,
+                    created_by=transaction.created_by,
                 )
+            )
 
         # Bulk create the transaction records
         data_repository.create_bulk(transaction_records)
