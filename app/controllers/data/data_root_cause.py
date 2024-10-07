@@ -27,19 +27,15 @@ class DataDetailRootCauseController(BaseController[EfficiencyDataDetailRootCause
             if not data_root_causes:
                 return exc.BadRequest("Data root causes must be provided if is_bulk is True")
 
-            parent_ids = [root_cause["parent_id"] for root_cause in data_root_causes]
+            # parent_ids = [root_cause["parent_id"] for root_cause in data_root_causes]
 
-            data_roots = {root.parent_cause_id: root for root in self.data_detail_root_cause_repository.get_by_detail_id_parent_ids(parent_ids, detail_id)}
-
-            if data_roots:
-                self.data_detail_root_cause_repository.delete_members(data_roots)
+            data_roots = {root.parent_cause_id: root for root in self.data_detail_root_cause_repository.get_by_detail_id(detail_id)}
 
             for root_cause in data_root_causes:
-                ##CHeck if root cause is already exist
-                if root_cause["parent_id"] in data_roots:
-                    data_root_cause = data_roots[root_cause["parent_id"]]
-                
-                else:
+                # CHeck if root cause is already exist
+                data_root_cause = data_roots.get(root_cause["parent_id"], None)
+
+                if not data_root_cause:
                     data_root_cause = self.data_detail_root_cause_repository.create({
                         "data_detail_id": detail_id,
                         "is_repair": root_cause["is_repair"],
@@ -47,6 +43,11 @@ class DataDetailRootCauseController(BaseController[EfficiencyDataDetailRootCause
                         "parent_cause_id": root_cause["parent_id"],
                         "created_by": user_id
                     })
+                else:
+                    data_root_cause.is_repair = root_cause["is_repair"]
+                    data_root_cause.biaya = 0
+                    for member in data_root_cause.members:
+                        self.data_detail_root_cause_repository.session.delete(member)
 
                 root_cause_members = [
                     EfficiencyDataDetailRootCauseMember(
@@ -100,26 +101,28 @@ class DataDetailRootCauseController(BaseController[EfficiencyDataDetailRootCause
 
         if not data_actions:
             return exc.BadRequest("Data actionss must be provided")
-        
+
         root_ids = [root_cause["root_id"] for root_cause in data_actions]
 
         data_roots = {root.id: root for root in self.data_detail_root_cause_repository.get_by_root_ids(root_ids)}
-    
+
         if data_roots:
             self.data_detail_root_cause_repository.delete_actions(data_roots)
 
         for actions in data_actions:
-            if actions["root_id"] in data_roots:
-                data_root = data_roots[actions["root_id"]]
-    
-                root_cause_actions = [
-                    EfficiencyDataDetailRootCauseAction(
-                        root_cause_id=data_root.id,
-                        action_id=action_id,
-                        is_checked=is_checked,
-                        created_by=user_id
-                    )for action_id, is_checked in actions['actions'].items()
-                ]
+            data_root = data_roots.get(actions["root_id"], None)
+            
+            if not data_root:
+                return exc.BadRequest("Root cause not found")
+
+            root_cause_actions = [
+                EfficiencyDataDetailRootCauseAction(
+                    root_cause_id=data_root.id,
+                    action_id=action_id,
+                    is_checked=is_checked,
+                    created_by=user_id
+                )for action_id, is_checked in actions['actions'].items()
+            ]
 
         self.data_detail_root_cause_repository.session.add_all(root_cause_actions)
 
