@@ -54,11 +54,11 @@ class DataDetailRootCauseController(BaseController[EfficiencyDataDetailRootCause
                         root_cause_id=data_root_cause.id,
                         cause_id=cause_id,
                         is_parent=True if cause_id == root_cause["parent_id"] else False,
-                        is_checked=is_checked,
-                        is_repair=root_cause["is_repair"],
+                        is_checked=data['isChecked'],
+                        is_repair=data['is_repair'],
                         biaya=0,
                         created_by=user_id
-                    )for cause_id, is_checked in root_cause["root_causes"].items()
+                    )for cause_id, data in root_cause["root_causes"].items()
                 ]
 
                 self.data_detail_root_cause_repository.session.add_all(root_cause_members)
