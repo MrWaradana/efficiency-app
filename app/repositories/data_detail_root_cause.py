@@ -15,7 +15,7 @@ class DataDetailRootCauseRepository(BaseRepository[EfficiencyDataDetailRootCause
 
     def get_by_detail_id(self, detail_id: str, is_repair: bool = False):
         query = self._query({'members', 'actions'})
-        query = query.filter(EfficiencyDataDetailRootCause.data_detail_id == detail_id, EfficiencyDataDetailRootCause.is_repair.is_(is_repair))
+        query = query.filter(EfficiencyDataDetailRootCause.data_detail_id == detail_id)
         return self._all_unique(query)
 
     def get_by_detail_id_parent_ids(self, parent_ids: list, detail_id: str):
