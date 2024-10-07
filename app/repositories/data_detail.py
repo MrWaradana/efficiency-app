@@ -90,7 +90,7 @@ class DataDetailRepository(BaseRepository[EfficiencyDataDetail]):
             query = query.filter(
                 and_(
                     EfficiencyTransaction.jenis_parameter == ("Commision" if is_target else "Niaga"),
-                    Variable.is_nphr == True,
+                    Variable.excel_variable_name == nphr_input_name,
                 )
             )
 
@@ -98,7 +98,7 @@ class DataDetailRepository(BaseRepository[EfficiencyDataDetail]):
             query = query.filter(
                 and_(
                     EfficiencyDataDetail.efficiency_transaction_id == data_id,
-                    Variable.is_nphr == True,
+                    Variable.excel_variable_name == nphr_input_name,
                 )
             )
 
