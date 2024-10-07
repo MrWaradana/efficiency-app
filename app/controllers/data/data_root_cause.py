@@ -42,22 +42,13 @@ class DataDetailRootCauseController(BaseController[EfficiencyDataDetailRootCause
                 self.data_detail_root_cause_repository.delete_bulk(data_roots)
 
             for root_cause in data_root_causes:
-
-                @Transactional(propagation=Propagation.REQUIRED)
-                def save_root_cause():
-                    data_root_cause = EfficiencyDataDetailRootCause(
-                    data_detail_id=detail_id,
-                    is_repair=root_cause["is_repair"],
-                    biaya=0,
-                    parent_cause_id=root_cause["parent_id"],
-                    created_by=user_id
-                    )
-                    
-                    data =data_root_cause.save()
-                
-                    return data
-                
-                data_root_cause = save_root_cause()
+                data_root_cause = self.data_detail_root_cause_repository.create({
+                    "data_detail_id": detail_id,
+                    "is_repair": root_cause["is_repair"],
+                    "biaya": 0,
+                    "parent_cause_id": root_cause["parent_id"],
+                    "created_by": user_id
+                })
 
                 root_cause_members = [
                     EfficiencyDataDetailRootCauseMember(

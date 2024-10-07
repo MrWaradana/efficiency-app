@@ -7,7 +7,7 @@ from digital_twin_migration.models import db
 from digital_twin_migration.models.efficiency_app import (
     EfficiencyDataDetail, EfficiencyDataDetailRootCause, EfficiencyTransaction,
     Variable)
-from sqlalchemy import Select, and_, func, select
+from sqlalchemy import Select, and_, func, select, or_
 from sqlalchemy.orm import joinedload
 
 from core.repository import BaseRepository
@@ -49,7 +49,11 @@ class DataDetailRepository(BaseRepository[EfficiencyDataDetail]):
             and_(
                 EfficiencyDataDetail.efficiency_transaction_id == data_id,
                 Variable.in_out == "out",
+            )
+        ).filter(
+            or_(
                 Variable.category.isnot(None),
+                Variable.is_pareto.is_(True),
             )
         ).all()
 
@@ -58,6 +62,11 @@ class DataDetailRepository(BaseRepository[EfficiencyDataDetail]):
                 EfficiencyTransaction.jenis_parameter == "target",
                 Variable.in_out == "out",
                 Variable.category.isnot(None),
+            )
+        ).filter(
+            or_(
+                Variable.category.isnot(None),
+                Variable.is_pareto.is_(True),
             )
         ).all()
 
