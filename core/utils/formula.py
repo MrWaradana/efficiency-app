@@ -1,3 +1,6 @@
+import requests
+
+
 def calculate_gap(target, current) -> float:
     if target is not None and current is not None:
         return current - target
@@ -117,9 +120,28 @@ class VariableFormula():
         
         return (st_assembly_1_hpt_1.nilai + st_assembly_1_hpt_2.nilai + st_assembly_1_hpt_3.nilai) / 3
     
-    def calculate(self):
+    def calculate_lp_turbine_efficiency(self):
         "(|__ST Assembly [3] - LPT: ST Group [5] - LPT-1: Group overall efficiency|+|__ST Assembly [3] - LPT: ST Group [6] - LPT-2: Group overall efficiency|+|__ST Assembly [3] - LPT: ST Group [7] - LPT-3: Group overall efficiency|+|__ST Group [60] - LPT-4: Group overall efficiency|)/4,"
-    
+        st_assembly_3_lpt_1 = self.current_data_details.get("ST Assembly [3] - LPT: ST Group [5] - LPT-1: Group overall efficiency", None)
+        st_assembly_3_lpt_2 = self.current_data_details.get("ST Assembly [3] - LPT: ST Group [6] - LPT-2: Group overall efficiency", None)
+        st_assembly_3_lpt_3 = self.current_data_details.get("ST Assembly [3] - LPT: ST Group [7] - LPT-3: Group overall efficiency", None)
+        st_group_60_lpt_4 = self.current_data_details.get("ST Group [60] - LPT-4: Group overall efficiency", None)
+        
+        if not st_assembly_3_lpt_1 or not st_assembly_3_lpt_2 or not st_assembly_3_lpt_3 or not st_group_60_lpt_4:
+            return None
+        
+        return (st_assembly_3_lpt_1.nilai + st_assembly_3_lpt_2.nilai + st_assembly_3_lpt_3.nilai + st_group_60_lpt_4.nilai) / 4
+
+    def calculate_ip_turbine_efficiency(self):
+        "(|__ST Assembly [2] - IPT: ST Group [3] - IPT-1: Group overall efficiency|+|__ST Assembly [2] - IPT: ST Group [4] - IPT-2: Group overall efficiency|)/2"
+        st_assembly_2_ipt_1 = self.current_data_details.get("ST Assembly [2] - IPT: ST Group [3] - IPT-1: Group overall efficiency", None)
+        st_assembly_2_ipt_2 = self.current_data_details.get("ST Assembly [2] - IPT: ST Group [4] - IPT-2: Group overall efficiency", None)
+        
+        if not st_assembly_2_ipt_1 or not st_assembly_2_ipt_2:
+            return None
+        
+        return (st_assembly_2_ipt_1.nilai + st_assembly_2_ipt_2.nilai) / 2
+            
     def plant_gross_power(self):
         "Plant gross power"
         plant_gross_power = self.current_data_details.get("Plant gross power", None)
@@ -147,3 +169,181 @@ class VariableFormula():
         
         return plant_auxiliary.nilai
     
+    def calculate_ttd_hph_7(self):
+        "(T feedwater out - T saturated)"
+        t_feedwater_out_pi = "F1DPw1kUu10ziUaXEx2rIyo4pAZA0AAAS1RKQi1LSTAwLVBJMVxUSkIzLkhQIEZXIEhUUiA3IE9VVEwgRlcgVEVNUA"
+        t_saturated = self.current_data_details.get("Feedwater Heater [16] - HPH-6: Saturation temperature", None)
+        username = 'tjb.piwebapi'
+        password = 'PLNJepara@2024'
+
+        try:
+            res = requests.get(f"https://10.47.0.54/piwebapi/streams/{t_feedwater_out_pi}/value", auth=(username, password) , timeout=2, verify=False)
+
+            if res.ok:
+                data = res.json().get("Value", None)
+                
+                if not data or not t_saturated:
+                    return None
+                
+                return data - t_saturated.nilai
+        except requests.exceptions.RequestException:
+            return None
+        
+    def calculate_ttd_hph_6(self):
+        "(T feedwater out - T saturated)"
+        t_feedwater_out_pi = "F1DPw1kUu10ziUaXEx2rIyo4pAWg0AAAS1RKQi1LSTAwLVBJMVxUSkIzLkhQIEZXIEhUUiA2IE9VVEwgRlcgVEVNUA"
+        t_saturated = self.current_data_details.get("Feedwater Heater [15] - HPH-5: Saturation temperature", None)
+        
+        username = 'tjb.piwebapi'
+        password = 'PLNJepara@2024'
+
+        try:
+            res = requests.get(f"https://10.47.0.54/piwebapi/streams/{t_feedwater_out_pi}/value", auth=(username, password) , timeout=2, verify=False)
+        
+            if res.ok:
+                data = res.json().get("Value", None)
+                
+                if not data or not t_saturated:
+                    return None
+                
+                return data - t_saturated.nilai
+        except requests.exceptions.RequestException:
+            return None
+        
+    def calculate_ttd_hph_5(self):
+        "(T feedwater out - T saturated)"
+        t_feedwater_out_pi = "F1DPw1kUu10ziUaXEx2rIyo4pAUQ0AAAS1RKQi1LSTAwLVBJMVxUSkIzLkhQIEZXIEhUUiA1IE9VVEwgRlcgVEVNUA"
+        t_saturated = self.current_data_details.get("Feedwater Heater [14] - HPH-4: Saturation temperature", None)
+        
+        username = 'tjb.piwebapi'
+        password = 'PLNJepara@2024'
+
+        try:
+            res = requests.get(f"https://10.47.0.54/piwebapi/streams/{t_feedwater_out_pi}/value", auth=(username, password) , timeout=2, verify=False)
+            
+        
+            if res.ok:
+                data = res.json().get("Value", None)
+                
+                if not data or not t_saturated:
+                    return None
+                
+                return data - t_saturated.nilai
+        
+        except requests.exceptions.RequestException:
+            return None
+    
+    
+    def calculate_ttd_lph_1(self):
+        "(T saturated - T feedwater out)"
+        
+        t_feedwater_out_pi = "F1DPw1kUu10ziUaXEx2rIyo4pA6w0AAAS1RKQi1LSTAwLVBJMVxUSkIzLkxQIEZXIEhUUiAxIE9VVEwgQ09ORCBXVFIgVEVNUA"
+        t_saturated = self.current_data_details.get("Feedwater Heater [10] - LPH-1: Saturation temperature", None)
+        
+        
+        username = 'tjb.piwebapi'
+        password = 'PLNJepara@2024'
+
+        try:
+            res = requests.get(f"https://10.47.0.54/piwebapi/streams/{t_feedwater_out_pi}/value", auth=(username, password) , timeout=2, verify=False)
+            
+        
+            if res.ok:
+                data = res.json().get("Value", None)
+                
+                if not data or not t_saturated:
+                    return None
+                
+                return t_saturated.nilai - data
+        
+        except requests.exceptions.RequestException:
+            return None
+        
+    def calculate_ttd_lph_2(self):
+            "(T saturated - T feedwater out)"
+            
+            t_feedwater_out_pi = "F1DPw1kUu10ziUaXEx2rIyo4pA8w0AAAS1RKQi1LSTAwLVBJMVxUSkIzLkxQIEZXIEhUUiAyIE9VVEwgQ09ORCBXVFIgVEVNUA"
+            t_saturated = self.current_data_details.get("Feedwater Heater [11] - LPH-2: Saturation temperature", None)
+            
+            
+            username = 'tjb.piwebapi'
+            password = 'PLNJepara@2024'
+
+            try:
+                res = requests.get(f"https://10.47.0.54/piwebapi/streams/{t_feedwater_out_pi}/value", auth=(username, password) , timeout=2, verify=False)
+                
+            
+                if res.ok:
+                    data = res.json().get("Value", None)
+                    
+                    if not data or not t_saturated:
+                        return None
+                    
+                    return t_saturated.nilai - data
+            
+            except requests.exceptions.RequestException:
+                return None
+            
+    def calculate_ttd_lph_3(self):
+            "(T saturated - T feedwater out)"
+            
+            t_feedwater_out_pi = "F1DPw1kUu10ziUaXEx2rIyo4pAUgwAAAS1RKQi1LSTAwLVBJMVxUSkIzLkRFQSZGVyBUSyBJTkwgQ09ORCBXVFIgVEVNUA"
+            t_saturated = self.current_data_details.get("Feedwater Heater [12] - LPH-3: Saturation temperature", None)
+            
+            
+            username = 'tjb.piwebapi'
+            password = 'PLNJepara@2024'
+
+            try:
+                res = requests.get(f"https://10.47.0.54/piwebapi/streams/{t_feedwater_out_pi}/value", auth=(username, password) , timeout=2, verify=False)
+                
+            
+                if res.ok:
+                    data = res.json().get("Value", None)
+                    
+                    if not data or not t_saturated:
+                        return None
+                    
+                    return t_saturated.nilai - data
+            
+            except requests.exceptions.RequestException:
+                return None
+            
+    
+    def calculate_air_heater_effectiveness(self):
+        # PA1 = ( [Stream [98] - Outlet 1 of Splitter [82] -> Primary air inlet of Rotary Air Heater [67] - ROTARY AH: Mass flow] + [Stream [96] - Primary air outlet of Rotary Air Heater [67] - ROTARY AH -> Primary air inlet of Furnace w/ Pulverizer [48] - BOILER-PULVERIZER: Mass flow] ) / 2
+        
+        PA1 = (self.current_data_details.get("Stream [98] - Outlet 1 of Splitter [82] -> Primary air inlet of Rotary Air Heater [67] - ROTARY AH: Mass flow", None) + self.current_data_details.get("Stream [96] - Primary air outlet of Rotary Air Heater [67] - ROTARY AH -> Primary air inlet of Furnace w/ Pulverizer [48] - BOILER-PULVERIZER: Mass flow", None))/2
+        PA2 = (self.current_data_details.get("Stream [98] - Outlet 1 of Splitter [82] -> Primary air inlet of Rotary Air Heater [67] - ROTARY AH: Specific heat", None) + self.current_data_details.get("Stream [96] - Primary air outlet of Rotary Air Heater [67] - ROTARY AH -> Primary air inlet of Furnace w/ Pulverizer [48] - BOILER-PULVERIZER: Specific heat", None))/2
+        
+        PA3 = ( 1000 / 3600 ) * PA1 * PA2
+        
+        
+        # SA1 = ( [Stream [89] - Outlet of Duct - Classic [79] -> Main air inlet of Rotary Air Heater [67] - ROTARY AH: Mass flow] + [Stream [90] - Main air outlet of Rotary Air Heater [67] - ROTARY AH -> Combustion air inlet of Furnace w/ Pulverizer [48] - BOILER-PULVERIZER: Mass flow] ) / 2
+        # SA2 = ( [Stream [89] - Outlet of Duct - Classic [79] -> Main air inlet of Rotary Air Heater [67] - ROTARY AH: Specific heat] + [Stream [90] - Main air outlet of Rotary Air Heater [67] - ROTARY AH -> Combustion air inlet of Furnace w/ Pulverizer [48] - BOILER-PULVERIZER: Specific heat] ) / 2
+        
+        SA1 = (self.current_data_details.get("Stream [89] - Outlet of Duct - Classic [79] -> Main air inlet of Rotary Air Heater [67] - ROTARY AH: Mass flow", None) + self.current_data_details.get("Stream [90] - Main air outlet of Rotary Air Heater [67] - ROTARY AH -> Combustion air inlet of Furnace w/ Pulverizer [48] - BOILER-PULVERIZER: Mass flow", None))/2
+        SA2 = (self.current_data_details.get("Stream [89] - Outlet of Duct - Classic [79] -> Main air inlet of Rotary Air Heater [67] - ROTARY AH: Specific heat", None) + self.current_data_details.get("Stream [90] - Main air outlet of Rotary Air Heater [67] - ROTARY AH -> Combustion air inlet of Furnace w/ Pulverizer [48] - BOILER-PULVERIZER: Specific heat", None))/2
+        
+        SA3 = ( 1000 / 3600 ) * SA1 * SA2
+
+        # FG1 = ( [Stream [100] - Gas outlet of Economiser [71] - ECO -> Flue gas inlet of Rotary Air Heater [67] - ROTARY AH: Mass flow] + [Stream [91] - Flue gas outlet of Rotary Air Heater [67] - ROTARY AH -> Inlet of Electrostatic Precipitator [68] - ESP: Mass flow] ) / 2
+        # FG2 = ( [Stream [100] - Gas outlet of Economiser [71] - ECO -> Flue gas inlet of Rotary Air Heater [67] - ROTARY AH: Specific heat] + [Stream [91] - Flue gas outlet of Rotary Air Heater [67] - ROTARY AH -> Inlet of Electrostatic Precipitator [68] - ESP: Specific heat] ) / 2
+        
+        FG1 = (self.current_data_details.get("Stream [100] - Gas outlet of Economiser [71] - ECO -> Flue gas inlet of Rotary Air Heater [67] - ROTARY AH: Mass flow", None) + self.current_data_details.get("Stream [91] - Flue gas outlet of Rotary Air Heater [67] - ROTARY AH -> Inlet of Electrostatic Precipitator [68] - ESP: Mass flow", None))/2
+        FG2 = (self.current_data_details.get("Stream [100] - Gas outlet of Economiser [71] - ECO -> Flue gas inlet of Rotary Air Heater [67] - ROTARY AH: Specific heat", None) + self.current_data_details.get("Stream [91] - Flue gas outlet of Rotary Air Heater [67] - ROTARY AH -> Inlet of Electrostatic Precipitator [68] - ESP: Specific heat", None))/2
+        
+        FG3 = ( 1000 / 3600 ) * FG1 * FG2
+        
+        # AVGin = ( [Stream [98] - Outlet 1 of Splitter [82] -> Primary air inlet of Rotary Air Heater [67] - ROTARY AH: Temperature]+[Stream [89] - Outlet of Duct - Classic [79] -> Main air inlet of Rotary Air Heater [67] - ROTARY AH: Temperature] ) / 2
+        # AVGout = ( [Stream [96] - Primary air outlet of Rotary Air Heater [67] - ROTARY AH -> Primary air inlet of Furnace w/ Pulverizer [48] - BOILER-PULVERIZER: Temperature]+[Stream [90] - Main air outlet of Rotary Air Heater [67] - ROTARY AH -> Combustion air inlet of Furnace w/ Pulverizer [48] - BOILER-PULVERIZER: Temperature] ) / 2
+        
+        AVGin = (self.current_data_details.get("Stream [98] - Outlet 1 of Splitter [82] -> Primary air inlet of Rotary Air Heater [67] - ROTARY AH: Temperature", None)+self.current_data_details.get("Stream [89] - Outlet of Duct - Classic [79] -> Main air inlet of Rotary Air Heater [67] - ROTARY AH: Temperature", None))/2
+        AVGout = (self.current_data_details.get("Stream [96] - Primary air outlet of Rotary Air Heater [67] - ROTARY AH -> Primary air inlet of Furnace w/ Pulverizer [48] - BOILER-PULVERIZER: Temperature", None)+self.current_data_details.get("Stream [90] - Main air outlet of Rotary Air Heater [67] - ROTARY AH -> Combustion air inlet of Furnace w/ Pulverizer [48] - BOILER-PULVERIZER: Temperature", None))/2
+        
+        if ( (PA3 + SA3) < FG3 ):
+            AHE = ( (AVGout - AVGin) / ([5037] - AVGin) )
+        else:
+            AHE = ( (PA3+SA3)(AVGout - AVGin) / (FG3)([5037] - AVGin) )
+            
+        return AHE

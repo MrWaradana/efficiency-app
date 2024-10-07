@@ -55,6 +55,7 @@ class DataDetailRootCauseController(BaseController[EfficiencyDataDetailRootCause
                         cause_id=cause_id,
                         is_parent=True if cause_id == root_cause["parent_id"] else False,
                         is_checked=is_checked,
+                        is_repair=root_cause["is_repair"],
                         biaya=0,
                         created_by=user_id
                     )for cause_id, is_checked in root_cause["root_causes"].items()

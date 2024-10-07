@@ -20,7 +20,7 @@ from core.utils import get_key_by_value, response
 from core.utils.formula import calculate_pareto
 from core.factory import data_factory, variable_factory
 from werkzeug import exceptions
-import core.utils.formula as mainFormula
+from core.utils.formula import VariableFormula
 
 from flask_sse import sse
 
@@ -246,6 +246,7 @@ class DataController(BaseController[EfficiencyTransaction]):
 
         # Get Data based on uniqueId
         transaction = data_repository.get_by_unique_id(unique_id)
+        mainFormula = VariableFormula(transaction)
         transaction_records = []
 
         excel = excel_repository.get_all()[0]
@@ -284,9 +285,9 @@ class DataController(BaseController[EfficiencyTransaction]):
             elif formula:
                 # Calculate the output value based on the formula
                 formulaFunc = getattr(mainFormula, formula)
-
+    
                 if callable(formulaFunc):
-                    value_float = formulaFunc(output_var)
+                    value_float = formulaFunc()
             elif output_var:
                 try:
                     value_float = float(output_var)
@@ -338,6 +339,7 @@ class DataController(BaseController[EfficiencyTransaction]):
     @Transactional(propagation=Propagation.REQUIRED)
     def update_data(self, transaction_id, user_id, inputs, name):
         transaction = data_repository.get_by_uuid(transaction_id)
+        
 
         if not transaction:
             raise exceptions.NotFound("Data not found")
