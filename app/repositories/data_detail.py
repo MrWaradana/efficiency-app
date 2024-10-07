@@ -49,24 +49,22 @@ class DataDetailRepository(BaseRepository[EfficiencyDataDetail]):
             and_(
                 EfficiencyDataDetail.efficiency_transaction_id == data_id,
                 Variable.in_out == "out",
-            )
-        ).filter(
+                
+            ),
             or_(
-                Variable.category.isnot(None),
                 Variable.is_pareto.is_(True),
+                Variable.category.isnot(None)
             )
         ).all()
 
         target_query = query.filter(
             and_(
-                EfficiencyTransaction.jenis_parameter == "target",
+                EfficiencyTransaction.jenis_parameter == "Commision",
                 Variable.in_out == "out",
-                Variable.category.isnot(None),
-            )
-        ).filter(
+            ),
             or_(
-                Variable.category.isnot(None),
                 Variable.is_pareto.is_(True),
+                Variable.category.isnot(None)
             )
         ).all()
 
@@ -91,7 +89,7 @@ class DataDetailRepository(BaseRepository[EfficiencyDataDetail]):
         if is_target or is_kpi:
             query = query.filter(
                 and_(
-                    EfficiencyTransaction.jenis_parameter == ("target" if is_target else "kpi"),
+                    EfficiencyTransaction.jenis_parameter == ("Commision" if is_target else "Niaga"),
                     Variable.is_nphr == True,
                 )
             )

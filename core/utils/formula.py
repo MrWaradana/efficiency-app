@@ -29,3 +29,5 @@ def calculate_pareto(target_data, current_data):
 def calculate_cost_benefit(netto, heatRate, nilai_losses):
     cost_benefit = nilai_losses * (netto * heatRate)
     return cost_benefit
+
+

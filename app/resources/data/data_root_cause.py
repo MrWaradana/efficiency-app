@@ -29,9 +29,11 @@ data_detail_root_cause_schema = data_detail_root_cause_factory.data_detail_root_
 
 class DataRootCausesListResource(Resource):
     @token_required
-    def get(self, user_id, transaction_id, detail_id):
-
-        root_causes = data_detail_root_cause_controller.get_by_detail_id(detail_id)
+    @parse_params(Argument("is_repair", location="args", type=int, required=False, default=0))
+    def get(self, user_id, transaction_id, detail_id, is_repair:int):
+        is_repair = bool(is_repair == 1)
+        
+        root_causes = data_detail_root_cause_controller.get_by_detail_id(detail_id, is_repair)
 
         return response(
             200,

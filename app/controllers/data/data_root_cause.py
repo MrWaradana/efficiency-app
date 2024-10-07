@@ -1,7 +1,7 @@
 
 
 from core.controller.base import BaseController
-from digital_twin_migration.models.efficiency_app import EfficiencyDataDetailRootCause, EfficiencyDataDetailRootCauseMember
+from digital_twin_migration.models.efficiency_app import EfficiencyDataDetailRootCause, EfficiencyDataDetailRootCauseMember, EfficiencyDataDetailRootCauseAction
 from core.factory import data_detail_root_cause_factory
 from core.cache import Cache
 from werkzeug import exceptions as exc
@@ -13,10 +13,9 @@ class DataDetailRootCauseController(BaseController[EfficiencyDataDetailRootCause
         super().__init__(model=EfficiencyDataDetailRootCause, repository=data_detail_root_cause_repository)
         self.data_detail_root_cause_repository = data_detail_root_cause_repository
 
-    def get_by_detail_id(self, detail_id):
+    def get_by_detail_id(self, detail_id, is_repair=False):
         def fetch_data_detail_root_cause():
-            root_causes = self.data_detail_root_cause_repository.get_by_detail_id(detail_id)
-            
+            root_causes = self.data_detail_root_cause_repository.get_by_detail_id(detail_id, is_repair)
 
             return root_causes
 
@@ -39,7 +38,7 @@ class DataDetailRootCauseController(BaseController[EfficiencyDataDetailRootCause
             data_roots = self.data_detail_root_cause_repository.get_by_detail_id_parent_ids(parent_ids, detail_id)
 
             if data_roots:
-                self.data_detail_root_cause_repository.delete_bulk(data_roots)
+                self.data_detail_root_cause_repository.delete_members(data_roots[0])
 
             for root_cause in data_root_causes:
                 data_root_cause = self.data_detail_root_cause_repository.create({
@@ -60,10 +59,8 @@ class DataDetailRootCauseController(BaseController[EfficiencyDataDetailRootCause
                         created_by=user_id
                     )for cause_id, is_checked in root_cause["root_causes"].items()
                 ]
-                
-                
+
                 self.data_detail_root_cause_repository.session.add_all(root_cause_members)
-                
 
             # data_root_causes_records = [
             #     EfficiencyDataDetailRootCause(
@@ -99,6 +96,28 @@ class DataDetailRootCauseController(BaseController[EfficiencyDataDetailRootCause
         Cache.remove_by_prefix(f"data_detail_root_cause_{detail_id}")
 
         return None
+
+    def create_data_detail_root_cause_actions(self, user_id, root_cause_id, data_actions):
+
+        if not data_actions:
+            return exc.BadRequest("Data actionss must be provided")
+
+        data_root = self.data_detail_root_cause_repository.get_by("id", root_cause_id)
+
+        if data_root:
+            self.data_detail_root_cause_repository.delete_actions(data_root)
+
+        for actions in data_actions:
+            root_cause_actions = [
+                EfficiencyDataDetailRootCauseAction(
+                    root_cause_id=data_root.id,
+                    action_id=action_id,
+                    is_checked=is_checked,
+                    created_by=user_id
+                )for action_id, is_checked in actions.items()
+            ]
+
+        self.data_detail_root_cause_repository.session.add_all(root_cause_actions)
 
 
 data_detail_root_cause_controller = DataDetailRootCauseController()

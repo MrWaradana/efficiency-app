@@ -46,6 +46,7 @@ class DataParetoController(BaseController[EfficiencyDataDetail]):
             raise exceptions.NotFound("Transaction not found")
 
         data = data_detail_repository.get_data_pareto(transaction_id)
+    
 
         if data is None:
             raise exceptions.NotFound("Data not found")

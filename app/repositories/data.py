@@ -127,7 +127,7 @@ class DataRepository(BaseRepository[EfficiencyTransaction]):
             .filter(
                 and_(
                     EfficiencyDataDetail.variable_id.in_(variable_ids),
-                    EfficiencyTransaction.jenis_parameter == "target"
+                    EfficiencyTransaction.jenis_parameter == "Commision"
                 )
             )
             .options(

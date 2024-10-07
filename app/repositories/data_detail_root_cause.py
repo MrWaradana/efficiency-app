@@ -13,9 +13,9 @@ from core.repository import BaseRepository
 
 class DataDetailRootCauseRepository(BaseRepository[EfficiencyDataDetailRootCause]):
 
-    def get_by_detail_id(self, detail_id: str):
-        query = self._query({'members'})
-        query = query.filter(EfficiencyDataDetailRootCause.data_detail_id == detail_id)
+    def get_by_detail_id(self, detail_id: str, is_repair: bool = False):
+        query = self._query({'members', 'actions'})
+        query = query.filter(EfficiencyDataDetailRootCause.data_detail_id == detail_id, EfficiencyDataDetailRootCause.is_repair.is_(is_repair))
         return self._all_unique(query)
 
     def get_by_detail_id_parent_ids(self, parent_ids: list, detail_id: str):
@@ -37,9 +37,12 @@ class DataDetailRootCauseRepository(BaseRepository[EfficiencyDataDetailRootCause
 
         # Retrieve unique records (assuming _all_unique applies distinct or similar)
         return self._all_unique(query)
-    
+
     def _join_members(self, query: Select) -> Select:
         return query.options(joinedload(EfficiencyDataDetailRootCause.members))
+
+    def _join_actions(self, query: Select) -> Select:
+        return query.options(joinedload(EfficiencyDataDetailRootCause.actions))
 
     def get_by_detail_id_with_actions(self, detail_id: str):
         query = self._query()
@@ -47,3 +50,13 @@ class DataDetailRootCauseRepository(BaseRepository[EfficiencyDataDetailRootCause
     def delete_bulk(self, root_causes: list):
         for root_cause in root_causes:
             self.delete(root_cause)
+
+    def delete_members(self, root_cause):
+        for member in root_cause.members:
+            self.delete(member)
+        return root_cause
+
+    def delete_actions(self, root_cause):
+        for action in root_cause.actions:
+            self.delete(action)
+        return root_cause
