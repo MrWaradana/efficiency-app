@@ -252,6 +252,7 @@ class DataController(BaseController[EfficiencyTransaction]):
 
         if not excel:
             data_repository.update_thermoflow_status(False)
+            transaction.status = "Failed"
             sse.publish({"message": "Excel not found on Insert Outputs", "status": False}, type="data_outputs")
             raise exceptions.NotFound("Excel not found")
 
@@ -307,6 +308,7 @@ class DataController(BaseController[EfficiencyTransaction]):
         # Bulk create the transaction records
         data_repository.create_bulk(transaction_records)
         data_repository.update_thermoflow_status(False)
+        transaction.status = "Done"
 
         sse.publish({"message": "Output has been processed", "status": True}, type="data_outputs")
 
