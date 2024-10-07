@@ -41,7 +41,7 @@ class DataNphrController(BaseController[EfficiencyTransaction]):
         # get data chart pareto
         data_pareto = data_pareto_controller.get_data_pareto(data.id, data.persen_threshold)
 
-        return data_pareto[1], nphr, data.id
+        return data_pareto[1], nphr, data.id, data.name
 
 
 data_nphr_controller = DataNphrController()

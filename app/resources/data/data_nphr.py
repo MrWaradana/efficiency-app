@@ -17,14 +17,15 @@ class DataNPHRResource(Resource):
         data_id: str = None,
     ) -> Response:
         data_id = None if data_id == "null" else data_id
-        
-        chart, nphr, data_id = data_nphr_controller.get_data_nphr(data_id)
-        
+
+        chart, nphr, data_id, data_name = data_nphr_controller.get_data_nphr(data_id)
+
         return response(
             200,
             True,
             "Data retrieved successfully",
             {
+                "name": data_name,
                 "data_id": data_id,
                 "chart_result": chart,
                 "nphr_result": nphr,

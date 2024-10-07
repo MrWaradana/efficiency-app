@@ -42,7 +42,7 @@ class VariableFormula():
     def calculate_sfc(self):
         "__Stream [95] - Outlet of Fuel Mixer [32] -> Fuel inlet of Furnace w/ Pulverizer [48] - BOILER-PULVERIZER: Mass flow|*1000/|__Plant gross power"
         stream_95 = self.current_data_details.get("Stream [95] - Outlet of Fuel Mixer [32] -> Fuel inlet of Furnace w/ Pulverizer [48] - BOILER-PULVERIZER: Mass flow", None)
-        plant_gross_power = self.current_data_details.get("Plant gross power", None)
+        plant_gross_power = self.plant_gross_power()
 
         if not stream_95 or not plant_gross_power:
             return None
@@ -98,8 +98,8 @@ class VariableFormula():
     
     def calculate_auxiliary_power(self):
         "__Plant auxiliary|/|__Plant gross power"
-        plant_auxiliary = self.current_data_details.get("Plant auxiliary", None)
-        plant_gross_power = self.current_data_details.get("Plant gross power", None)
+        plant_auxiliary = self.plant_auxiliary()
+        plant_gross_power = self.plant_gross_power()
         
         if not plant_auxiliary or not plant_gross_power:
             return None
@@ -117,10 +117,33 @@ class VariableFormula():
         
         return (st_assembly_1_hpt_1.nilai + st_assembly_1_hpt_2.nilai + st_assembly_1_hpt_3.nilai) / 3
     
-   
+    def calculate(self):
+        "(|__ST Assembly [3] - LPT: ST Group [5] - LPT-1: Group overall efficiency|+|__ST Assembly [3] - LPT: ST Group [6] - LPT-2: Group overall efficiency|+|__ST Assembly [3] - LPT: ST Group [7] - LPT-3: Group overall efficiency|+|__ST Group [60] - LPT-4: Group overall efficiency|)/4,"
     
+    def plant_gross_power(self):
+        "Plant gross power"
+        plant_gross_power = self.current_data_details.get("Plant gross power", None)
         
-
-    def calculate_cost_benefit(self, netto, heatRate, nilai_losses):
-        cost_benefit = nilai_losses * (netto * heatRate)
-        return cost_benefit
+        if not plant_gross_power:
+            return None
+        
+        return plant_gross_power.nilai
+    
+    def plant_net_power(self):
+        "Plant net power"
+        plant_net_power = self.current_data_details.get("Plant net power", None)
+        
+        if not plant_net_power:
+            return None
+        
+        return plant_net_power.nilai
+    
+    def plant_auxiliary(self):
+        "Plant auxiliary"
+        plant_auxiliary = self.current_data_details.get("Plant auxiliary", None)
+        
+        if not plant_auxiliary:
+            return None
+        
+        return plant_auxiliary.nilai
+    

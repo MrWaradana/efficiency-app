@@ -8,15 +8,11 @@ from core.utils import response
 
 
 def handle_exception(e):
-    sse.publish({"message": str(e)}, type="error")
-    
     if isinstance(e, HTTPException):
         return response(e.code, False, e.description)
 
     if isinstance(e, SQLAlchemyError):
         return response(500, False, str(e))
-    
-    
 
     return (
         response(500, False, str(e))
