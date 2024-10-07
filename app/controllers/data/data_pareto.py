@@ -93,7 +93,7 @@ class DataParetoController(BaseController[EfficiencyDataDetail]):
                     "total_biaya": total_cost,
                     "symptoms": "Higher" if gap > 0 else "Lower",
                     "has_cause" : hasCause,
-                    "is_pareto": current_data.is_pareto,
+                    "is_pareto" : current_data.variable.is_pareto
                 }
             )
 
