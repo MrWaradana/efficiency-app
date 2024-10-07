@@ -21,12 +21,6 @@ class DataDetailRootCauseController(BaseController[EfficiencyDataDetailRootCause
 
         return fetch_data_detail_root_cause()
 
-    def get_root_actions_by_detail_id(self, detail_id):
-
-        root_cause_actions = self.data_detail_root_cause_repository.get_root_actions_by_detail_id(detail_id)
-
-        return root_cause_actions
-
     @Transactional(propagation=Propagation.REQUIRED)
     def create_data_detail_root_cause(self, user_id, transaction_id, detail_id, is_bulk, data_root_causes, **inputs):
         if is_bulk:
@@ -35,19 +29,24 @@ class DataDetailRootCauseController(BaseController[EfficiencyDataDetailRootCause
 
             parent_ids = [root_cause["parent_id"] for root_cause in data_root_causes]
 
-            data_roots = self.data_detail_root_cause_repository.get_by_detail_id_parent_ids(parent_ids, detail_id)
+            data_roots = {root.parent_cause_id: root for root in self.data_detail_root_cause_repository.get_by_detail_id_parent_ids(parent_ids, detail_id)}
 
             if data_roots:
-                self.data_detail_root_cause_repository.delete_members(data_roots[0])
+                self.data_detail_root_cause_repository.delete_members(data_roots)
 
             for root_cause in data_root_causes:
-                data_root_cause = self.data_detail_root_cause_repository.create({
-                    "data_detail_id": detail_id,
-                    "is_repair": root_cause["is_repair"],
-                    "biaya": 0,
-                    "parent_cause_id": root_cause["parent_id"],
-                    "created_by": user_id
-                })
+                ##CHeck if root cause is already exist
+                if root_cause["parent_id"] in data_roots:
+                    data_root_cause = data_roots[root_cause["parent_id"]]
+                
+                else:
+                    data_root_cause = self.data_detail_root_cause_repository.create({
+                        "data_detail_id": detail_id,
+                        "is_repair": root_cause["is_repair"],
+                        "biaya": 0,
+                        "parent_cause_id": root_cause["parent_id"],
+                        "created_by": user_id
+                    })
 
                 root_cause_members = [
                     EfficiencyDataDetailRootCauseMember(
@@ -97,25 +96,30 @@ class DataDetailRootCauseController(BaseController[EfficiencyDataDetailRootCause
 
         return None
 
-    def create_data_detail_root_cause_actions(self, user_id, root_cause_id, data_actions):
+    def create_data_detail_root_cause_actions(self, user_id, data_actions):
 
         if not data_actions:
             return exc.BadRequest("Data actionss must be provided")
+        
+        root_ids = [root_cause["root_id"] for root_cause in data_actions]
 
-        data_root = self.data_detail_root_cause_repository.get_by("id", root_cause_id)
-
-        if data_root:
-            self.data_detail_root_cause_repository.delete_actions(data_root)
+        data_roots = {root.id: root for root in self.data_detail_root_cause_repository.get_by_root_ids(root_ids)}
+    
+        if data_roots:
+            self.data_detail_root_cause_repository.delete_actions(data_roots)
 
         for actions in data_actions:
-            root_cause_actions = [
-                EfficiencyDataDetailRootCauseAction(
-                    root_cause_id=data_root.id,
-                    action_id=action_id,
-                    is_checked=is_checked,
-                    created_by=user_id
-                )for action_id, is_checked in actions.items()
-            ]
+            if actions["root_id"] in data_roots:
+                data_root = data_roots[actions["root_id"]]
+    
+                root_cause_actions = [
+                    EfficiencyDataDetailRootCauseAction(
+                        root_cause_id=data_root.id,
+                        action_id=action_id,
+                        is_checked=is_checked,
+                        created_by=user_id
+                    )for action_id, is_checked in actions['actions'].items()
+                ]
 
         self.data_detail_root_cause_repository.session.add_all(root_cause_actions)
 

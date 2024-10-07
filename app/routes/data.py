@@ -7,17 +7,18 @@ from flask_restful import Api
 
 from app.resources import (DataDetailListResource, DataDetailResource,
                            DataListParetoResource, DataListResource,
-                           DataResource, DataRootCausesListResource, DataListCostBenefit)
+                           DataResource, DataRootCausesListResource, DataListCostBenefit, DataStatusThermoflow)
 from app.resources.data.data_hl_trending import DataTrendingListResource
 from app.resources.data.data_nphr import DataNPHRResource
 from app.resources.data import DataOutputResource, DataPerformanceResource
+from app.resources.data import DataRootCausesActionResource
 
 TRANSACTION_BLUEPRIENT = Blueprint("data", __name__)
 
 Api(TRANSACTION_BLUEPRIENT).add_resource(DataListResource, "/data")
+Api(TRANSACTION_BLUEPRIENT).add_resource(DataStatusThermoflow, "/data/status/thermoflow")
 Api(TRANSACTION_BLUEPRIENT).add_resource(DataPerformanceResource, "/data/charts/performance")
 Api(TRANSACTION_BLUEPRIENT).add_resource(DataOutputResource, "/data/output")
-
 Api(TRANSACTION_BLUEPRIENT).add_resource(DataResource, "/data/<transaction_id>")
 
 
@@ -36,6 +37,10 @@ Api(TRANSACTION_BLUEPRIENT).add_resource(
 
 Api(TRANSACTION_BLUEPRIENT).add_resource(
     DataRootCausesListResource, "/data/<transaction_id>/root/<detail_id>"
+)
+
+Api(TRANSACTION_BLUEPRIENT).add_resource(
+    DataRootCausesActionResource, "/data/<transaction_id>/root/<detail_id>/action"
 )
 
 Api(TRANSACTION_BLUEPRIENT).add_resource(DataTrendingListResource, "/data/trending")

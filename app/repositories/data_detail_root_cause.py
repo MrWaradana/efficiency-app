@@ -38,6 +38,12 @@ class DataDetailRootCauseRepository(BaseRepository[EfficiencyDataDetailRootCause
         # Retrieve unique records (assuming _all_unique applies distinct or similar)
         return self._all_unique(query)
 
+    def get_by_root_ids(self, root_ids: list):
+        query = self._query({'actions'})
+        query = query.filter(EfficiencyDataDetailRootCause.id.in_(root_ids))
+        return self._all_unique(query)
+
+
     def _join_members(self, query: Select) -> Select:
         return query.options(joinedload(EfficiencyDataDetailRootCause.members))
 
@@ -51,12 +57,12 @@ class DataDetailRootCauseRepository(BaseRepository[EfficiencyDataDetailRootCause
         for root_cause in root_causes:
             self.delete(root_cause)
 
-    def delete_members(self, root_cause):
-        for member in root_cause.members:
-            self.delete(member)
-        return root_cause
+    def delete_members(self, roots):
+        for root in roots.values():
+            for member in root.members:
+                self.delete(member)
 
-    def delete_actions(self, root_cause):
-        for action in root_cause.actions:
-            self.delete(action)
-        return root_cause
+    def delete_actions(self, roots:list):
+        for root in roots.values():
+            for action in root.actions:
+                self.delete(action)
