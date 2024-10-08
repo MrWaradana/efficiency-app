@@ -24,28 +24,40 @@ class VariableCauseController(BaseController[VariableCause]):
         self.variable_cause_repository = variable_cause_repository
         
         
-    def get_cause_actions(self, detail_id: str) -> List[Dict]:
+    def get_cause_actions(self, detail_id: str, variable_id:str) -> List[Dict]:
         
-        def has_checked_root_cause_members(nodeId: str) -> bool:
-            """Check if a node has any checked root cause members."""
-            members = data_detail_root_cause_controller.data_detail_root_cause_repository.get_by_member_id_and_detail_id(nodeId, detail_id).members
+        def has_checked_root_cause_members(node: Dict, root_ids: List[str]) -> bool:
+            """
+            Check if a node has any checked root cause members with matching root_ids.
             
-            raise Exception(members)
+            Args:
+                node (Dict): The node to check
+                root_ids (List[str]): List of valid root cause IDs
+            
+            Returns:
+                bool: True if any member is checked and has a matching root_cause_id
+            """
+            # Get root_cause_members safely using dict.get()
+            members = node.get('root_cause_members', [])
             
             if not members:
                 return False
-            return any(member.is_checked for member in members.members)
+            
+            # Check both conditions for each member
+            return any(
+                member.get('is_repair', False) and 
+                member.get('root_cause_id') in root_ids 
+                for member in members
+            )
         
-        has_checked_root_cause_members()
-        
-        def is_leaf_node_with_actions(node: VariableCause) -> bool:
+        def is_leaf_node_with_actions(node: Dict) -> bool:
             """Check if a node is a leaf node with actions."""
-            has_actions = bool(node.actions)
-            has_no_children = not node.children
+            has_actions = bool(node.get('actions'))
+            has_no_children = not node.get('children')
             return has_actions and has_no_children
         
 
-        def filter_tree(node: VariableCause) -> Optional[Dict]:
+        def filter_tree(node: Dict, root_ids: List[str]) -> Optional[Dict]:
             """
             Recursively filter the tree structure.
             Returns None if the node should be filtered out.
@@ -60,39 +72,45 @@ class VariableCauseController(BaseController[VariableCause]):
             # If it's a leaf node with actions
             if is_leaf_node_with_actions(node):
                 # Only return the node if it has checked root cause members
-                return node if has_checked_root_cause_members(node.id) else None
+                raise Exception(node)
+                return node if has_checked_root_cause_members(node, root_ids) else None
             
             # Process children if they exist
-            if node.children:
+            if node.get('children'):
                 # Filter children recursively
                 filtered_children = []
-                for child in node.children:
-                    filtered_child = filter_tree(child)
+                for child in node['children']:
+                    filtered_child = filter_tree(child, root_ids)
                     if filtered_child is not None:
                         filtered_children.append(filtered_child)
                 
                 # If any children remain after filtering, update node's children
                 if filtered_children:
-                    node.children = filtered_children
+                    node['children'] = filtered_children
                     return node
             
             # If no valid children and not a valid leaf node, return None
             return None
         
         # Fetch the data
-        data = self.variable_cause_repository.
+        data = variable_cause_repository.get_by_variable_id(variable_id, {"children", "actions"})
+        root_ids = [root.id for root in data_detail_root_cause_controller.data_detail_root_cause_repository.get_by_detail_id(detail_id)]
         
-        filtered_data = copy.deepcopy(data)
+        filtered_data = variable_cause_schema.dump(data, many=True)
         
         # Filter each node in the data array
         filtered_nodes = []
-        for node in filtered_data['data']:
-            filtered_node = filter_tree(node)
+        for node in filtered_data:
+            filtered_node = filter_tree(node, root_ids)
             if filtered_node is not None:
                 filtered_nodes.append(filtered_node)
+                
+        raise Exception(filtered_nodes)
         
         return {
             'data': filtered_nodes,
             'message': 'Filtered data',
             'status': True
         }
+        
+variable_cause_controller = VariableCauseController()

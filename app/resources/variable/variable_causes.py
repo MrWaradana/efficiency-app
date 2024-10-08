@@ -9,6 +9,7 @@ from app.resources.variable.variable import variable_repository
 from app.schemas import VariableCauseSchema
 from core.security import token_required
 from core.utils import parse_params, response
+from app.controllers.variable import variable_cause_controller
 
 variable_cause_schema = VariableCauseSchema()
 variable_cause_repository = CausesRepository(VariableCause)
@@ -104,6 +105,11 @@ class VariableCauseResource(Resource):
 
 
 class VariableCauseActionResource(Resource):
-    
-        def get(self):
-            pass
+
+        @parse_params(
+            Argument("detail_id", location="args", required=True, type=str),
+        )
+        def get(self, variable_id, detail_id: str) -> Response:
+            variable_cause_controller.get_cause_actions(detail_id, variable_id)
+            
+            return response(200, True, "Cause actions retrieved successfully")

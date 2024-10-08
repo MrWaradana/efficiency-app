@@ -36,11 +36,7 @@ def calculate_cost_benefit(netto, heatRate, nilai_losses):
 
 class VariableFormula():
     def __init__(self, current_data):
-        self.current_data = current_data
-        self.current_data_details = {
-            details.variable.excel_variable_name: details
-            for details in current_data.efficiency_transaction_details
-        }
+        self.current_data_details = current_data
 
     def calculate_sfc(self):
         "__Stream [95] - Outlet of Fuel Mixer [32] -> Fuel inlet of Furnace w/ Pulverizer [48] - BOILER-PULVERIZER: Mass flow|*1000/|__Plant gross power"
@@ -50,7 +46,7 @@ class VariableFormula():
         if not stream_95 or not plant_gross_power:
             return None
 
-        return stream_95.nilai * 1000 / plant_gross_power.nilai if plant_gross_power.nilai != 0 else 0
+        return stream_95 * 1000 / plant_gross_power if plant_gross_power != 0 else 0
     
     def calculate_total_coal_flow(self):
         "__Stream [95] - Outlet of Fuel Mixer [32] -> Fuel inlet of Furnace w/ Pulverizer [48] - BOILER-PULVERIZER: Mass flow|*|1000"
@@ -59,7 +55,7 @@ class VariableFormula():
         if not stream_95:
             return None
         
-        return stream_95.nilai * 1000
+        return stream_95 * 1000
     
     
     def calculate_HHV_batubara(self):
@@ -69,7 +65,7 @@ class VariableFormula():
         if not fuel_source_33:
             return None
         
-        return fuel_source_33.nilai * 0.239
+        return fuel_source_33 * 0.239
     
     def calculate_plant_gross_heat_rate(self):
         "__Plant gross heat rate (HHV)|*0,239"
@@ -78,7 +74,7 @@ class VariableFormula():
         if not plant_gross_heat_rate:
             return None
         
-        return plant_gross_heat_rate.nilai * 0.239
+        return plant_gross_heat_rate * 0.239
     
     def calculate_plant_net_heat_rate(self):
         "__Plant net heat rate (HHV)|*0,239"
@@ -87,7 +83,7 @@ class VariableFormula():
         if not plant_net_heat_rate:
             return None
         
-        return plant_net_heat_rate.nilai * 0.239
+        return plant_net_heat_rate * 0.239
     
     def calculate_water_spray(self):
         "__Desuperheater [83] - DESUP SH-1: Spray mass flow|+|__Desuperheater [84] - DESUP SH-2: Spray mass flow"
@@ -97,7 +93,7 @@ class VariableFormula():
         if not desuperheater_83 or not desuperheater_84:
             return None
         
-        return desuperheater_83.nilai + desuperheater_84.nilai
+        return desuperheater_83 + desuperheater_84
     
     def calculate_auxiliary_power(self):
         "__Plant auxiliary|/|__Plant gross power"
@@ -107,7 +103,7 @@ class VariableFormula():
         if not plant_auxiliary or not plant_gross_power:
             return None
         
-        return plant_auxiliary.nilai / plant_gross_power.nilai if plant_gross_power.nilai != 0 else 0
+        return plant_auxiliary / plant_gross_power if plant_gross_power != 0 else 0
     
     def calculate_hp_turbine_efficiency(self):
         "(|__ST Assembly [1] - HPT: ST Group [1] - HPT-1: Outlet temperature|+|__ST Assembly [1] - HPT: ST Group [2] - HPT-2: Group overall efficiency|+|__ST Assembly [1] - HPT: ST Group [58] - HPT-3: Group overall efficiency|)/3"
@@ -118,7 +114,7 @@ class VariableFormula():
         if not st_assembly_1_hpt_1 or not st_assembly_1_hpt_2 or not st_assembly_1_hpt_3:
             return None
         
-        return (st_assembly_1_hpt_1.nilai + st_assembly_1_hpt_2.nilai + st_assembly_1_hpt_3.nilai) / 3
+        return (st_assembly_1_hpt_1 + st_assembly_1_hpt_2 + st_assembly_1_hpt_3) / 3
     
     def calculate_lp_turbine_efficiency(self):
         "(|__ST Assembly [3] - LPT: ST Group [5] - LPT-1: Group overall efficiency|+|__ST Assembly [3] - LPT: ST Group [6] - LPT-2: Group overall efficiency|+|__ST Assembly [3] - LPT: ST Group [7] - LPT-3: Group overall efficiency|+|__ST Group [60] - LPT-4: Group overall efficiency|)/4,"
@@ -130,7 +126,7 @@ class VariableFormula():
         if not st_assembly_3_lpt_1 or not st_assembly_3_lpt_2 or not st_assembly_3_lpt_3 or not st_group_60_lpt_4:
             return None
         
-        return (st_assembly_3_lpt_1.nilai + st_assembly_3_lpt_2.nilai + st_assembly_3_lpt_3.nilai + st_group_60_lpt_4.nilai) / 4
+        return (st_assembly_3_lpt_1 + st_assembly_3_lpt_2 + st_assembly_3_lpt_3 + st_group_60_lpt_4) / 4
 
     def calculate_ip_turbine_efficiency(self):
         "(|__ST Assembly [2] - IPT: ST Group [3] - IPT-1: Group overall efficiency|+|__ST Assembly [2] - IPT: ST Group [4] - IPT-2: Group overall efficiency|)/2"
@@ -140,7 +136,7 @@ class VariableFormula():
         if not st_assembly_2_ipt_1 or not st_assembly_2_ipt_2:
             return None
         
-        return (st_assembly_2_ipt_1.nilai + st_assembly_2_ipt_2.nilai) / 2
+        return (st_assembly_2_ipt_1 + st_assembly_2_ipt_2) / 2
             
     def plant_gross_power(self):
         "Plant gross power"
@@ -149,7 +145,7 @@ class VariableFormula():
         if not plant_gross_power:
             return None
         
-        return plant_gross_power.nilai
+        return plant_gross_power
     
     def plant_net_power(self):
         "Plant net power"
@@ -158,7 +154,7 @@ class VariableFormula():
         if not plant_net_power:
             return None
         
-        return plant_net_power.nilai
+        return plant_net_power
     
     def plant_auxiliary(self):
         "Plant auxiliary"
@@ -167,7 +163,7 @@ class VariableFormula():
         if not plant_auxiliary:
             return None
         
-        return plant_auxiliary.nilai
+        return plant_auxiliary
     
     def calculate_ttd_hph_7(self):
         "(T feedwater out - T saturated)"
@@ -185,7 +181,7 @@ class VariableFormula():
                 if not data or not t_saturated:
                     return None
                 
-                return data - t_saturated.nilai
+                return data - t_saturated
         except requests.exceptions.RequestException:
             return None
         
@@ -206,7 +202,7 @@ class VariableFormula():
                 if not data or not t_saturated:
                     return None
                 
-                return data - t_saturated.nilai
+                return data - t_saturated
         except requests.exceptions.RequestException:
             return None
         
@@ -228,7 +224,7 @@ class VariableFormula():
                 if not data or not t_saturated:
                     return None
                 
-                return data - t_saturated.nilai
+                return data - t_saturated
         
         except requests.exceptions.RequestException:
             return None
@@ -254,7 +250,7 @@ class VariableFormula():
                 if not data or not t_saturated:
                     return None
                 
-                return t_saturated.nilai - data
+                return t_saturated - data
         
         except requests.exceptions.RequestException:
             return None
@@ -279,7 +275,7 @@ class VariableFormula():
                     if not data or not t_saturated:
                         return None
                     
-                    return t_saturated.nilai - data
+                    return t_saturated - data
             
             except requests.exceptions.RequestException:
                 return None
@@ -304,7 +300,7 @@ class VariableFormula():
                     if not data or not t_saturated:
                         return None
                     
-                    return t_saturated.nilai - data
+                    return t_saturated - data
             
             except requests.exceptions.RequestException:
                 return None
