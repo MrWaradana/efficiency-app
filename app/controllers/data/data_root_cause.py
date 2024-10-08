@@ -119,13 +119,13 @@ class DataDetailRootCauseController(BaseController[EfficiencyDataDetailRootCause
             if not data_root:
                 return exc.BadRequest("Root cause not found")
 
-            root_cause_actions = [
-                EfficiencyDataDetailRootCauseAction(
+            root_cause_actions = [EfficiencyDataDetailRootCauseAction(
                     root_cause_id=data_root.id,
                     action_id=action_id,
-                    is_checked=is_checked,
+                    is_checked=data['isChecked'],
+                    biaya=data['biaya'],
                     created_by=user_id
-                )for action_id, is_checked in actions['actions'].items()
+                )for action_id, data in actions['actions'].items()
             ]
 
         self.data_detail_root_cause_repository.session.add_all(root_cause_actions)

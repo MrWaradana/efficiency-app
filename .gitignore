@@ -12,3 +12,4 @@ env/
 .env
 ssl/
 rcfa_env/
+venv/

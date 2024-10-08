@@ -6,7 +6,7 @@ authors = ["Cizz22 <cisatraa@gmail.com>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = ">=3.11,<4"
+python = ">=3.10,<4"
 alembic = "1.13.2"
 amqp = "5.2.0"
 aniso8601 = "9.0.1"
@@ -82,7 +82,7 @@ vine = "5.1.0"
 wcwidth = "0.2.13"
 werkzeug = "3.0.3"
 zipp = "3.20.0"
-digital-twin-migration = {git = "https://github.com/Cizz22/digital-twin-migration"}
+digital-twin-migration = { git = "https://github.com/Cizz22/digital-twin-migration" }
 flasgger = "^0.9.7.1"
 isort = "^5.13.2"
 ujson = "^5.10.0"
