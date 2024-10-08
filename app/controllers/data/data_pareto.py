@@ -46,6 +46,7 @@ class DataParetoController(BaseController[EfficiencyDataDetail]):
             raise exceptions.NotFound("Transaction not found")
 
         data = data_detail_repository.get_data_pareto(transaction_id)
+        nphr = data_detail_repository.get_data_nphr(transaction_id).nilai
     
 
         if data is None:
@@ -71,9 +72,8 @@ class DataParetoController(BaseController[EfficiencyDataDetail]):
 
             # Static Data
             netto = 1000
-            heatRate = 0.1
 
-            cost_benefit = calculate_cost_benefit(netto, heatRate, nilai_losses)
+            cost_benefit = calculate_cost_benefit(netto, nphr, nilai_losses)
 
             aggregated_value[category]['persen_losses'] += persen_losses or 0
             aggregated_value[category]['total_biaya'] += total_cost or 0
