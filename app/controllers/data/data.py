@@ -267,9 +267,6 @@ class DataController(BaseController[EfficiencyTransaction]):
         # Iterate over the output data
         for variable_name, variable_data in variable_mappings.items():
             
-            if variable_name != "HHV Batubara (AR)":
-                continue
-            
             output_var =  outputs.get(variable_name)
             variable_id = variable_data.get("id")
             web_id = variable_data.get("web_id")
