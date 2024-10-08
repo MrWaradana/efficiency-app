@@ -106,15 +106,15 @@ class DataDetailRootCauseController(BaseController[EfficiencyDataDetailRootCause
         if not data_actions:
             return exc.BadRequest("Data actionss must be provided")
 
-        root_ids = [root_cause["root_id"] for root_cause in data_actions]
+        root_parent_ids = [root_cause["parent_id"] for root_cause in data_actions]
 
-        data_roots = {root.id: root for root in self.data_detail_root_cause_repository.get_by_root_ids(root_ids)}
+        data_roots = {str(root.parent_cause_id): root for root in self.data_detail_root_cause_repository.get_by_root_ids(root_parent_ids)}
 
         if data_roots:
             self.data_detail_root_cause_repository.delete_actions(data_roots)
 
         for actions in data_actions:
-            data_root = data_roots.get(actions["root_id"], None)
+            data_root = data_roots.get(actions["parent_id"], None)
             
             if not data_root:
                 return exc.BadRequest("Root cause not found")
