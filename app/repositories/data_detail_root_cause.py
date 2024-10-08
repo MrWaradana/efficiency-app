@@ -4,7 +4,7 @@ from digital_twin_migration.database import Propagation, Transactional
 from digital_twin_migration.models import db
 from digital_twin_migration.models.efficiency_app import (
     EfficiencyDataDetail, EfficiencyDataDetailRootCause, EfficiencyTransaction,
-    Variable)
+    Variable, EfficiencyDataDetailRootCauseMember)
 from sqlalchemy import Select, and_, func, select
 from sqlalchemy.orm import joinedload
 
@@ -43,6 +43,16 @@ class DataDetailRootCauseRepository(BaseRepository[EfficiencyDataDetailRootCause
         query = query.filter(EfficiencyDataDetailRootCause.id.in_(root_ids))
         return self._all_unique(query)
 
+
+    def get_by_member_id_and_detail_id(self, cause_id: str, detail_id: str):
+        query = self._query().join(EfficiencyDataDetailRootCause.members)
+        query = query.filter(
+            and_(
+                EfficiencyDataDetailRootCauseMember.cause_id == cause_id,
+                EfficiencyDataDetailRootCause.data_detail_id == detail_id,
+            )
+        )
+        return self._first(query)
 
     def _join_members(self, query: Select) -> Select:
         return query.options(joinedload(EfficiencyDataDetailRootCause.members))

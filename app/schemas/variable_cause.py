@@ -1,7 +1,7 @@
-from digital_twin_migration.models.efficiency_app import VariableCause
+from digital_twin_migration.models.efficiency_app import VariableCause, VariableCauseAction
 from marshmallow import fields
 
-from app.schemas.data import EfficiencyDataDetailRootCauseSchema as root
+from app.schemas.data import EfficiencyDataDetailRootCauseMemberSchema as root
 from core.schema import ma
 
 
@@ -11,5 +11,14 @@ class VariableCauseSchema(ma.SQLAlchemyAutoSchema):
         load_instance = True
         include_fk = True
 
+
     children = fields.Nested(lambda: VariableCauseSchema, many=True)
-    root_causes = fields.Nested(root, many=True)
+    root_cause_members = fields.Nested(root, many=True)
+    actions = fields.Nested(lambda: VariableCauseActionSchema, many=True)
+
+
+class VariableCauseActionSchema(ma.SQLAlchemyAutoSchema):
+    class Meta:
+        model = VariableCauseAction
+        load_instance = True
+        include_fk = True

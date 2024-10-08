@@ -2,7 +2,7 @@
 
 from digital_twin_migration.database import Propagation, Transactional
 from digital_twin_migration.models.efficiency_app import (
-    EfficiencyDataDetail, EfficiencyDataDetailRootCause, VariableCause)
+    EfficiencyDataDetail, EfficiencyDataDetailRootCause, VariableCause,VariableCauseAction)
 from sqlalchemy import Select
 from sqlalchemy.orm import contains_eager, joinedload
 
@@ -32,6 +32,9 @@ class CausesRepository(BaseRepository[VariableCause]):
 
     def _join_root_causes(self, query: Select) -> Select:
         return query.options(joinedload(VariableCause.root_causes))
+    
+    def _join_actions(self, query: Select) -> Select:
+        return query.options(joinedload(VariableCause.actions))
 
     def get_by_uuid(self, uuid: str, join_: set[str] | None = None):
         query = self._query(join_)

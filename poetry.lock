@@ -690,7 +690,7 @@ dev = ["Sphinx (>=4.3.0,<7.1.0)", "black (>=23.0,<24.0)", "build", "furo (==2023
 type = "git"
 url = "https://github.com/Cizz22/digital-twin-migration"
 reference = "HEAD"
-resolved_reference = "7e1882820b7fc80b14c0805444123564b0c00941"
+resolved_reference = "11cd50d2bf259a2c6acd10f1408250f274ec2825"
 
 [[package]]
 name = "docker"

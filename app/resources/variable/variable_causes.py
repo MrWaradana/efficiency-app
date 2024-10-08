@@ -26,7 +26,7 @@ class VariableCausesResource(Resource):
         if not variable:
             return response(404, False, "Variable not found")
 
-        causes = variable_cause_repository.get_by_variable_id(variable_id, {"children"})
+        causes = variable_cause_repository.get_by_variable_id(variable_id, {"children", "actions"})
 
         return response(
             200,
@@ -101,3 +101,9 @@ class VariableCauseResource(Resource):
         variable_cause_repository.update(cause, {"updated_by": user_id, **attributes})
 
         return response(200, True, "Cause updated successfully")
+
+
+class VariableCauseActionResource(Resource):
+    
+        def get(self):
+            pass

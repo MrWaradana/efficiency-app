@@ -15,7 +15,7 @@ class DataDetailRootCauseController(BaseController[EfficiencyDataDetailRootCause
 
     def get_by_detail_id(self, detail_id, is_repair=False):
         def fetch_data_detail_root_cause():
-            root_causes = self.data_detail_root_cause_repository.get_by_detail_id(detail_id, is_repair)
+            root_causes = self.data_detail_root_cause_repository.get_by_detail_id(detail_id)
 
             return root_causes
 
@@ -38,13 +38,13 @@ class DataDetailRootCauseController(BaseController[EfficiencyDataDetailRootCause
                 if not data_root_cause:
                     data_root_cause = self.data_detail_root_cause_repository.create({
                         "data_detail_id": detail_id,
-                        "is_repair": root_cause["is_repair"],
+                        "is_repair": False,
                         "biaya": 0,
                         "parent_cause_id": root_cause["parent_id"],
                         "created_by": user_id
                     })
                 else:
-                    data_root_cause.is_repair = root_cause["is_repair"]
+                    data_root_cause.is_repair = False
                     data_root_cause.biaya = 0
                     for member in data_root_cause.members:
                         self.data_detail_root_cause_repository.session.delete(member)
@@ -126,6 +126,8 @@ class DataDetailRootCauseController(BaseController[EfficiencyDataDetailRootCause
             ]
 
         self.data_detail_root_cause_repository.session.add_all(root_cause_actions)
+        
+
 
 
 data_detail_root_cause_controller = DataDetailRootCauseController()
