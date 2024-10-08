@@ -110,6 +110,6 @@ class VariableCauseActionResource(Resource):
             Argument("detail_id", location="args", required=True, type=str),
         )
         def get(self, variable_id, detail_id: str) -> Response:
-            variable_cause_controller.get_cause_actions(detail_id, variable_id)
+            data = variable_cause_controller.get_cause_actions(detail_id, variable_id)
             
-            return response(200, True, "Cause actions retrieved successfully")
+            return response(200, True, "Cause actions retrieved successfully", data)

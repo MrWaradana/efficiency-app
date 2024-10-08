@@ -29,12 +29,13 @@ class DataDetailRootCauseController(BaseController[EfficiencyDataDetailRootCause
 
             # parent_ids = [root_cause["parent_id"] for root_cause in data_root_causes]
 
-            data_roots = {root.parent_cause_id: root for root in self.data_detail_root_cause_repository.get_by_detail_id(detail_id)}
+            data_roots = {str(root.parent_cause_id): root for root in self.data_detail_root_cause_repository.get_by_detail_id(detail_id)}
 
             for root_cause in data_root_causes:
                 # CHeck if root cause is already exist
+                
                 data_root_cause = data_roots.get(root_cause["parent_id"], None)
-
+                
                 if not data_root_cause:
                     data_root_cause = self.data_detail_root_cause_repository.create({
                         "data_detail_id": detail_id,
@@ -48,6 +49,8 @@ class DataDetailRootCauseController(BaseController[EfficiencyDataDetailRootCause
                     data_root_cause.biaya = 0
                     for member in data_root_cause.members:
                         self.data_detail_root_cause_repository.session.delete(member)
+                
+
 
                 root_cause_members = [
                     EfficiencyDataDetailRootCauseMember(

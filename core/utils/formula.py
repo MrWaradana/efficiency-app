@@ -337,9 +337,13 @@ class VariableFormula():
         AVGin = (self.current_data_details.get("Stream [98] - Outlet 1 of Splitter [82] -> Primary air inlet of Rotary Air Heater [67] - ROTARY AH: Temperature", None)+self.current_data_details.get("Stream [89] - Outlet of Duct - Classic [79] -> Main air inlet of Rotary Air Heater [67] - ROTARY AH: Temperature", None))/2
         AVGout = (self.current_data_details.get("Stream [96] - Primary air outlet of Rotary Air Heater [67] - ROTARY AH -> Primary air inlet of Furnace w/ Pulverizer [48] - BOILER-PULVERIZER: Temperature", None)+self.current_data_details.get("Stream [90] - Main air outlet of Rotary Air Heater [67] - ROTARY AH -> Combustion air inlet of Furnace w/ Pulverizer [48] - BOILER-PULVERIZER: Temperature", None))/2
         
+        # Stream [100] - Gas outlet of Economiser [71] - ECO -> Flue gas inlet of Rotary Air Heater [67] - ROTARY AH: Temperature
+        stream_100 = self.current_data_details.get("Stream [100] - Gas outlet of Economiser [71] - ECO -> Flue gas inlet of Rotary Air Heater [67] - ROTARY AH: Temperature", None)
+        
+        
         if ( (PA3 + SA3) < FG3 ):
-            AHE = ( (AVGout - AVGin) / ([5037] - AVGin) )
+            AHE = ( (AVGout - AVGin) / (stream_100 - AVGin) )
         else:
-            AHE = ( (PA3+SA3)(AVGout - AVGin) / (FG3)([5037] - AVGin) )
+            AHE = ( (PA3+SA3)(AVGout - AVGin) / (FG3)(stream_100 - AVGin) )
             
         return AHE

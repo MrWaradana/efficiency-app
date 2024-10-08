@@ -57,16 +57,20 @@ class DataDetailRepository(BaseRepository[EfficiencyDataDetail]):
             )
         ).all()
 
+        target = EfficiencyTransaction.query.filter_by(jenis_parameter="Commision").first()
+        
         target_query = query.filter(
             and_(
-                EfficiencyTransaction.jenis_parameter == "Commision",
+                EfficiencyDataDetail.efficiency_transaction_id == target.id,
                 Variable.in_out == "out",
+                
             ),
             or_(
                 Variable.is_pareto.is_(True),
                 Variable.category.isnot(None)
             )
         ).all()
+    
 
         if not target_query:
             raise exceptions.NotFound("Target data not found")

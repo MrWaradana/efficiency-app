@@ -72,7 +72,6 @@ class VariableCauseController(BaseController[VariableCause]):
             # If it's a leaf node with actions
             if is_leaf_node_with_actions(node):
                 # Only return the node if it has checked root cause members
-                raise Exception(node)
                 return node if has_checked_root_cause_members(node, root_ids) else None
             
             # Process children if they exist
@@ -94,7 +93,7 @@ class VariableCauseController(BaseController[VariableCause]):
         
         # Fetch the data
         data = variable_cause_repository.get_by_variable_id(variable_id, {"children", "actions"})
-        root_ids = [root.id for root in data_detail_root_cause_controller.data_detail_root_cause_repository.get_by_detail_id(detail_id)]
+        root_ids = [str(root.id) for root in data_detail_root_cause_controller.data_detail_root_cause_repository.get_by_detail_id(detail_id)]
         
         filtered_data = variable_cause_schema.dump(data, many=True)
         
@@ -104,13 +103,7 @@ class VariableCauseController(BaseController[VariableCause]):
             filtered_node = filter_tree(node, root_ids)
             if filtered_node is not None:
                 filtered_nodes.append(filtered_node)
-                
-        raise Exception(filtered_nodes)
         
-        return {
-            'data': filtered_nodes,
-            'message': 'Filtered data',
-            'status': True
-        }
+        return filtered_nodes
         
 variable_cause_controller = VariableCauseController()
