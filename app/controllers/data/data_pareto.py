@@ -1,17 +1,14 @@
+import asyncio
 from collections import defaultdict
 from functools import partial
-from multiprocessing import cpu_count, Pool
 
+import concurrent
 from digital_twin_migration.database import Propagation, Transactional, db
 from digital_twin_migration.models.efficiency_app import (
     EfficiencyDataDetail, EfficiencyTransaction)
-from flask_restful import Resource
-from flask_restful.reqparse import Argument
 
 from app.controllers.data.data import data_repository
 from app.repositories.data_detail import DataDetailRepository
-from app.schemas import EfficiencyDataDetailSchema, VariableSchema
-from core.cache import Cache
 from core.controller.base import BaseController
 from core.security import token_required
 from core.utils import (calculate_gap, calculate_pareto,
@@ -34,8 +31,150 @@ class DataParetoController(BaseController[EfficiencyDataDetail]):
         transaction = data_repository.get_newest_transaction()
         return transaction.id
 
+    # @Transactional(propagation=Propagation.REQUIRED)
+    # def get_data_pareto(self, transaction_id, percent_threshold=None):
+    
     @Transactional(propagation=Propagation.REQUIRED)
     def get_data_pareto(self, transaction_id, percent_threshold=None):
+        # 1. Fetch all required data in single database calls
+        transaction_data = data_repository.get_by_uuid(transaction_id)
+        if not transaction_data:
+            raise exceptions.NotFound("Transaction not found")
+
+        # Fetch all data in parallel using asyncio or concurrent.futures
+        async def fetch_all_data():
+            categorized_data, uncategorized_data, nphr_data = await asyncio.gather(
+                data_detail_repository.get_data_pareto(transaction_id),
+                data_detail_repository.get_data_pareto(transaction_id, is_uncategorized=True),
+                data_detail_repository.get_data_nphr(transaction_id)
+            )
+            return categorized_data, uncategorized_data, nphr_data.nilai
+
+        categorized_data, uncategorized_data, nphr = asyncio.run(fetch_all_data())
+
+        if categorized_data is None or uncategorized_data is None:
+            raise exceptions.NotFound("Data not found")
+
+        # 2. Pre-calculate common values
+        netto = 1000
+        
+        # 3. Use vectorized operations for calculations
+        def process_data_batch(data_batch):
+            calculated_data = []
+            aggregated_value = defaultdict(lambda: {
+                'persen_losses': 0,
+                'total_biaya': 0,
+                'cost_benefit': 0
+            })
+
+            # Process data in chunks for better memory management
+            for item in data_batch:
+                current_data, target_data, total_cost = item
+                category = current_data.variable.category
+
+                # Calculate all values at once
+                gap = calculate_gap(target_data.nilai, current_data.nilai)
+                persen_losses = calculate_persen_losses(
+                    gap, target_data.deviasi, current_data.persen_hr
+                )
+                nilai_losses = (persen_losses / 100) * netto
+                cost_benefit = calculate_cost_benefit(netto, nphr, nilai_losses)
+
+                # Update aggregated values
+                aggregated_value[category]['persen_losses'] += persen_losses
+                aggregated_value[category]['total_biaya'] += total_cost
+                aggregated_value[category]['cost_benefit'] += cost_benefit
+
+                # Create data point
+                data_point = {
+                    "category": category,
+                    "id": str(current_data.id),
+                    "variable": variable_schema.dump(current_data.variable),
+                    "existing_data": current_data.nilai,
+                    "reference_data": target_data.nilai,
+                    "deviasi": current_data.deviasi,
+                    "persen_hr": current_data.persen_hr,
+                    "persen_losses": persen_losses,
+                    "nilai_losses": nilai_losses,
+                    "cost_benefit": cost_benefit,
+                    "gap": gap,
+                    "total_biaya": total_cost,
+                    "symptoms": "Higher" if gap > 0 else "Lower",
+                    "has_cause": bool(current_data.variable.causes),
+                    "is_pareto": current_data.variable.is_pareto
+                }
+                calculated_data.append(data_point)
+
+            return calculated_data, aggregated_value
+
+        # 4. Process categorized and uncategorized data in parallel
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            categorized_future = executor.submit(process_data_batch, categorized_data)
+            uncategorized_future = executor.submit(process_data_batch, uncategorized_data)
+            
+            calculated_data_by_category, aggregated_value = categorized_future.result()
+            calculated_data_uncategorized, _ = uncategorized_future.result()
+
+        # 5. Sort and prepare final results
+        sorted_aggregated_value = dict(
+            sorted(aggregated_value.items(), key=lambda x: x[1]['persen_losses'], reverse=True)
+        )
+
+        result_chart = [
+            {
+                "category": category, 
+                "total_persen_losses": value['persen_losses'],
+                "total_nilai_losses": (value['persen_losses'] / 100) * netto
+            } 
+            for category, value in sorted_aggregated_value.items()
+        ]
+
+        # 6. Prepare final results with running totals
+        result_pareto = []
+        total_persen = total_biaya = total_cost_benefit = 0
+
+        for category, value in sorted_aggregated_value.items():
+            new_total_persen = total_persen + value['persen_losses']
+            
+            if percent_threshold and new_total_persen > percent_threshold:
+                break
+
+            total_persen = new_total_persen
+            total_biaya += value['total_biaya']
+            total_cost_benefit += value['cost_benefit']
+
+            category_data = [d for d in calculated_data_by_category if d['category'] == category]
+            sorted_category_data = sorted(category_data, key=lambda x: x["persen_losses"], reverse=True)
+
+            payload = {
+                "category": category,
+                "total_persen_losses": value['persen_losses'],
+                "total_nilai_losses": (value['persen_losses'] / 100) * netto,
+                "total_cost_gap": value['total_biaya'],
+                "total_cost_benefit": value['cost_benefit'],
+                "data": sorted_category_data,
+            } if not percent_threshold is None else {
+                "category": category,
+                "total_cost_benefit": value['cost_benefit'],
+            }
+
+            result_pareto.append(payload)
+
+        # 7. Update transaction data if needed
+        if percent_threshold is not None:
+            transaction_data.persen_threshold = percent_threshold
+
+        total_losses = (total_persen / 100) * netto
+
+        return (
+            result_pareto,
+            result_chart,
+            total_persen,
+            total_losses,
+            total_biaya,
+            total_cost_benefit,
+            calculated_data_uncategorized
+        )
         result_pareto = []
         total_persen = 0
         total_biaya = 0
@@ -50,12 +189,10 @@ class DataParetoController(BaseController[EfficiencyDataDetail]):
         categorized_data = data_detail_repository.get_data_pareto(transaction_id)
         uncategorized_data = data_detail_repository.get_data_pareto(transaction_id, is_uncategorized=True)
         nphr = data_detail_repository.get_data_nphr(transaction_id).nilai
-    
 
         if categorized_data is None or uncategorized_data is None:
             raise exceptions.NotFound("Data not found")
-    
-        
+
         # # Process data in parallel
         # with Pool(processes=cpu_count() - 1 or 1) as pool:
         #     processed_categirized_data = pool.map(process_func, categorized_data)
@@ -68,18 +205,70 @@ class DataParetoController(BaseController[EfficiencyDataDetail]):
             'total_biaya': 0,
             'cost_benefit': 0
         })
-        
+
         for item in categorized_data:
-            payload = process_single_data_pareto(nphr, variable_schema, item)
-            category = item['category']
-            aggregated_value[category]['persen_losses'] += item['persen_losses'] or 0
-            aggregated_value[category]['total_biaya'] += item['total_biaya'] or 0
-            aggregated_value[category]['cost_benefit'] += item['cost_benefit'] or 0
-            calculated_data_by_category[category].append(item)
+            """
+            Process a single data point with all calculations
+            """
+            current_data, target_data, total_cost = item
+
+            gap = calculate_gap(target_data.nilai, current_data.nilai)
+            persen_losses = calculate_persen_losses(
+                gap, target_data.deviasi, current_data.persen_hr
+            )
+            nilai_losses = (persen_losses / 100) * 1000
+            netto = 1000
+            cost_benefit = calculate_cost_benefit(netto, nphr, nilai_losses)
+
+            calculated_data_by_category.append({
+                "category": current_data.variable.category,
+                "id": str(current_data.id),
+                "variable": variable_schema.dump(current_data.variable),
+                "existing_data": current_data.nilai,
+                "reference_data": target_data.nilai,
+                "deviasi": current_data.deviasi,
+                "persen_hr": current_data.persen_hr,
+                "persen_losses": persen_losses,
+                "nilai_losses": nilai_losses,
+                "cost_benefit": cost_benefit,
+                "gap": gap,
+                "total_biaya": total_cost,
+                "symptoms": "Higher" if gap > 0 else "Lower",
+                "has_cause": bool(current_data.variable.causes),
+                "is_pareto": current_data.variable.is_pareto
+            })
 
         for item in uncategorized_data:
-            payload = process_single_data_pareto(nphr, variable_schema, item)
-            calculated_data_uncategorized.append(item)
+            """
+            Process a single data point with all calculations
+            """
+            current_data, target_data, total_cost = item
+
+            gap = calculate_gap(target_data.nilai, current_data.nilai)
+            persen_losses = calculate_persen_losses(
+                gap, target_data.deviasi, current_data.persen_hr
+            )
+            nilai_losses = (persen_losses / 100) * 1000
+            netto = 1000
+            cost_benefit = calculate_cost_benefit(netto, nphr, nilai_losses)
+
+            calculated_data_uncategorized.append({
+                "category": current_data.variable.category,
+                "id": str(current_data.id),
+                "variable": variable_schema.dump(current_data.variable),
+                "existing_data": current_data.nilai,
+                "reference_data": target_data.nilai,
+                "deviasi": current_data.deviasi,
+                "persen_hr": current_data.persen_hr,
+                "persen_losses": persen_losses,
+                "nilai_losses": nilai_losses,
+                "cost_benefit": cost_benefit,
+                "gap": gap,
+                "total_biaya": total_cost,
+                "symptoms": "Higher" if gap > 0 else "Lower",
+                "has_cause": bool(current_data.variable.causes),
+                "is_pareto": current_data.variable.is_pareto
+            })
 
         # Sort aggregated losses only once, limit looping
         sorted_aggregated_value = dict(
@@ -116,7 +305,6 @@ class DataParetoController(BaseController[EfficiencyDataDetail]):
             }
 
             result_pareto.append(payload)
-    
 
         # update persen_threshold
         if not is_cost_benefit:
@@ -125,7 +313,7 @@ class DataParetoController(BaseController[EfficiencyDataDetail]):
         total_losses = (total_persen / 100) * 1000
 
         return result_pareto, result_chart, total_persen, total_losses, total_biaya, total_cost_benefit, calculated_data_uncategorized
-
+    
     @Transactional(propagation=Propagation.REQUIRED)
     def update_pareto(self, user_id, transaction_id, is_bulk, pareto_data, **inputs):
 
