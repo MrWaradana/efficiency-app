@@ -35,9 +35,19 @@ class DataNphrController(BaseController[EfficiencyTransaction]):
         nphr["kpi"] = 12352.98952565403
 
         # get data chart pareto
-        data_pareto = data_pareto_controller.get_data_pareto(data.id, data.persen_threshold)
+        result_pareto, result_chart, total_persen, total_losses, total_biaya, total_cost_benefit, calculated_data_uncategorized = data_pareto_controller.get_data_pareto(data.id, data.persen_threshold)
 
-        return data_pareto[1], nphr, data.id, data.name, data_pareto[0]
+        return (
+            nphr,
+            result_chart,
+            data.id,
+            data.name,
+            result_pareto,
+            total_persen,
+            total_losses,
+            total_biaya,
+            total_cost_benefit,
+        )
 
 
 data_nphr_controller = DataNphrController()
