@@ -34,10 +34,6 @@ class DataNphrController(BaseController[EfficiencyTransaction]):
         
         nphr["kpi"] = 12352.98952565403
 
-        if config.ENVIRONMENT == "development" and not nphr["current"]:
-            nphr["target"] = 2352.98952565403
-            nphr["current"] = 8352.98952565403
-
         # get data chart pareto
         data_pareto = data_pareto_controller.get_data_pareto(data.id, data.persen_threshold)
 

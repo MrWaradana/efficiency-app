@@ -45,11 +45,11 @@ class DataParetoController(BaseController[EfficiencyDataDetail]):
         if not transaction_data:
             raise exceptions.NotFound("Transaction not found")
 
-        data = data_detail_repository.get_data_pareto(transaction_id)
+        categorized_data = data_detail_repository.get_data_pareto(transaction_id)
         nphr = data_detail_repository.get_data_nphr(transaction_id).nilai
     
 
-        if data is None:
+        if categorized_data is None:
             raise exceptions.NotFound("Data not found")
 
         calculated_data_by_category = defaultdict(list)
@@ -59,7 +59,8 @@ class DataParetoController(BaseController[EfficiencyDataDetail]):
             'cost_benefit': 0
         })
 
-        for current_data, target_data, total_cost in data:
+        for current_data, target_data, total_cost in categorized_data:
+            
             gap = calculate_gap(target_data.nilai, current_data.nilai)
             persen_losses = calculate_persen_losses(
                 gap, target_data.deviasi, current_data.persen_hr

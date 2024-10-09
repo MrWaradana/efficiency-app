@@ -49,12 +49,13 @@ class DataDetailRepository(BaseRepository[EfficiencyDataDetail]):
             and_(
                 EfficiencyDataDetail.efficiency_transaction_id == data_id,
                 Variable.in_out == "out",
+                Variable.category.isnot(None)
                 
             ),
-            or_(
-                Variable.is_pareto.is_(True),
-                Variable.category.isnot(None)
-            )
+            # or_(
+            #     Variable.is_pareto.is_(True),
+            #     Variable.category.isnot(None)
+            # )
         ).all()
 
         target = EfficiencyTransaction.query.filter_by(jenis_parameter="Commision").first()
@@ -63,12 +64,13 @@ class DataDetailRepository(BaseRepository[EfficiencyDataDetail]):
             and_(
                 EfficiencyDataDetail.efficiency_transaction_id == target.id,
                 Variable.in_out == "out",
+                Variable.category.isnot(None)
                 
             ),
-            or_(
-                Variable.is_pareto.is_(True),
-                Variable.category.isnot(None)
-            )
+            # or_(
+            #     Variable.is_pareto.is_(True),
+            #     Variable.category.isnot(None)
+            # )
         ).all()
     
 
