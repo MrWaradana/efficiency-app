@@ -114,7 +114,7 @@ class VariableFormula():
         if not st_assembly_1_hpt_1 or not st_assembly_1_hpt_2 or not st_assembly_1_hpt_3:
             return None
         
-        return (st_assembly_1_hpt_1 + st_assembly_1_hpt_2 + st_assembly_1_hpt_3) / 3
+        return (st_assembly_1_hpt_1 * st_assembly_1_hpt_2 * st_assembly_1_hpt_3)
     
     def calculate_lp_turbine_efficiency(self):
         "(|__ST Assembly [3] - LPT: ST Group [5] - LPT-1: Group overall efficiency|+|__ST Assembly [3] - LPT: ST Group [6] - LPT-2: Group overall efficiency|+|__ST Assembly [3] - LPT: ST Group [7] - LPT-3: Group overall efficiency|+|__ST Group [60] - LPT-4: Group overall efficiency|)/4,"
@@ -126,7 +126,7 @@ class VariableFormula():
         if not st_assembly_3_lpt_1 or not st_assembly_3_lpt_2 or not st_assembly_3_lpt_3 or not st_group_60_lpt_4:
             return None
         
-        return (st_assembly_3_lpt_1 + st_assembly_3_lpt_2 + st_assembly_3_lpt_3 + st_group_60_lpt_4) / 4
+        return (st_assembly_3_lpt_1 * st_assembly_3_lpt_2 * st_assembly_3_lpt_3 * st_group_60_lpt_4)
 
     def calculate_ip_turbine_efficiency(self):
         "(|__ST Assembly [2] - IPT: ST Group [3] - IPT-1: Group overall efficiency|+|__ST Assembly [2] - IPT: ST Group [4] - IPT-2: Group overall efficiency|)/2"
@@ -136,7 +136,7 @@ class VariableFormula():
         if not st_assembly_2_ipt_1 or not st_assembly_2_ipt_2:
             return None
         
-        return (st_assembly_2_ipt_1 + st_assembly_2_ipt_2) / 2
+        return (st_assembly_2_ipt_1 * st_assembly_2_ipt_2)
             
     def plant_gross_power(self):
         "Plant gross power"
