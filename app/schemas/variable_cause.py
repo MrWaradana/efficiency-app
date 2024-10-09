@@ -22,7 +22,7 @@ class VaribleCauseSchemaJustChildren(ma.SQLAlchemyAutoSchema):
         load_instance = True
         include_fk = True
 
-    children = fields.Nested(lambda: VariableCauseSchema, many=True)
+    children = fields.Nested(lambda: VariableCauseSchema, many=True, exclude=("root_cause_members", "actions"))
 
 
 class VariableCauseActionSchema(ma.SQLAlchemyAutoSchema):
