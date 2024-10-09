@@ -24,5 +24,8 @@ def fetch_variable_data(self, url, username, password):
         return response.json().get('Value', 'N/A')
 
     except requests.exceptions.RequestException as e:
-        # self.retry(exc=e, countdown=5)  # Retry on failure
+        self.retry(exc=e, countdown=5)  # Retry on failure
+        return 'N/A'
+    
+    except Exception as e:
         return 'N/A'
