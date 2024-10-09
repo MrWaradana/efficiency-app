@@ -20,8 +20,9 @@ def fetch_variable_data(self, url, username, password):
             verify=False,  # Consider removing this in production
             timeout=5
         )
+        response.raise_for_status()  # Raise an exception for HTTP errors (e.g., 404)
         return response.json().get('Value', 'N/A')
 
-    except requests.RequestException as e:
+    except requests.exceptions.RequestException as e:
         # self.retry(exc=e, countdown=5)  # Retry on failure
         return 'N/A'

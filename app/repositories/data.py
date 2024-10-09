@@ -28,6 +28,7 @@ class DataRepository(BaseRepository[EfficiencyTransaction]):
 
     def get_newest_data(self):
         query = self.model_class.query
+        query = query.filter(EfficiencyTransaction.jenis_parameter == "current")
         query = query.order_by(EfficiencyTransaction.created_at.desc())
         return query.first()
 

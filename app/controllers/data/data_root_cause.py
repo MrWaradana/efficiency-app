@@ -64,7 +64,7 @@ class DataDetailRootCauseController(BaseController[EfficiencyDataDetailRootCause
                 
                 
                 
-                Cache.remove_by_prefix(f"variable_actions_{detail_id}_{variable_id}")
+                Cache.remove_by_prefix(f"variable_actions_{detail_id}")
 
                 self.data_detail_root_cause_repository.session.add_all(root_cause_members)
 
