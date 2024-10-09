@@ -20,6 +20,10 @@ def fetch_variable_data(self, url, username, password):
             verify=False,  # Consider removing this in production
             timeout=5
         )
+
+        if response.status_code == 404:
+            return 'N/A'
+        
         response.raise_for_status()  # Raise an exception for HTTP errors (e.g., 404)
         return response.json().get('Value', 'N/A')
 
