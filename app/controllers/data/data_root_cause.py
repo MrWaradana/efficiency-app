@@ -101,6 +101,7 @@ class DataDetailRootCauseController(BaseController[EfficiencyDataDetailRootCause
 
         return None
 
+    @Transactional(propagation=Propagation.REQUIRED)
     def create_data_detail_root_cause_actions(self, user_id, data_actions):
 
         if not data_actions:
