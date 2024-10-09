@@ -15,6 +15,14 @@ class VariableCauseSchema(ma.SQLAlchemyAutoSchema):
     children = fields.Nested(lambda: VariableCauseSchema, many=True)
     root_cause_members = fields.Nested(root, many=True)
     actions = fields.Nested(lambda: VariableCauseActionSchema, many=True)
+    
+class VaribleCauseSchemaJustChildren(ma.SQLAlchemyAutoSchema):
+    class Meta:
+        model = VariableCause
+        load_instance = True
+        include_fk = True
+
+    children = fields.Nested(lambda: VariableCauseSchema, many=True)
 
 
 class VariableCauseActionSchema(ma.SQLAlchemyAutoSchema):

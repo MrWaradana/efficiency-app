@@ -7,12 +7,13 @@ from flask_restful.reqparse import Argument
 from app.repositories import CausesRepository
 from app.resources.variable.variable import variable_repository
 from app.schemas import VariableCauseSchema
+from app.schemas.variable_cause import VaribleCauseSchemaJustChildren
 from core.security import token_required
 from core.utils import parse_params, response
 from app.controllers.variable import variable_cause_controller
 from core.cache import Cache
 
-variable_cause_schema = VariableCauseSchema(exclude=["actions", "root_cause_members"])
+variable_cause_schema = VaribleCauseSchemaJustChildren()
 variable_cause_repository = CausesRepository(VariableCause)
 
 
