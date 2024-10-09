@@ -191,7 +191,7 @@ class DataParetoController(BaseController[EfficiencyDataDetail]):
             raise exceptions.NotFound("Data not found")
 
         calculated_data_by_category = defaultdict(list)
-        calculated_data_uncategorized = defaultdict(list)
+        calculated_data_uncategorized = []
         aggregated_value = defaultdict(lambda: {
             'persen_losses': 0,
             'total_biaya': 0,
