@@ -54,29 +54,32 @@ class DataParetoController(BaseController[EfficiencyDataDetail]):
 
         if categorized_data is None or uncategorized_data is None:
             raise exceptions.NotFound("Data not found")
+    
         
-        process_func = partial(process_single_data_pareto, nphr, variable_schema)
-        
-        # Process data in parallel
-        with Pool(processes=cpu_count() - 1 or 1) as pool:
-            processed_categirized_data = pool.map(process_func, categorized_data)
-            processed_uncategorized_data = pool.map(process_func, uncategorized_data)
+        # # Process data in parallel
+        # with Pool(processes=cpu_count() - 1 or 1) as pool:
+        #     processed_categirized_data = pool.map(process_func, categorized_data)
+        #     processed_uncategorized_data = pool.map(process_func, uncategorized_data)
 
         calculated_data_by_category = defaultdict(list)
-        calculated_data_uncategorized = processed_uncategorized_data
+        calculated_data_uncategorized = defaultdict(list)
         aggregated_value = defaultdict(lambda: {
             'persen_losses': 0,
             'total_biaya': 0,
             'cost_benefit': 0
         })
-
-        for item in processed_categirized_data:
+        
+        for item in categorized_data:
+            payload = process_single_data_pareto(nphr, variable_schema, item)
             category = item['category']
             aggregated_value[category]['persen_losses'] += item['persen_losses'] or 0
             aggregated_value[category]['total_biaya'] += item['total_biaya'] or 0
             aggregated_value[category]['cost_benefit'] += item['cost_benefit'] or 0
             calculated_data_by_category[category].append(item)
 
+        for item in uncategorized_data:
+            payload = process_single_data_pareto(nphr, variable_schema, item)
+            calculated_data_uncategorized.append(item)
 
         # Sort aggregated losses only once, limit looping
         sorted_aggregated_value = dict(
