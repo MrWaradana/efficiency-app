@@ -14,7 +14,7 @@ from core.repository import BaseRepository
 class DataDetailRootCauseRepository(BaseRepository[EfficiencyDataDetailRootCause]):
 
     def get_by_detail_id(self, detail_id: str, is_repair: bool = False):
-        query = self._query()
+        query = self._query({'members', 'actions'})
         query = query.filter(EfficiencyDataDetailRootCause.data_detail_id == detail_id)
         return self._all_unique(query)
 
