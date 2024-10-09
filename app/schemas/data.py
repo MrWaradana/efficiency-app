@@ -1,5 +1,5 @@
 from digital_twin_migration.models.efficiency_app import (
-    EfficiencyDataDetail, EfficiencyDataDetailRootCause, EfficiencyTransaction, EfficiencyDataDetailRootCauseMember)
+    EfficiencyDataDetail, EfficiencyDataDetailRootCause, EfficiencyTransaction, EfficiencyDataDetailRootCauseMember, EfficiencyDataDetailRootCauseAction)
 from marshmallow import fields
 
 from app.schemas.variable import VariableSchema as vs
@@ -30,6 +30,12 @@ class EfficiencyDataDetailRootCauseMemberSchema(ma.SQLAlchemyAutoSchema):
         model = EfficiencyDataDetailRootCauseMember
         load_instance = True
         include_fk = True
+        
+class EfficiencyDataDetailRootCauseActionSchema(ma.SQLAlchemyAutoSchema):
+    class Meta:
+        model = EfficiencyDataDetailRootCauseAction
+        load_instance = True
+        include_fk = True
 
 
 class EfficiencyDataDetailRootCauseSchema(ma.SQLAlchemyAutoSchema):
@@ -39,3 +45,4 @@ class EfficiencyDataDetailRootCauseSchema(ma.SQLAlchemyAutoSchema):
         include_fk = True
         
     members = fields.Nested(EfficiencyDataDetailRootCauseMemberSchema, many=True)
+    actions = fields.Nested(EfficiencyDataDetailRootCauseActionSchema, many=True)

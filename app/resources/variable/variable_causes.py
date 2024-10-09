@@ -10,8 +10,9 @@ from app.schemas import VariableCauseSchema
 from core.security import token_required
 from core.utils import parse_params, response
 from app.controllers.variable import variable_cause_controller
+from core.cache import Cache
 
-variable_cause_schema = VariableCauseSchema()
+variable_cause_schema = VariableCauseSchema(exclude=["actions", "root_cause_members"])
 variable_cause_repository = CausesRepository(VariableCause)
 
 
@@ -26,14 +27,19 @@ class VariableCausesResource(Resource):
         variable = variable_repository.get_by_uuid(variable_id)
         if not variable:
             return response(404, False, "Variable not found")
+        
+        @Cache.cached(f"variable_causes_{variable_id}")       
+        def get_causes(variable_id: str):
+            causes = variable_cause_repository.get_by_variable_id(variable_id, {"children"})
+            return variable_cause_schema.dump(causes, many=True)
 
-        causes = variable_cause_repository.get_by_variable_id(variable_id, {"children", "actions"})
+        data = get_causes()
 
         return response(
             200,
             True,
             "Variable causes retrieved successfully",
-            variable_cause_schema.dump(causes, many=True),
+            data,
         )
 
     @token_required

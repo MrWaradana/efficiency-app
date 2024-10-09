@@ -13,7 +13,7 @@ from werkzeug import exceptions
 from worker import fetch_variable_data
 from typing import Dict, List, Optional
 import copy
-
+from core.cache import Cache
 
 variable_cause_schema = VariableCauseSchema()
 variable_cause_repository = CausesRepository(VariableCause)
@@ -23,7 +23,7 @@ class VariableCauseController(BaseController[VariableCause]):
         super().__init__(model=Variable, repository=variable_cause_repository)
         self.variable_cause_repository = variable_cause_repository
         
-        
+
     def get_cause_actions(self, detail_id: str, variable_id:str) -> List[Dict]:
         
         def has_checked_root_cause_members(node: Dict, root_ids: List[str]) -> bool:
@@ -91,19 +91,23 @@ class VariableCauseController(BaseController[VariableCause]):
             # If no valid children and not a valid leaf node, return None
             return None
         
-        # Fetch the data
-        data = variable_cause_repository.get_by_variable_id(variable_id, {"children", "actions"})
-        root_ids = [str(root.id) for root in data_detail_root_cause_controller.data_detail_root_cause_repository.get_by_detail_id(detail_id)]
-        
-        filtered_data = variable_cause_schema.dump(data, many=True)
-        
-        # Filter each node in the data array
-        filtered_nodes = []
-        for node in filtered_data:
-            filtered_node = filter_tree(node, root_ids)
-            if filtered_node is not None:
-                filtered_nodes.append(filtered_node)
-        
-        return filtered_nodes
+        @Cache.cached(f"variable_actions_{detail_id}")
+        def get_data():
+            # Fetch the data
+            data = variable_cause_repository.get_by_variable_id(variable_id, {"children", "actions"})
+            root_ids = [str(root.id) for root in data_detail_root_cause_controller.data_detail_root_cause_repository.get_by_detail_id(detail_id)]
+            
+            filtered_data = variable_cause_schema.dump(data, many=True)
+            
+            # Filter each node in the data array
+            filtered_nodes = []
+            for node in filtered_data:
+                filtered_node = filter_tree(node, root_ids)
+                if filtered_node is not None:
+                    filtered_nodes.append(filtered_node)
+            
+            return filtered_nodes
+
+        return get_data()
         
 variable_cause_controller = VariableCauseController()

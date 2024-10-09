@@ -14,12 +14,10 @@ class DataDetailRootCauseController(BaseController[EfficiencyDataDetailRootCause
         self.data_detail_root_cause_repository = data_detail_root_cause_repository
 
     def get_by_detail_id(self, detail_id, is_repair=False):
-        def fetch_data_detail_root_cause():
-            root_causes = self.data_detail_root_cause_repository.get_by_detail_id(detail_id)
+        root_causes = self.data_detail_root_cause_repository.get_by_detail_id(detail_id)
 
-            return root_causes
+        return root_causes
 
-        return fetch_data_detail_root_cause()
 
     @Transactional(propagation=Propagation.REQUIRED)
     def create_data_detail_root_cause(self, user_id, transaction_id, detail_id, is_bulk, data_root_causes, **inputs):
@@ -63,6 +61,10 @@ class DataDetailRootCauseController(BaseController[EfficiencyDataDetailRootCause
                         created_by=user_id
                     )for cause_id, data in root_cause["root_causes"].items()
                 ]
+                
+                
+                
+                Cache.remove_by_prefix(f"variable_actions_{detail_id}_{variable_id}")
 
                 self.data_detail_root_cause_repository.session.add_all(root_cause_members)
 
@@ -130,7 +132,7 @@ class DataDetailRootCauseController(BaseController[EfficiencyDataDetailRootCause
             ]
 
         self.data_detail_root_cause_repository.session.add_all(root_cause_actions)
-        
+
 
 
 

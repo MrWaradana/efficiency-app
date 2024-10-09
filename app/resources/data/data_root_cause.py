@@ -24,22 +24,23 @@ from app.controllers.data import data_detail_root_cause_controller
 from core.factory import variable_factory, data_detail_root_cause_factory
 
 variable_schema = variable_factory.variable_schema
-data_detail_root_cause_schema = data_detail_root_cause_factory.data_detail_root_cause_schema
+data_detail_root_cause_schema_actions = data_detail_root_cause_factory.exclude_schema(["members"])
+data_detail_root_cause_schema_members = data_detail_root_cause_factory.exclude_schema(["actions"])
 
 
 class DataRootCausesListResource(Resource):
     @token_required
     @parse_params(Argument("is_repair", location="args", type=int, required=False, default=0))
-    def get(self, user_id, transaction_id, detail_id, is_repair:int):
+    def get(self, user_id, transaction_id, detail_id, is_repair: int):
         is_repair = bool(is_repair == 1)
-        
+
         root_causes = data_detail_root_cause_controller.get_by_detail_id(detail_id, is_repair)
 
         return response(
             200,
             True,
             "Data root causes retrieved successfully",
-            data_detail_root_cause_schema.dump(root_causes, many=True),
+            data_detail_root_cause_schema_members.dump(root_causes, many=True),
         )
 
     @token_required
@@ -66,14 +67,19 @@ class DataRootCausesListResource(Resource):
         return response(200, True, "Data root cause created successfully")
 
 
-
 class DataRootCausesActionResource(Resource):
-    
+
     @token_required
     @parse_params(
         Argument("data_actions", location="json", type=list, required=True)
     )
     def post(self, user_id, data_actions, detail_id, transaction_id):
         data = data_detail_root_cause_controller.create_data_detail_root_cause_actions(user_id, data_actions)
-        
+
         return response(200, True, "Data root cause actions created successfully")
+
+    @token_required
+    def get(self, user_id, detail_id, transaction_id):
+        data = data_detail_root_cause_controller.get_by_detail_id(detail_id)
+
+        return response(200, True, "Data root cause actions retrieved successfully", data_detail_root_cause_schema_actions.dump(data, many=True))
