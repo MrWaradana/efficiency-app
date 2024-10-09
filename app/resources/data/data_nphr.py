@@ -18,7 +18,7 @@ class DataNPHRResource(Resource):
     ) -> Response:
         data_id = None if data_id == "null" else data_id
 
-        chart, nphr, data_id, data_name = data_nphr_controller.get_data_nphr(data_id)
+        chart, nphr, data_id, data_name, pareto = data_nphr_controller.get_data_nphr(data_id)
 
         return response(
             200,
@@ -29,5 +29,6 @@ class DataNPHRResource(Resource):
                 "data_id": data_id,
                 "chart_result": chart,
                 "nphr_result": nphr,
+                "pareto_result": pareto,
             }
         )
