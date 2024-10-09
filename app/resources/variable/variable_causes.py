@@ -33,7 +33,7 @@ class VariableCausesResource(Resource):
             causes = variable_cause_repository.get_by_variable_id(variable_id, {"children"})
             return variable_cause_schema.dump(causes, many=True)
 
-        data = get_causes()
+        data = get_causes(variable_id)
 
         return response(
             200,
