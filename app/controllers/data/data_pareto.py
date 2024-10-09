@@ -101,10 +101,10 @@ class DataParetoController(BaseController[EfficiencyDataDetail]):
             return calculated_data, uncategorized_data, aggregated_value
 
         # 4. Process categorized and uncategorized data in parallel
-        with concurrent.futures.ThreadPoolExecutor() as executor:
-            data_future = executor.submit(process_data_batch, data)
+        # with concurrent.futures.ThreadPoolExecutor() as executor:
+        #     data_future = executor.submit(process_data_batch, data)
 
-            calculated_data_by_category, calculated_data_uncategorized, aggregated_value = data_future.result()
+        calculated_data_by_category, calculated_data_uncategorized, aggregated_value = process_data_batch(data)
 
         # 5. Sort and prepare final results
         sorted_aggregated_value = dict(
