@@ -4,4 +4,4 @@ from .datetime import *
 from .formula import calculate_gap, calculate_pareto, calculate_persen_losses, calculate_cost_benefit, VariableFormula
 from .parse_params import parse_params
 from .response import response
-from .util import fetch_data_from_api, get_key_by_value, modify_number
+from .util import fetch_data_from_api, get_key_by_value, modify_number, process_single_data_pareto

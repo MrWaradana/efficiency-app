@@ -38,40 +38,57 @@ class DataDetailRepository(BaseRepository[EfficiencyDataDetail]):
     def _join_variable(self, query: Select) -> Select:
         return query.join(Variable)
 
-    def get_data_pareto(self, data_id: str):
+    def get_data_pareto(self, data_id: str, is_uncategorized: bool = False):
         query = (
             db.session.query(EfficiencyDataDetail, EfficiencyDataDetail.total_cost())
             .join(EfficiencyTransaction)
             .join(Variable)
         )
-
-        current_query = query.filter(
-            and_(
-                EfficiencyDataDetail.efficiency_transaction_id == data_id,
-                Variable.in_out == "out",
-                Variable.category.isnot(None)
-                
-            ),
-            # or_(
-            #     Variable.is_pareto.is_(True),
-            #     Variable.category.isnot(None)
-            # )
-        ).all()
-
-        target = EfficiencyTransaction.query.filter_by(jenis_parameter="Commision").first()
         
-        target_query = query.filter(
-            and_(
-                EfficiencyDataDetail.efficiency_transaction_id == target.id,
-                Variable.in_out == "out",
-                Variable.category.isnot(None)
-                
-            ),
-            # or_(
-            #     Variable.is_pareto.is_(True),
-            #     Variable.category.isnot(None)
-            # )
-        ).all()
+        if is_uncategorized:
+            current_query = query.filter(
+                and_(
+                    EfficiencyDataDetail.efficiency_transaction_id == data_id,
+                    Variable.in_out == "out",
+                    Variable.is_pareto.is_(True),
+                    
+                )
+            ).all()
+
+            target = EfficiencyTransaction.query.filter_by(jenis_parameter="Commision").first()
+            
+            target_query = query.filter(
+                and_(
+                    EfficiencyDataDetail.efficiency_transaction_id == target.id,
+                    Variable.in_out == "out",
+                    Variable.is_pareto.is_(True),
+                    
+                ),
+            ).all()
+        else:
+            current_query = query.filter(
+                and_(
+                    EfficiencyDataDetail.efficiency_transaction_id == data_id,
+                    Variable.in_out == "out",
+                    Variable.category.isnot(None)
+                    
+                )
+            ).all()
+
+            target = EfficiencyTransaction.query.filter_by(jenis_parameter="Commision").first()
+            
+            target_query = query.filter(
+                and_(
+                    EfficiencyDataDetail.efficiency_transaction_id == target.id,
+                    Variable.in_out == "out",
+                    Variable.category.isnot(None)
+                    
+                ),
+                # or_(
+                #     Variable.is_pareto.is_(True),
+                #     Variable.category.isnot(None)
+                # )
+            ).all()
     
 
         if not target_query:

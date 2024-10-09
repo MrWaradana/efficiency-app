@@ -20,13 +20,14 @@ class DataListParetoResource(Resource):
     )
     def get(self, user_id, transaction_id, percent_threshold):
         
-        result_pareto, result_chart, total_persen, total_losses, total_biaya, total_cost_benefit = data_pareto_controller.get_data_pareto(
+        result_pareto, result_chart, total_persen, total_losses, total_biaya, total_cost_benefit, calculated_data_uncategorized = data_pareto_controller.get_data_pareto(
             transaction_id, percent_threshold
         )
 
         return response(200, True, "Data retrieved successfully", {
             "pareto_result": result_pareto,
             "chart_result": result_chart,
+            "parett_uncategorized_result": calculated_data_uncategorized,
             "total_persen": total_persen,
             "total_nilai": total_losses,
             "total_cost_gap": total_biaya,

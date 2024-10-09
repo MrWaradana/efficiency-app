@@ -2,6 +2,8 @@ import random
 import aiohttp
 import requests
 
+from core.utils.formula import calculate_cost_benefit, calculate_gap, calculate_persen_losses
+
 
 def fetch_data_from_api(url):
     """
@@ -25,6 +27,7 @@ def fetch_data_from_api(url):
         return response.json()
     else:
         return None
+
 
 async def fetch_variable_data(session, url, username, password):
     async with session.get(url, auth=aiohttp.BasicAuth(username, password), ssl=False) as response:
@@ -62,3 +65,36 @@ def modify_number(original_number: float, max_delta) -> float:
     new_number = original_number + (sign * delta)
 
     return float(new_number)
+
+
+def process_single_data_pareto( nphr, variable_schema, data_tuple):
+    """
+    Process a single data point with all calculations
+    """
+    current_data, target_data, total_cost = data_tuple
+
+    gap = calculate_gap(target_data.nilai, current_data.nilai)
+    persen_losses = calculate_persen_losses(
+        gap, target_data.deviasi, current_data.persen_hr
+    )
+    nilai_losses = (persen_losses / 100) * 1000
+    netto = 1000
+    cost_benefit = calculate_cost_benefit(netto, nphr, nilai_losses)
+
+    return {
+        "category": current_data.variable.category,
+        "id": str(current_data.id),
+        "variable": variable_schema.dump(current_data.variable),
+        "existing_data": current_data.nilai,
+        "reference_data": target_data.nilai,
+        "deviasi": current_data.deviasi,
+        "persen_hr": current_data.persen_hr,
+        "persen_losses": persen_losses,
+        "nilai_losses": nilai_losses,
+        "cost_benefit": cost_benefit,
+        "gap": gap,
+        "total_biaya": total_cost,
+        "symptoms": "Higher" if gap > 0 else "Lower",
+        "has_cause": bool(current_data.variable.causes),
+        "is_pareto": current_data.variable.is_pareto
+    }
