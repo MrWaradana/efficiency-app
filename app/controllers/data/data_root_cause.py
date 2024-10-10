@@ -3,7 +3,7 @@
 from core.controller.base import BaseController
 from digital_twin_migration.models.efficiency_app import EfficiencyDataDetailRootCause, EfficiencyDataDetailRootCauseMember, EfficiencyDataDetailRootCauseAction
 from core.factory import data_detail_root_cause_factory
-from core.cache import Cache
+from core.cache import Cache, cache_flask
 from werkzeug import exceptions as exc
 from digital_twin_migration.database import Propagation, Transactional
 
@@ -64,7 +64,7 @@ class DataDetailRootCauseController(BaseController[EfficiencyDataDetailRootCause
                 
                 
                 
-                Cache.remove_by_prefix(f"variable_actions_{detail_id}")
+                cache_flask.delete(f"variable_actions_{detail_id}")
 
                 self.data_detail_root_cause_repository.session.add_all(root_cause_members)
 

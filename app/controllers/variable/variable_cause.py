@@ -13,7 +13,7 @@ from werkzeug import exceptions
 from worker import fetch_variable_data
 from typing import Dict, List, Optional
 import copy
-from core.cache import Cache
+from core.cache import Cache, cache_flask
 
 variable_cause_schema = VariableCauseSchema()
 variable_cause_repository = CausesRepository(VariableCause)
@@ -91,7 +91,7 @@ class VariableCauseController(BaseController[VariableCause]):
             # If no valid children and not a valid leaf node, return None
             return None
         
-        @Cache.cached(f"variable_actions_{detail_id}")
+        @cache_flask.cached(key_prefix=f"variable_actions_{detail_id}")
         def get_data():
             # Fetch the data
             data = variable_cause_repository.get_by_variable_id(variable_id, {"children", "actions"})

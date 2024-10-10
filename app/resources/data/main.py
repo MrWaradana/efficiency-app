@@ -14,7 +14,7 @@ from flask_restful.reqparse import Argument
 from app.controllers import data_controller
 from app.repositories import DataRepository, VariablesRepository
 from app.schemas.data import EfficiencyTransactionSchema
-from core.cache.cache_manager import Cache
+from core.cache import redis, RedisBackend
 from core.config import config
 from core.security.jwt_verif import token_required
 from core.utils import get_key_by_value, parse_params, response
@@ -46,7 +46,12 @@ class DataListResource(Resource):
     )
     def get(self, user_id, page, size, all, start_date, end_date, is_performance_test):
         # Get Thermoflow status
-        thermoflow_status = ThermoflowStatus.query.first()
+        thermoflow_status = bool(redis.get("thermoflow_status"))
+        
+        if thermoflow_status is None:
+            thermoflow_status = ThermoflowStatus.query.first().is_running
+        
+        redis.set("thermoflow_status", 1 if thermoflow_status else 0)
 
         # Apply pagination
         data = (
@@ -56,13 +61,14 @@ class DataListResource(Resource):
                 page, size, start_date, end_date
             )
         )
+    
 
         return response(
             200,
             True,
             "Transactions retrieved successfully.",
             {
-                "thermo_status": thermoflow_status.is_running,
+                "thermo_status": thermoflow_status,
                 ** data[0],
                 "transactions": [
                     {

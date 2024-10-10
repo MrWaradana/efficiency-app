@@ -11,7 +11,7 @@ from app.schemas.variable_cause import VaribleCauseSchemaJustChildren
 from core.security import token_required
 from core.utils import parse_params, response
 from app.controllers.variable import variable_cause_controller
-from core.cache import Cache
+from core.cache import Cache, cache_flask
 
 variable_cause_schema = VaribleCauseSchemaJustChildren()
 variable_cause_repository = CausesRepository(VariableCause)
@@ -29,7 +29,7 @@ class VariableCausesResource(Resource):
         if not variable:
             return response(404, False, "Variable not found")
         
-        @Cache.cached(f"variable_causes_{variable_id}")       
+        @cache_flask.cached(key_prefix=f"variable_causes_{variable_id}")       
         def get_causes(variable_id: str):
             causes = variable_cause_repository.get_by_variable_id(variable_id, {"children"})
             return variable_cause_schema.dump(causes, many=True)
@@ -63,6 +63,8 @@ class VariableCausesResource(Resource):
         cause = variable_cause_repository.create(
             {"created_by": user_id, "variable_id": variable_id, **inputs}
         )
+        
+        cache_flask.delete(f"variable_causes_{variable_id}")
 
         return response(
             200, True, "Cause created successfully", variable_cause_schema.dump(cause)

@@ -17,13 +17,15 @@ from core.utils import (calculate_gap, calculate_pareto,
 from core.factory import data_detail_factory, variable_factory
 from werkzeug import exceptions
 from core.cache.cache_manager import Cache
-from core.cache import RedisBackend
+from core.cache import RedisBackend, cache_flask
+import copy
 
 variable_schema = variable_factory.variable_schema
 data_details_schema = data_detail_factory.data_detail_schema
 data_detail_repository = data_detail_factory.data_detail_repository
 
 redis = RedisBackend()
+
 
 class DataParetoController(BaseController[EfficiencyDataDetail]):
     def __init__(
@@ -45,20 +47,33 @@ class DataParetoController(BaseController[EfficiencyDataDetail]):
 
         is_cost_benefit = percent_threshold is None
 
-        transaction_data = data_repository.get_by_uuid(transaction_id)
-        if not transaction_data:
-            raise exceptions.NotFound("Transaction not found")
+        @cache_flask.cached(key_prefix=f"data_transaction_{transaction_id}")
+        def get_data_transaction(transaction_id):
+            transaction_data = data_repository.get_by_uuid(transaction_id)
 
-        categorized_data = data_detail_repository.get_data_pareto(transaction_id)
-        nphr = data_detail_repository.get_data_nphr(transaction_id).nilai
+            if not transaction_data:
+                raise exceptions.NotFound("Transaction not found")
+
+            return transaction_data
+
+        transaction_data = get_data_transaction(transaction_id)
+
+        @cache_flask.cached(key_prefix=f"data_pareto_{transaction_id}")
+        def get_data(transaction_id):
+            categorized_data = data_detail_repository.get_data_pareto(transaction_id)
+            nphr = data_detail_repository.get_data_nphr(transaction_id).nilai
+
+            return categorized_data, nphr
+
+        categorized_data, nphr = get_data(transaction_id)
 
         if categorized_data is None:
             raise exceptions.NotFound("Data not found")
-        
+
         def batch_process_data(categorized_data):
-            calculated_data_by_category = defaultdict(list)
-            calculated_data_uncategorized = []
-            aggregated_value = defaultdict(lambda: {
+            categorized = defaultdict(list)
+            uncategorized = []
+            aggregated = defaultdict(lambda: {
                 'persen_losses': 0,
                 'total_biaya': 0,
                 'cost_benefit': 0
@@ -82,9 +97,9 @@ class DataParetoController(BaseController[EfficiencyDataDetail]):
                 
                 if category is not None:
 
-                    aggregated_value[category]['persen_losses'] += persen_losses or 0
-                    aggregated_value[category]['total_biaya'] += total_cost or 0
-                    aggregated_value[category]['cost_benefit'] += cost_benefit or 0
+                    aggregated[category]['persen_losses'] += persen_losses or 0
+                    aggregated[category]['total_biaya'] += total_cost or 0
+                    aggregated[category]['cost_benefit'] += cost_benefit or 0
 
                 payload = {
                         "id": str(current_data.id),
@@ -103,29 +118,23 @@ class DataParetoController(BaseController[EfficiencyDataDetail]):
                         "is_pareto" : current_data.variable.is_pareto
                     }
                 
-                calculated_data_by_category[category].append(payload) if category is not None else calculated_data_uncategorized.append(payload)
+                categorized[category].append(payload) if category is not None else uncategorized.append(payload)
             
-            return calculated_data_by_category, calculated_data_uncategorized, aggregated_value
+            return categorized, uncategorized, aggregated
         
-        
-
-        with ThreadPoolExecutor(max_workers=cpu_count()-1) as executor:
+        with ThreadPoolExecutor(max_workers=cpu_count()) as executor:
             data_future = executor.submit(batch_process_data, categorized_data)
             calculated_data_by_category, calculated_data_uncategorized, aggregated_value = data_future.result()
-        
-            
-        
+
         sorted_aggregated_value = dict(
             sorted(aggregated_value.items(), key=lambda x: x[1]['persen_losses'], reverse=True)
         )
 
         result_chart = [{"category": category, "total_persen_losses": value['persen_losses'], "total_nilai_losses": (value['persen_losses'] / 100) * 1000} for category, value in sorted_aggregated_value.items()]
 
-        
-        
         for category, value in sorted_aggregated_value.items():
             total_persen += value['persen_losses']
-            
+
             if percent_threshold and total_persen >= percent_threshold * 1000:
                 total_persen -= value['persen_losses']
                 break

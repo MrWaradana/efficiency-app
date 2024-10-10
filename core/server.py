@@ -39,6 +39,7 @@ def create_app():
     app.config['CACHE_REDIS_HOST'] = config.REDIS_HOST
     app.config['CACHE_REDIS_PORT'] = config.REDIS_PORT
     app.config['CACHE_REDIS_DB'] = config.REDIS_DB
+    app.config['CACHE_DEFAULT_TIMEOUT'] = 60 * 10
 
     # Bind extensions to the app
     db.init_app(app)

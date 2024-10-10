@@ -9,7 +9,7 @@ from flask_restful.reqparse import Argument
 from app.controllers.data.data import data_repository
 from app.repositories.data_detail import DataDetailRepository
 from app.schemas import EfficiencyDataDetailSchema, VariableSchema
-from core.cache import Cache
+from core.cache import Cache, cache_flask
 from core.controller.base import BaseController
 from core.security import token_required
 from core.utils import (calculate_gap, calculate_pareto,
@@ -30,7 +30,7 @@ class DataDetailController(BaseController[EfficiencyDataDetail]):
         self.data_detail_repository = data_detail_repository
 
     def get_data_details(self, transaction_id: str, type: str):
-        @Cache.cached(f"data_details_{transaction_id}_{type}")
+        @cache_flask.cached(key_prefix=f"data_details_{transaction_id}_{type}")
         def fetch_data_details():
             data_details = self.data_detail_repository.get_by_data_id_and_variable_type(
                 transaction_id, type
@@ -41,7 +41,7 @@ class DataDetailController(BaseController[EfficiencyDataDetail]):
         return fetch_data_details()
 
     def get_data_detail(self, detail_id: str):
-        @Cache.cached(f"data_detail_{detail_id}")
+        @cache_flask.cached(key_prefix=f"data_detail_{detail_id}")
         def fetch_data_detail():
             data_detail = self.data_detail_repository.get_by_uuid(detail_id)
 

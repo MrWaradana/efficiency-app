@@ -8,6 +8,7 @@ from core.factory import data_factory, data_detail_factory
 from werkzeug.exceptions import HTTPException
 from core.config import config
 from app.controllers.data import data_pareto_controller
+from core.cache import cache_flask
 
 
 class DataNphrController(BaseController[EfficiencyTransaction]):
@@ -21,10 +22,16 @@ class DataNphrController(BaseController[EfficiencyTransaction]):
 
         if not data:
             raise HTTPException(description="Data not found", response=404)
-
-        current_nphr = self.data_detail_repository.get_data_nphr(data.id)
-        target_nphr = self.data_detail_repository.get_data_nphr(is_target=True)
-        kpi_nphr = self.data_detail_repository.get_data_nphr(is_kpi=True)
+        
+        @cache_flask.cached(key_prefix=f"data_nphr_{data.id}")
+        def get_data():
+            current_nphr = self.data_detail_repository.get_data_nphr(data.id)
+            target_nphr = self.data_detail_repository.get_data_nphr(is_target=True)
+            kpi_nphr = self.data_detail_repository.get_data_nphr(is_kpi=True)
+            
+            return current_nphr, target_nphr, kpi_nphr
+        
+        current_nphr, target_nphr, kpi_nphr = get_data()
 
         nphr = {
             "current": current_nphr.nilai if current_nphr else None,

@@ -1,3 +1,4 @@
+from collections import defaultdict
 import random
 import aiohttp
 import requests
@@ -67,7 +68,7 @@ def modify_number(original_number: float, max_delta) -> float:
     return float(new_number)
 
 
-def process_single_data_pareto( nphr, variable_schema, data_tuple):
+def process_single_data_pareto(nphr, variable_schema, data_tuple):
     """
     Process a single data point with all calculations
     """
@@ -98,3 +99,56 @@ def process_single_data_pareto( nphr, variable_schema, data_tuple):
         "has_cause": bool(current_data.variable.causes),
         "is_pareto": current_data.variable.is_pareto
     }
+
+
+def batch_process_data_pareto(categorized_data, nphr, variable_schema):
+    calculated_data_by_category = defaultdict(list)
+    calculated_data_uncategorized = []
+    aggregated_value = defaultdict(lambda: {
+        'persen_losses': 0,
+        'total_biaya': 0,
+        'cost_benefit': 0
+    })
+
+    for current_data, target_data, total_cost in categorized_data:
+        gap = calculate_gap(target_data.nilai, current_data.nilai)
+        persen_losses = calculate_persen_losses(
+            gap, target_data.deviasi, current_data.persen_hr
+        )
+        nilai_losses = (persen_losses / 100) * 1000
+
+        category = current_data.variable.category
+
+        hasCause = True if current_data.variable.causes else False
+
+        # Static Data
+        netto = 1000
+
+        cost_benefit = calculate_cost_benefit(netto, nphr, nilai_losses)
+
+        if category is not None:
+
+            aggregated_value[category]['persen_losses'] += persen_losses or 0
+            aggregated_value[category]['total_biaya'] += total_cost or 0
+            aggregated_value[category]['cost_benefit'] += cost_benefit or 0
+
+        payload = {
+            "id": str(current_data.id),
+            "variable": variable_schema.dump(current_data.variable),
+            "existing_data": current_data.nilai,
+            "reference_data": target_data.nilai,
+            "deviasi": current_data.deviasi,
+            "persen_hr": current_data.persen_hr,
+            "persen_losses": persen_losses,
+            "nilai_losses": nilai_losses,
+            "cost_benefit": cost_benefit,
+            "gap": gap,
+            "total_biaya": total_cost,
+            "symptoms": "Higher" if gap > 0 else "Lower",
+            "has_cause" : hasCause,
+            "is_pareto" : current_data.variable.is_pareto
+        }
+
+        calculated_data_by_category[category].append(payload) if category is not None else calculated_data_uncategorized.append(payload)
+
+    return calculated_data_by_category, calculated_data_uncategorized, aggregated_value

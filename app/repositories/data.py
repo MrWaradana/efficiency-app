@@ -11,7 +11,7 @@ from sqlalchemy import Select, and_, func
 from sqlalchemy.orm import contains_eager, joinedload, subqueryload
 from sqlalchemy.orm.query import Query
 from sqlalchemy.orm import aliased
-from core.cache.cache_manager import Cache
+from core.cache import redis
 from core.repository import BaseRepository
 
 
@@ -141,7 +141,7 @@ class DataRepository(BaseRepository[EfficiencyTransaction]):
 
     def update_thermoflow_status(self, status: bool):
         ## Delete Cache
-        Cache.remove_by_prefix("thermoflow_status")
+        redis.delete("thermoflow_status")
         
         thermoflow_status = ThermoflowStatus.query.first()
         thermoflow_status.is_running = status

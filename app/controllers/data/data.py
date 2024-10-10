@@ -13,7 +13,7 @@ from app.controllers.excels import excel_repository
 from app.resources.variable.variable import variable_repository
 from app.schemas.data import EfficiencyTransactionSchema
 from app.schemas.variable import VariableSchema
-from core.cache import Cache
+from core.cache import Cache, cache_flask, redis
 from core.config import EnvironmentType, config
 from core.controller import BaseController
 from core.utils import get_key_by_value, response
@@ -34,7 +34,7 @@ class DataController(BaseController[EfficiencyTransaction]):
         super().__init__(model=EfficiencyTransaction, repository=data_repository)
         self.data_repository = data_repository
 
-    @Cache.cached(prefix="get_data_paginated")
+    @cache_flask.cached(key_prefix="get_data_paginated")
     def paginated_list_data(self, page, size, all, start_date, end_date):
         """
         Retrieve all Transactions.
@@ -78,7 +78,7 @@ class DataController(BaseController[EfficiencyTransaction]):
         # Apply pagination
         paginated_option, items = data_repository.paginate(query, page, size)
 
-        return paginated_option, items
+        return (paginated_option, items)
 
     @Cache.cached(prefix="get_performance_test_data_paginated")
     def paginated_performance_test_data(self, page, size, start_date, end_date):
@@ -219,7 +219,7 @@ class DataController(BaseController[EfficiencyTransaction]):
         # Bulk create the transaction records
 
         # Fetch data again for cahche
-        Cache.remove_by_prefix("get_data_paginated")
+        redis.delete("flask_cache_get_data_paginated")
 
         return transaction_parent.id
 
@@ -333,7 +333,7 @@ class DataController(BaseController[EfficiencyTransaction]):
             raise exceptions.NotFound("Data not found")
 
         data_repository.delete(data)
-        Cache.remove_by_prefix("get_data_paginated")
+        redis.delete("flask_cache_get_data_paginated")
 
         return data
 
@@ -435,7 +435,7 @@ class DataController(BaseController[EfficiencyTransaction]):
         if transaction_records:
             data_repository.create_bulk(transaction_records)
 
-        Cache.remove_by_prefix("get_data_paginated")
+        redis.delete("flask_cache_get_data_paginated")
 
         return transaction
 
