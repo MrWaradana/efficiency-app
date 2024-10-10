@@ -65,6 +65,7 @@ class DataDetailRootCauseController(BaseController[EfficiencyDataDetailRootCause
                 
                 
                 cache_flask.delete(f"variable_actions_{detail_id}")
+                cache_flask.delete(f"data_pareto_{transaction_id}")
 
                 self.data_detail_root_cause_repository.session.add_all(root_cause_members)
 

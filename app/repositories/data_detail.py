@@ -7,7 +7,7 @@ from digital_twin_migration.models import db
 from digital_twin_migration.models.efficiency_app import (
     EfficiencyDataDetail, EfficiencyDataDetailRootCause, EfficiencyTransaction,
     Variable)
-from sqlalchemy import Select, and_, func, select, or_
+from sqlalchemy import Select, and_, case, func, select, or_, union_all
 from sqlalchemy.orm import joinedload
 
 from core.repository import BaseRepository
@@ -39,49 +39,68 @@ class DataDetailRepository(BaseRepository[EfficiencyDataDetail]):
         return query.join(Variable)
 
     def get_data_pareto(self, data_id: str, is_uncategorized: bool = False):
-        query = (
-            db.session.query(EfficiencyDataDetail, EfficiencyDataDetail.total_cost())
-            .join(EfficiencyTransaction)
-            .join(Variable)
+        # Create a subquery for the target data to reduce number of queries
+        target_subquery = (
+            db.session.query(EfficiencyTransaction.id)
+            .filter_by(jenis_parameter="Commision")
+            .scalar_subquery()
         )
-        
-        
-        current_query = query.filter(
-            and_(
-                EfficiencyDataDetail.efficiency_transaction_id == data_id,
+
+        # Use select_from to establish the join relationship once
+        base_query = (
+            db.session.query(
+                EfficiencyDataDetail,
+                EfficiencyDataDetail.total_cost(),
+                Variable.id.label('variable_id')  # Include variable_id in main query
+            )
+            .select_from(EfficiencyDataDetail)
+            .join(Variable)
+            .filter(
                 Variable.in_out == "out",
-                
-            ),
-            or_(
-                Variable.is_pareto.is_(True),
-                Variable.category.isnot(None)
-            )
-        ).all()
-
-        target = EfficiencyTransaction.query.filter_by(jenis_parameter="Commision").first()
-        
-        target_query = query.filter(
-            and_(
-                EfficiencyDataDetail.efficiency_transaction_id == target.id,
-                Variable.in_out == "out",    
-            ),
-            or_(
-                Variable.is_pareto.is_(True),
-                Variable.category.isnot(None)
-            )
-        ).all()
-
-        if not target_query:
-            raise exceptions.NotFound("Target data not found")
-
-        target_mapping = {item.variable_id: item for item, total_cost in target_query}
-
-        paired_data = []
-        for current_item, total_cost in current_query:
-            if current_item.variable_id in target_mapping:
-                paired_data.append(
-                    (current_item, target_mapping[current_item.variable_id], total_cost)
+                or_(
+                    Variable.is_pareto.is_(True),
+                    Variable.category.isnot(None)
                 )
+            )
+            .options(
+                joinedload(EfficiencyDataDetail.variable),  # Eager load relationships
+                joinedload(EfficiencyDataDetail.efficiency_transaction)
+            )
+        )
+
+        # Execute both queries in parallel using union
+        combined_query = db.session.query(
+        EfficiencyDataDetail,
+        EfficiencyDataDetail.total_cost(),
+        Variable.id.label('variable_id')
+        ).from_self().select_from(
+            union_all(
+                base_query.filter(EfficiencyDataDetail.efficiency_transaction_id == data_id).subquery(),
+                base_query.filter(EfficiencyDataDetail.efficiency_transaction_id == target_subquery).subquery()
+            )
+        )
+
+        # Group results by transaction type
+        results = combined_query.all()
+        if not results:
+            raise exceptions.NotFound("No data found")
+
+        # Separate current and target results
+        current_results = []
+        target_mapping = {}
+
+        for detail, total_cost, var_id in results:
+            if detail.efficiency_transaction_id == data_id:
+                current_results.append((detail, total_cost, var_id))
+            else:
+                target_mapping[var_id] = detail
+
+        # Match pairs more efficiently
+        paired_data = [
+            (current, target_mapping[var_id], total_cost)
+            for current, total_cost, var_id in current_results
+            if var_id in target_mapping
+        ]
 
         return paired_data
 
@@ -106,6 +125,61 @@ class DataDetailRepository(BaseRepository[EfficiencyDataDetail]):
             )
 
         return self._one_or_none(query)
+    
+    def get_all_nphr_data(self, data_id: str = None):
+        """
+        Get current, target, and KPI NPHR data in a single query
+        Returns tuple of (current_nphr, target_nphr, kpi_nphr)
+        """
+        nphr_input_name = config.NPHR_VARIABLE_NAME
+        
+        # Create base query with common joins and conditions
+        base_query = (
+            self._query({"variable", "data"})
+            .filter(Variable.excel_variable_name == nphr_input_name)
+        )
+
+        # Create case statements to identify each type
+        type_case = case(
+            (EfficiencyTransaction.jenis_parameter == "Commision"),
+            (EfficiencyTransaction.jenis_parameter == "Niaga"),
+            else_="current"
+        ).label("data_type")
+
+        # Combine all conditions in a single query
+        combined_query = (
+            base_query
+            .add_columns(type_case)
+            .filter(
+                or_(
+                    EfficiencyDataDetail.efficiency_transaction_id == data_id,
+                    EfficiencyTransaction.jenis_parameter.in_(["Commision", "Niaga"])
+                )
+            )
+            .options(
+                joinedload(EfficiencyDataDetail.variable),
+                joinedload(EfficiencyDataDetail.efficiency_transaction)
+            )
+        )
+
+        # Execute query and process results
+        results = combined_query.all()
+        
+        # Initialize results
+        current_nphr = None
+        target_nphr = None
+        kpi_nphr = None
+
+        # Map results to their respective variables
+        for result, data_type in results:
+            if data_type == "current":
+                current_nphr = result
+            elif data_type == "Commision":
+                target_nphr = result
+            elif data_type == "Niaga":
+                kpi_nphr = result
+
+        return current_nphr, target_nphr, kpi_nphr
 
     def _join_data(self, query: Select) -> Select:
         return query.join(EfficiencyTransaction)

@@ -304,8 +304,8 @@ class DataController(BaseController[EfficiencyTransaction]):
                     nilai=value_float,
                     nilai_string=value_string,
                     created_by=transaction.created_by,
-                    persen_hr=variable_data.get("persen_hr", 0.1),
-                    deviasi=variable_data.get("deviasi", 0.1)
+                    persen_hr=variable_data.get("persen_hr", 1),
+                    deviasi=variable_data.get("deviasi", 1)
                 )
             )
 
