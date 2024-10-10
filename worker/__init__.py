@@ -15,6 +15,10 @@ celery_app.conf.update(task_track_started=True)
 @celery_app.task(bind=True)
 def fetch_variable_data(self, url, username, password):
     try:
+
+        if url == "https://10.47.0.54/piwebapi/streams/F1DPw1kUu10ziUaXEx2rIyo4pA2xgAAAS1RKQi1LSTAwLVBJMVxUSkIzLjFSWSBBSVIgRkxPVyAoTUlMTCBJTkxFVCk/value":
+            return 'N/A'
+        
         response = requests.get(
             url,
             auth=(username, password),
