@@ -16,10 +16,14 @@ from core.utils import (calculate_gap, calculate_pareto,
                         calculate_persen_losses, parse_params, response, calculate_cost_benefit, process_single_data_pareto)
 from core.factory import data_detail_factory, variable_factory
 from werkzeug import exceptions
+from core.cache.cache_manager import Cache
+from core.cache import RedisBackend
+
 variable_schema = variable_factory.variable_schema
 data_details_schema = data_detail_factory.data_detail_schema
 data_detail_repository = data_detail_factory.data_detail_repository
 
+redis = RedisBackend()
 
 class DataParetoController(BaseController[EfficiencyDataDetail]):
     def __init__(
@@ -102,10 +106,14 @@ class DataParetoController(BaseController[EfficiencyDataDetail]):
                 calculated_data_by_category[category].append(payload) if category is not None else calculated_data_uncategorized.append(payload)
             
             return calculated_data_by_category, calculated_data_uncategorized, aggregated_value
-            
+        
+        
+
         with ThreadPoolExecutor(max_workers=cpu_count()-1) as executor:
             data_future = executor.submit(batch_process_data, categorized_data)
             calculated_data_by_category, calculated_data_uncategorized, aggregated_value = data_future.result()
+        
+            
         
         sorted_aggregated_value = dict(
             sorted(aggregated_value.items(), key=lambda x: x[1]['persen_losses'], reverse=True)
@@ -115,9 +123,10 @@ class DataParetoController(BaseController[EfficiencyDataDetail]):
 
         for category, value in sorted_aggregated_value.items():
             total_persen += value['persen_losses']
-            if percent_threshold and total_persen >= percent_threshold:
-                total_persen -= value['persen_losses']
-                break
+            
+            # if percent_threshold and total_persen >= percent_threshold:
+            #     total_persen -= value['persen_losses']
+            #     break
 
             total_biaya += value['total_biaya']
             total_cost_benefit += value['cost_benefit']
