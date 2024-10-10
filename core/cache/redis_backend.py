@@ -8,11 +8,10 @@ import ujson
 from core.cache.base import BaseBackend
 from core.config import config
 
-redis = redis.Redis.from_url(config.REDIS_URL)
+redis = redis.Redis(host=config.REDIS_HOST, port=config.REDIS_PORT, db=config.REDIS_DB)
 
 logging.basicConfig(level=logging.ERROR)
 logger = logging.getLogger(__name__)
-
 
 class RedisBackend(BaseBackend):
     def get(self, key: str) -> Any:

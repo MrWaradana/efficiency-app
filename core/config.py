@@ -49,6 +49,9 @@ class Config:
     AUTH_SERVICE_API = os.getenv("AUTH_SERVICE_API")
     NPHR_VARIABLE_NAME = "Plant Net Heat Rate"
     EXCEL_DATA_API = os.getenv("EXCEL_DATA_API")
+    REDIS_HOST = "192.168.1.82"
+    REDIS_PORT = 6379
+    REDIS_DB = 7
 
 
 logging.basicConfig(

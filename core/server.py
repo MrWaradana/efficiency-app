@@ -16,6 +16,8 @@ from core.schema import ma
 from core.utils import response
 from flask_sse import sse
 
+from core.cache import cache_flask
+
 # Initialize extensions
 migrate = Migrate()
 swagger = Swagger()
@@ -33,6 +35,10 @@ def create_app():
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = config.SQLALCHEMY_TRACK_MODIFICATIONS
     app.config["SECRET_KEY"] = config.SECRET_KEY
     app.config["REDIS_URL"] = config.REDIS_URL
+    app.config['CACHE_TYPE'] = 'redis'
+    app.config['CACHE_REDIS_HOST'] = config.REDIS_HOST
+    app.config['CACHE_REDIS_PORT'] = config.REDIS_PORT
+    app.config['CACHE_REDIS_DB'] = config.REDIS_DB
 
     # Bind extensions to the app
     db.init_app(app)
@@ -45,6 +51,8 @@ def create_app():
 
     # Redis
     Cache.init(RedisBackend(), CustomKeyMaker())
+    cache_flask.init_app(app)
+    
 
     # Create command functions
     @click.command(name="drop")
