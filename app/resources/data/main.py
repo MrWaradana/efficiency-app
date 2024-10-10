@@ -46,12 +46,7 @@ class DataListResource(Resource):
     )
     def get(self, user_id, page, size, all, start_date, end_date, is_performance_test):
         # Get Thermoflow status
-        if cache_flask.has("thermoflow_status"):
-            thermoflow_status = bool(cache_flask.get("thermoflow_status"))
-        
-        else:
-            thermoflow_status = ThermoflowStatus.query.first().is_running
-            cache_flask.set("thermoflow_status", thermoflow_status)
+        thermoflow_status = ThermoflowStatus.query.first().is_running
 
         # Apply pagination
         data = (
