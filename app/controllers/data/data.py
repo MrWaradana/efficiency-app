@@ -260,7 +260,7 @@ class DataController(BaseController[EfficiencyTransaction]):
         variables = variable_repository.get_by_excel_id(excel.id, "out")
 
         variable_mappings = {
-            var.excel_variable_name: {"id": var.id, "web_id": var.web_id, "formula": var.formula}
+            var.excel_variable_name: {"id": var.id, "web_id": var.web_id, "formula": var.formula, "persen_hr": var.persen_hr, "deviasi": var.deviasi}
             for var in variables
         }
 
@@ -304,6 +304,8 @@ class DataController(BaseController[EfficiencyTransaction]):
                     nilai=value_float,
                     nilai_string=value_string,
                     created_by=transaction.created_by,
+                    persen_hr=variable_data.get("persen_hr", 0.1),
+                    deviasi=variable_data.get("deviasi", 0.1)
                 )
             )
 
