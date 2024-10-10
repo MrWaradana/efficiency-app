@@ -14,7 +14,7 @@ from flask_restful.reqparse import Argument
 from app.controllers import data_controller
 from app.repositories import DataRepository, VariablesRepository
 from app.schemas.data import EfficiencyTransactionSchema
-from core.cache import redis, RedisBackend
+from core.cache import redis, RedisBackend, cache_flask
 from core.config import config
 from core.security.jwt_verif import token_required
 from core.utils import get_key_by_value, parse_params, response
@@ -46,12 +46,12 @@ class DataListResource(Resource):
     )
     def get(self, user_id, page, size, all, start_date, end_date, is_performance_test):
         # Get Thermoflow status
-        thermoflow_status = bool(redis.get("thermoflow_status"))
+        if cache_flask.has("thermoflow_status"):
+            thermoflow_status = bool(cache_flask.get("thermoflow_status"))
         
-        if thermoflow_status is None:
+        else:
             thermoflow_status = ThermoflowStatus.query.first().is_running
-        
-        redis.set("thermoflow_status", 1 if thermoflow_status else 0)
+            cache_flask.set("thermoflow_status", thermoflow_status)
 
         # Apply pagination
         data = (
