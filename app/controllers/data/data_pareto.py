@@ -124,7 +124,7 @@ class DataParetoController(BaseController[EfficiencyDataDetail]):
         for category, value in sorted_aggregated_value.items():
             total_persen += value['persen_losses']
             
-            if percent_threshold and total_persen >= percent_threshold:
+            if percent_threshold and total_persen >= percent_threshold*1000000:
                 total_persen -= value['persen_losses']
                 break
 
