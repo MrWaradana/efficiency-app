@@ -22,6 +22,9 @@ def fetch_variable_data(self, url, username, password):
             timeout=5
         )
         
+        if response.json().get("Errors", None):
+            return 'N/A'
+        
         if response.status_code == 404:
             return 'N/A'
 
