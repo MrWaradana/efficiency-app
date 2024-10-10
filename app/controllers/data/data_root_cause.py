@@ -125,8 +125,8 @@ class DataDetailRootCauseController(BaseController[EfficiencyDataDetailRootCause
             root_cause_actions = [EfficiencyDataDetailRootCauseAction(
                     root_cause_id=data_root.id,
                     action_id=action_id,
-                    is_checked=data['isChecked'],
-                    biaya=data['biaya'],
+                    is_checked=data.get('isChecked', False),
+                    biaya=data.get('biaya', 0),
                     created_by=user_id
                 )for action_id, data in actions['actions'].items()
             ]
