@@ -108,33 +108,49 @@ class DataDetailRootCauseController(BaseController[EfficiencyDataDetailRootCause
     def create_data_detail_root_cause_actions(self, user_id, data_actions):
 
         if not data_actions:
-            return exc.BadRequest("Data actionss must be provided")
+            return exc.BadRequest("Data actions must be provided")
 
-        root_parent_ids = [root_cause["parent_id"] for root_cause in data_actions]
-
-        data_roots = {str(root.parent_cause_id): root for root in self.data_detail_root_cause_repository.get_by_root_ids(root_parent_ids)}
-
-        if data_roots:
-            self.data_detail_root_cause_repository.delete_actions(data_roots)
+        # Extract root parent IDs once
+        root_parent_ids = [action["parent_id"] for action in data_actions]
+        
+        # Get all roots in one query
+        data_roots = {
+            str(root.parent_cause_id): root 
+            for root in self.data_detail_root_cause_repository.get_by_root_ids(root_parent_ids)
+        }
 
         root_cause_actions = []
         
-        for actions in data_actions:
-            data_root = data_roots.get(actions["parent_id"], None)
+        for data_action in data_actions:
+            parent_id = data_action["parent_id"]
+            data_root = data_roots.get(parent_id)
             
             if not data_root:
-                return exc.BadRequest("Root cause not found")
+                return exc.BadRequest(f"Root cause not found for parent_id: {parent_id}")
             
-            for action_id, data in actions['actions'].items():
-                root_cause_actions.append(EfficiencyDataDetailRootCauseAction(
+            total_biaya = sum(action.biaya for action in data_root.actions)
+            data_root.biaya -= total_biaya
+            
+            for action in data_root.actions:
+                self.data_detail_root_cause_repository.session.delete(action)
+            
+            # Process new actions
+            new_actions = [
+                EfficiencyDataDetailRootCauseAction(
                     root_cause_id=data_root.id,
                     action_id=action_id,
-                    is_checked=data.get('isChecked', False),
-                    biaya=data.get('biaya', 0),
+                    is_checked=action_data.get('isChecked', False),
+                    biaya=action_data.get('biaya', 0),
                     created_by=user_id
-                ))
-                
-                data_root.biaya += data.get('biaya', 0)            
+                )
+                for action_id, action_data in data_action['actions'].items()
+            ]
+            
+            # Update total biaya with new actions
+            new_total_biaya = sum(action.biaya for action in new_actions)
+            data_root.biaya += new_total_biaya          
+            
+            root_cause_actions.extend(new_actions)
 
 
         self.data_detail_root_cause_repository.session.add_all(root_cause_actions)
