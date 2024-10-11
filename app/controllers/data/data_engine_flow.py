@@ -56,9 +56,9 @@ class DataEngineFlowController(BaseController):
             # Return variables of interest with each RH as individual keys
             return {
                 'EG': results.get("Plant gross power"), ## MW
-                'HPT': (results.get(variables[1]) * results.get(variables[2]) * results.get(variables[2])), #% 
-                'IPT': (results.get(variables[4]) * results.get(variables[5])), #%
-                'LPT': (results.get(variables[6]) * results.get(variables[7]) * results.get(variables[8]) * results.get(variables[9])),
+                'HPT': (results.get(variables[1]) * results.get(variables[2]) * results.get(variables[2]))/100^3, #% 
+                'IPT': (results.get(variables[4]) * results.get(variables[5]))/100^2, #%
+                'LPT': (results.get(variables[6]) * results.get(variables[7]) * results.get(variables[8]) * results.get(variables[9]))/100^4,
                 'RH7': results.get("TTD HPH 7"),
                 'RH6': results.get("TTD HPH 6"),
                 'RH5': results.get("TTD HPH 5"),
