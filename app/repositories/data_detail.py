@@ -180,15 +180,13 @@ class DataDetailRepository(BaseRepository[EfficiencyDataDetail]):
         nphr_input_name = config.NPHR_VARIABLE_NAME
 
         # Create base query with common joins and conditions
-        base_query = (
-            self._query({"variable", "data"})
-            .filter(Variable.excel_variable_name == nphr_input_name)
-        )
+        base_query = self.model_class.query.join(EfficiencyDataDetail.variable).filter(Variable.excel_variable_name == nphr_input_name)
+
 
         # Create case statements to identify each type
         type_case = case(
-            (EfficiencyTransaction.jenis_parameter == "Commision"),
-            (EfficiencyTransaction.jenis_parameter == "Niaga"),
+            (EfficiencyTransaction.jenis_parameter == "Commision", "Commision"),
+            (EfficiencyTransaction.jenis_parameter == "Niaga", "Niaga"),
             else_="current"
         ).label("data_type")
 
@@ -207,6 +205,7 @@ class DataDetailRepository(BaseRepository[EfficiencyDataDetail]):
                 joinedload(EfficiencyDataDetail.efficiency_transaction)
             )
         )
+        
 
         # Execute query and process results
         results = combined_query.all()

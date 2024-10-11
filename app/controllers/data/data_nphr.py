@@ -23,13 +23,14 @@ class DataNphrController(BaseController[EfficiencyTransaction]):
         if not data:
             raise HTTPException(description="Data not found", response=404)
         
-        @cache_flask.cached(key_prefix=f"data_nphr_{data.id}")
+        @cache_flask.cached(key_prefix=f"data_nphr_{str(data.id)}")
         def get_data():
             # current_nphr = self.data_detail_repository.get_data_nphr(data.id)
             # target_nphr = self.data_detail_repository.get_data_nphr(is_target=True)
             # kpi_nphr = self.data_detail_repository.get_data_nphr(is_kpi=True)
             
             current_nphr, target_nphr, kpi_nphr = self.data_detail_repository.get_all_nphr_data(data.id)
+            
             
             return current_nphr, target_nphr, kpi_nphr
         
