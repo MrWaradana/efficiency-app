@@ -313,6 +313,8 @@ class DataController(BaseController[EfficiencyTransaction]):
         data_repository.create_bulk(transaction_records)
         data_repository.update_thermoflow_status(False)
         transaction.status = "Done"
+        
+        cache_flask.delete("get_data_paginated")
 
         sse.publish({"message": "Output has been processed", "status": True}, type="data_outputs")
 
