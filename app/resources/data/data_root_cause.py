@@ -22,6 +22,7 @@ from core.security import token_required
 from core.utils import calculate_gap, parse_params, response
 from app.controllers.data import data_detail_root_cause_controller
 from core.factory import variable_factory, data_detail_root_cause_factory
+from core.cache import Cache, cache_flask
 
 variable_schema = variable_factory.variable_schema
 data_detail_root_cause_schema_actions = data_detail_root_cause_factory.exclude_schema(["members"])
@@ -75,6 +76,7 @@ class DataRootCausesActionResource(Resource):
     )
     def post(self, user_id, data_actions, detail_id, transaction_id):
         data = data_detail_root_cause_controller.create_data_detail_root_cause_actions(user_id, data_actions)
+        cache_flask.delete(f"data_pareto_{transaction_id}")
 
         return response(200, True, "Data root cause actions created successfully")
 

@@ -27,17 +27,6 @@ class DataCostBenefit(BaseController):
         total_biaya = 0
         total_cost_benefit = 0
 
-        @cache_flask.cached(key_prefix=f"data_transaction_{transaction_id}")
-        def get_data_transaction(transaction_id):
-            transaction_data = data_repository.get_by_uuid(transaction_id)
-
-            if not transaction_data:
-                raise exceptions.NotFound("Transaction not found")
-
-            return transaction_data
-
-        transaction_data = get_data_transaction(transaction_id)
-
         @cache_flask.cached(key_prefix=f"data_pareto_{transaction_id}")
         def get_data(transaction_id):
             categorized_data = data_detail_repository.get_data_pareto(transaction_id)
@@ -102,7 +91,7 @@ class DataCostBenefit(BaseController):
             data_future = executor.submit(batch_process_data, categorized_data)
             results, aggregated = data_future.result()
 
-        sorted_result = sorted(results, key=lambda x: x[1]['cost_benefit'], reverse=True)
+        sorted_result = sorted(results, key=lambda x: x['cost_benefit'], reverse=True)
 
         return sorted_result, aggregated['persen_losses'], aggregated['nilai_losses'], aggregated['total_biaya'], aggregated['cost_benefit'],
 

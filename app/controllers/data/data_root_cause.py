@@ -152,6 +152,7 @@ class DataDetailRootCauseController(BaseController[EfficiencyDataDetailRootCause
             
             root_cause_actions.extend(new_actions)
 
+        cache_flask.delete(f"variable_actions_{data_root.data_detail_id}")
 
         self.data_detail_root_cause_repository.session.add_all(root_cause_actions)
 
