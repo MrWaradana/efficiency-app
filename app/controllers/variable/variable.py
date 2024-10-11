@@ -55,7 +55,7 @@ class VariableController(BaseController[Variable]):
         task_results = []
 
         for variable in variables:
-            base_case = variable.konstanta if variable.konstanta is not None else None
+            base_case = variable.konstanta if variable.konstanta is not None else "N/A"
 
             if not variable.konstanta and is_connected_to_pi and variable.web_id and variable.web_id != "Not used" and variable.web_id != "Konstanta":
                 url = F"https://10.47.0.54/piwebapi/streams/{variable.web_id}/value"
