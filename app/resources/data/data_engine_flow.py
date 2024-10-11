@@ -12,7 +12,7 @@ from core.utils import response
 class DataEngineFlowResource(Resource):
     
     @token_required
-    def get(self, transaction_id):
+    def get(self, transaction_id, user_id):
         data = data_engine_flow_controller.get_all_engine_flow_data(transaction_id)
         
         

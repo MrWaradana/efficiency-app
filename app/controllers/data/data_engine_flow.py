@@ -63,6 +63,6 @@ class DataEngineFlowController(BaseController):
                 'RH3': results.get("TTD LPH 3")
             }
             
-        return fetch_data()
+        return fetch_data(data_id)
 
 data_engine_flow_controller = DataEngineFlowController()
