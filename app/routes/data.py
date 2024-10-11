@@ -11,7 +11,7 @@ from app.resources import (DataDetailListResource, DataDetailResource,
 from app.resources.data.data_hl_trending import DataTrendingListResource
 from app.resources.data.data_nphr import DataNPHRResource
 from app.resources.data import DataOutputResource, DataPerformanceResource
-from app.resources.data import DataRootCausesActionResource
+from app.resources.data import DataRootCausesActionResource, DataEngineFlowResource
 
 TRANSACTION_BLUEPRIENT = Blueprint("data", __name__)
 
@@ -33,6 +33,10 @@ Api(TRANSACTION_BLUEPRIENT).add_resource(
 
 Api(TRANSACTION_BLUEPRIENT).add_resource(
     DataListParetoResource, "/data/<transaction_id>/pareto"
+)
+
+Api(TRANSACTION_BLUEPRIENT).add_resource(
+    DataEngineFlowResource,  "/data/<transaction_id>/engine-flow"
 )
 
 Api(TRANSACTION_BLUEPRIENT).add_resource(
