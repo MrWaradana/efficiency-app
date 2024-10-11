@@ -5,7 +5,7 @@ from core.cache import cache_flask
 from core.factory import data_detail_factory
 from digital_twin_migration.models.efficiency_app import (
     EfficiencyDataDetail)
-
+from werkzeug import exceptions
 
 data_detail_repository = data_detail_factory.data_detail_repository
 
@@ -17,11 +17,19 @@ class DataEngineFlowController(BaseController):
         self.data_detail_repository = data_detail_repository
 
     def get_all_engine_flow_data(self, data_id):
+
+        if not data_id:
+            raise exceptions.NotFound("Data not found")
+        
+        
         @cache_flask.cached(key_prefix=f"data_engine_flow_{data_id}")
         def fetch_data(data_id):
             # Try to get data from cache, otherwise fetch from repository
             cache_key = f"data_details_{data_id}_out"
             data_details = cache_flask.get(cache_key) or self.data_detail_repository.get_by_data_id_and_variable_type(data_id, "out")
+            
+            if not data_details:
+                raise exceptions.NotFound("Data not found")
 
             # Create a mapping from excel variable names
             data_details_mapping = {data_detail.variable.excel_variable_name: data_detail for data_detail in data_details}
