@@ -40,6 +40,9 @@ class PIFormula():
         
     def calculate_design_point_condenser(self, value_pi):
         return value_pi / 1000
+    
+    def calculate_divide_by_100(self, value_pi):
+        return value_pi / 100
 
 class VariableFormula():
     def __init__(self, current_data):
