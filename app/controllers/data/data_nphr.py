@@ -17,9 +17,7 @@ class DataNphrController(BaseController[EfficiencyTransaction]):
         self.data_repository = data_factory.data_repository
         self.data_detail_repository = data_detail_factory.data_detail_repository
 
-    def get_data_nphr(self, data_id: str = None) -> EfficiencyDataDetail:
-        data = self.data_repository.get_newest_data() if data_id is None else self.data_repository.get_by_uuid(data_id)
-
+    def get_data_nphr(self, data) -> EfficiencyDataDetail:
         if not data:
             raise HTTPException(description="Data not found", response=404)
         

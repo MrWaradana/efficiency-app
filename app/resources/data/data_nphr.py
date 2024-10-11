@@ -14,9 +14,9 @@ class DataNPHRResource(Resource):
     def get(
         self,
         user_id: str,
-        data_id: str = None,
+        data_id: str,
     ) -> Response:
-        data_id = None if data_id == "null" else data_id
+        data = data_factory.data_repository.get_newest_data() if data_id == "new" else data_factory.data_repository.get_by_uuid(data_id)
 
         (nphr,
          result_chart,
@@ -26,7 +26,7 @@ class DataNPHRResource(Resource):
          total_persen,
          total_losses,
          total_biaya,
-         total_cost_benefit) = data_nphr_controller.get_data_nphr(data_id)
+         total_cost_benefit) = data_nphr_controller.get_data_nphr(data)
 
         return response(
             200,
