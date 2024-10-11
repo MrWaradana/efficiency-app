@@ -18,6 +18,7 @@ TRANSACTION_BLUEPRIENT = Blueprint("data", __name__)
 Api(TRANSACTION_BLUEPRIENT).add_resource(DataListResource, "/data")
 Api(TRANSACTION_BLUEPRIENT).add_resource(DataStatusThermoflow, "/data/status/thermoflow")
 Api(TRANSACTION_BLUEPRIENT).add_resource(DataPerformanceResource, "/data/charts/performance")
+Api(TRANSACTION_BLUEPRIENT).add_resource(DataListCostBenefit, "/data/cost-benefit")
 Api(TRANSACTION_BLUEPRIENT).add_resource(DataOutputResource, "/data/output")
 Api(TRANSACTION_BLUEPRIENT).add_resource(DataResource, "/data/<transaction_id>")
 
@@ -49,6 +50,5 @@ Api(TRANSACTION_BLUEPRIENT).add_resource(
 
 Api(TRANSACTION_BLUEPRIENT).add_resource(DataTrendingListResource, "/data/trending")
 
-Api(TRANSACTION_BLUEPRIENT).add_resource(DataListCostBenefit, "/data/cost-benefit")
 
 Api(TRANSACTION_BLUEPRIENT).add_resource(DataNPHRResource, "/data/<data_id>/nphr")
