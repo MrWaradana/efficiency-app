@@ -34,6 +34,13 @@ def calculate_cost_benefit(netto, heatRate, nilai_losses):
     return cost_benefit
 
 
+class PIFormula():
+    def __init__(self, current_data):
+        self.current_data_details = current_data
+        
+    def calculate_design_point_condenser(self, value_pi):
+        return value_pi / 1000
+
 class VariableFormula():
     def __init__(self, current_data):
         self.current_data_details = current_data

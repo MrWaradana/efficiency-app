@@ -11,6 +11,7 @@ import aiohttp
 import asyncio
 from werkzeug import exceptions
 from worker import fetch_variable_data
+from core.utils.formula import PIFormula
 
 
 variable_repository = variable_factory.variable_repository
@@ -53,6 +54,7 @@ class VariableController(BaseController[Variable]):
 
         variables_base_case = []
         task_results = []
+        pi_formula = PIFormula(variables)
 
         for variable in variables:
             base_case = variable.konstanta if variable.konstanta is not None else "N/A"
@@ -68,6 +70,25 @@ class VariableController(BaseController[Variable]):
         # Wait for Celery tasks to complete
         for task, variable in task_results:
             base_case = task.get()  # This will block until the task is finished
+
+            # Check if variable have formula
+            if variable.formula:
+                try:
+                    # Dynamically get the formula function from pi_formula
+                    formula_function = getattr(pi_formula, variable.formula)
+
+                    # Check if it's callable and apply the formula to base_case
+                    if callable(formula_function):
+                        base_case = formula_function(base_case)
+                    else:
+                        # Log a warning if formula is not a valid function
+                        print(f"Warning: {variable.formula} is not callable.")
+
+                except AttributeError:
+                    # Handle case where formula does not exist in pi_formula
+                    print(f"Error: {variable.formula} is not found in pi_formula.")
+                    raise exceptions.InternalServerError(f"Error: {variable.formula} is not found in pi_formula.")
+
             variables_base_case.append({**variable_schema.dump(variable), "base_case": base_case})
 
         return variables_base_case
