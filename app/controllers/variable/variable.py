@@ -55,15 +55,13 @@ class VariableController(BaseController[Variable]):
         task_results = []
 
         for variable in variables:
-            base_case = variable.konstanta or "N/A"
+            base_case = variable.konstanta if variable.konstanta is not None else None
 
             if not variable.konstanta and is_connected_to_pi and variable.web_id and variable.web_id != "Not used" and variable.web_id != "Konstanta":
                 url = F"https://10.47.0.54/piwebapi/streams/{variable.web_id}/value"
                 # Submit task to Celery
                 task = fetch_variable_data.delay(url, username, password)
                 task_results.append((task, variable))  # Store the task along with the variable
-                
-
             else:
                 variables_base_case.append({**variable_schema.dump(variable), "base_case": base_case})
 
