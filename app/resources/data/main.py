@@ -46,7 +46,7 @@ class DataListResource(Resource):
     )
     def get(self, user_id, page, size, all, start_date, end_date, is_performance_test):
         # Get Thermoflow status
-        thermoflow_status = redis.get("thermoflow_status")
+        status = bool(int(redis.get("thermoflow_status")))
 
         # Apply pagination
         data = (
@@ -56,13 +56,14 @@ class DataListResource(Resource):
                 page, size, start_date, end_date
             )
         )
+        
 
         return response(
             200,
             True,
             "Transactions retrieved successfully.",
             {
-                "thermo_status": thermoflow_status,
+                "thermo_status": status,
                 ** data[0],
                 "transactions": [
                     {
