@@ -44,7 +44,7 @@ class PIFormula():
     def calculate_divide_by_100(self, value_pi):
         return value_pi / 100
 
-    def calculate_mass_flow_from_pi(self):
+    def calculate_mass_flow_from_pi(self, value_pi = None):
         pi_id = "F1DPw1kUu10ziUaXEx2rIyo4pA5wsAAAS1RKQi1LSTAwLVBJMVxUSkIzLkNPQUwgRkVFREVSIFRPVEFMIENPQUwgRkxPVw"
         username = 'tjb.piwebapi'
         password = 'PLNJepara@2024'
