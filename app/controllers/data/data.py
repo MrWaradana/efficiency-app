@@ -116,7 +116,7 @@ class DataController(BaseController[EfficiencyTransaction]):
         password = 'PLNJepara@2024'
 
         try:
-            res = requests.get(f"https://10.47.0.54/piwebapi/stream/F1DPw1kUu10ziUaXEx2rIyo4pAAAwAAAS1RKQi1LSTAwLVBJMVxUSkIzLkNPTkRSIFZBQw/value", auth=(username, password) , timeout=2, verify=False)
+            res = requests.get(f"https://10.47.0.54/piwebapi/streams/F1DPw1kUu10ziUaXEx2rIyo4pAAAwAAAS1RKQi1LSTAwLVBJMVxUSkIzLkNPTkRSIFZBQw/value", auth=(username, password) , timeout=2, verify=False)
 
             if res.ok:
                 condensor_value = res.json().get("Value")
