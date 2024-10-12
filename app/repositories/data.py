@@ -141,6 +141,7 @@ class DataRepository(BaseRepository[EfficiencyTransaction]):
 
     def update_thermoflow_status(self, status: bool):
         ## Delete Cache
+        redis.set("thermoflow_status", int(status))
         thermoflow_status = ThermoflowStatus.query.first()
         thermoflow_status.is_running = status
         db.session.commit()

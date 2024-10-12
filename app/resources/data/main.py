@@ -56,7 +56,6 @@ class DataListResource(Resource):
                 page, size, start_date, end_date
             )
         )
-    
 
         return response(
             200,
@@ -188,23 +187,16 @@ class DataOutputResource(Resource):
 
 
 class DataPerformanceResource(Resource):
-    
+
     def get(self):
         data = data_controller.get_performance_test_chart_data()
-        
-        return response(200, True, "Data retrieved successfully", data)
-    
-    
-class DataStatusThermoflow(Resource):
-    
-    def get(self):
 
-        @Cache.cached("thermoflow_status")
-        def get_thermoflow_status():
-            thermoflow_status = ThermoflowStatus.query.first()
-            
-            return thermoflow_status
-        
-        thermoflow_status = get_thermoflow_status()
-        
-        return response(200, True, "Data retrieved successfully", {"thermo_status": thermoflow_status.is_running})
+        return response(200, True, "Data retrieved successfully", data)
+
+
+class DataStatusThermoflow(Resource):
+
+    def get(self):
+        status = bool(int(redis.get("thermoflow_status")))
+
+        return response(200, True, "Data retrieved successfully", {"thermo_status": status})

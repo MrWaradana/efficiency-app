@@ -31,7 +31,7 @@ class VariableCausesResource(Resource):
         
         @cache_flask.cached(key_prefix=f"variable_causes_{variable_id}")       
         def get_causes(variable_id: str):
-            causes = variable_cause_repository.get_by_variable_id(variable_id, {"children"})
+            causes = variable_cause_repository.get_by_variable_id(variable_id)
             return variable_cause_schema.dump(causes, many=True)
 
         data = get_causes(variable_id)
