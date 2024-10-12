@@ -39,7 +39,7 @@ class DataParetoController(BaseController[EfficiencyDataDetail]):
         return transaction.id
 
     @Transactional(propagation=Propagation.REQUIRED)
-    def get_data_pareto(self, transaction_id, percent_threshold=None):
+    def get_data_pareto(self, transaction_id, percent_threshold=None, is_nphr=False):
         result_pareto = []
         total_persen = 0
         total_biaya = 0
@@ -94,7 +94,7 @@ class DataParetoController(BaseController[EfficiencyDataDetail]):
                 netto = 1000
 
                 cost_benefit = calculate_cost_benefit(netto, nphr, nilai_losses)
-                
+
                 if category is not None:
 
                     aggregated[category]['persen_losses'] += persen_losses or 0
@@ -102,26 +102,26 @@ class DataParetoController(BaseController[EfficiencyDataDetail]):
                     aggregated[category]['cost_benefit'] += cost_benefit or 0
 
                 payload = {
-                        "id": str(current_data.id),
-                        "variable": variable_schema.dump(current_data.variable),
-                        "existing_data": current_data.nilai,
-                        "reference_data": target_data.nilai,
-                        "deviasi": current_data.deviasi,
-                        "persen_hr": current_data.persen_hr,
-                        "persen_losses": persen_losses,
-                        "nilai_losses": nilai_losses,
-                        "cost_benefit": cost_benefit,
-                        "gap": gap,
-                        "total_biaya": total_cost,
-                        "symptoms": "Higher" if gap > 0 else "Lower",
-                        "has_cause" : hasCause,
-                        "is_pareto" : current_data.variable.is_pareto
-                    }
-                
+                    "id": str(current_data.id),
+                    "variable": variable_schema.dump(current_data.variable),
+                    "existing_data": current_data.nilai,
+                    "reference_data": target_data.nilai,
+                    "deviasi": current_data.deviasi,
+                    "persen_hr": current_data.persen_hr,
+                    "persen_losses": persen_losses,
+                    "nilai_losses": nilai_losses,
+                    "cost_benefit": cost_benefit,
+                    "gap": gap,
+                    "total_biaya": total_cost,
+                    "symptoms": "Higher" if gap > 0 else "Lower",
+                    "has_cause" : hasCause,
+                    "is_pareto" : current_data.variable.is_pareto
+                }
+
                 categorized[category].append(payload) if category is not None else uncategorized.append(payload)
-            
+
             return categorized, uncategorized, aggregated
-        
+
         with ThreadPoolExecutor(max_workers=cpu_count()) as executor:
             data_future = executor.submit(batch_process_data, categorized_data)
             calculated_data_by_category, calculated_data_uncategorized, aggregated_value = data_future.result()
@@ -134,8 +134,7 @@ class DataParetoController(BaseController[EfficiencyDataDetail]):
 
         for category, value in sorted_aggregated_value.items():
             total_persen += value['persen_losses']
-
-            if percent_threshold and total_persen >= percent_threshold:
+            if (percent_threshold and total_persen >= percent_threshold) and not is_nphr:
                 total_persen -= value['persen_losses']
                 break
 
