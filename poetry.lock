@@ -695,7 +695,7 @@ toml = ["tomli"]
 
 [[package]]
 name = "digital-twin-migration"
-version = "1.1.16"
+version = "1.1.17"
 description = ""
 optional = false
 python-versions = ">=3.8"
@@ -709,7 +709,7 @@ dev = ["Sphinx (>=4.3.0,<7.1.0)", "black (>=23.0,<24.0)", "build", "furo (==2023
 type = "git"
 url = "https://github.com/Cizz22/digital-twin-migration"
 reference = "HEAD"
-resolved_reference = "40e7600244bf50b6eae9ecda53d727e30d06be5f"
+resolved_reference = "58c1a3315cc9eb130e8a9a89023a67a6eb662f8f"
 
 [[package]]
 name = "docker"

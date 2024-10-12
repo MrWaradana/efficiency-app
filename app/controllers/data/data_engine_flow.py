@@ -26,6 +26,8 @@ class DataEngineFlowController(BaseController):
             
             if not data_details:
                 raise exceptions.NotFound("Data Details not found")
+            
+            condensor_value = data_details[0].efficiency_transaction.condensor_value
 
             # Create a mapping from excel variable names
             data_details_mapping = {data_detail.variable.excel_variable_name: data_detail.nilai for data_detail in data_details}
@@ -64,7 +66,8 @@ class DataEngineFlowController(BaseController):
                 'RH5': results.get("TTD HPH 5"),
                 'RH1': results.get("TTD LPH 1"),
                 'RH2': results.get("TTD LPH 2"),
-                'RH3': results.get("TTD LPH 3")
+                'RH3': results.get("TTD LPH 3"),
+                'Condensor_Value': condensor_value
             }
             
         return fetch_data(data_id)
