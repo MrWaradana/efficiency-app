@@ -102,13 +102,28 @@ class DataController(BaseController[EfficiencyTransaction]):
     @Transactional(propagation=Propagation.REQUIRED)
     def create_data(self, jenis_parameter, excel_id, inputs, user_id, name: str, is_performance_test, performance_test_weight):
         data_repository.update_thermoflow_status(True)
-
+        
         # Check connection to Excel Server
         try:
             res = requests.get(f"{config.WINDOWS_EFFICIENCY_APP_API}", timeout=2)
         except requests.exceptions.RequestException:
             data_repository.update_thermoflow_status(False)
             raise exceptions.InternalServerError("Failed to connect to Excel Server")
+
+        condensor_value = 0
+
+        username = 'tjb.piwebapi'
+        password = 'PLNJepara@2024'
+
+        try:
+            res = requests.get(f"https://10.47.0.54/piwebapi/stream/F1DPw1kUu10ziUaXEx2rIyo4pAAAwAAAS1RKQi1LSTAwLVBJMVxUSkIzLkNPTkRSIFZBQw/value", auth=(username, password) , timeout=2, verify=False)
+
+            if res.ok:
+                condensor_value = res.json().get("Value")
+
+        except requests.exceptions.RequestException:
+            raise exceptions.InternalServerError("Failed to connect to Excel Server")
+
 
         excel = excel_repository.get_by_uuid(excel_id)
 
@@ -142,6 +157,7 @@ class DataController(BaseController[EfficiencyTransaction]):
                 "is_performance_test": is_performance_test,
                 "performance_test_weight": performance_test_weight,
                 "unique_id": unique_id,
+                "condensor_value": condensor_value,
             }
         )
 
