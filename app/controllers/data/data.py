@@ -34,7 +34,7 @@ class DataController(BaseController[EfficiencyTransaction]):
         super().__init__(model=EfficiencyTransaction, repository=data_repository)
         self.data_repository = data_repository
 
-    @cache_flask.cached(key_prefix="get_data_paginated")
+    # @cache_flask.cached(key_prefix="get_data_paginated")
     def paginated_list_data(self, page, size, all, start_date, end_date):
         """
         Retrieve all Transactions.
@@ -250,7 +250,7 @@ class DataController(BaseController[EfficiencyTransaction]):
         transaction_records = []
 
         # transaction.status = "Done"
-        data_repository.update({"status": "Done"})
+        transaction.status = "Done"
         data_repository.session.commit()
         redis.delete("flask_cache_get_data_paginated")
 
