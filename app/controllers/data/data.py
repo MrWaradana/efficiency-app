@@ -224,8 +224,8 @@ class DataController(BaseController[EfficiencyTransaction]):
         return transaction_parent.id
 
     @Transactional(propagation=Propagation.REQUIRED)
-    def create_data_output(self, outputs:dict, unique_id):
-        ##Write 
+    def create_data_output(self, outputs: dict, unique_id):
+        # Write
         try:
             with open("/app/output.json", 'w') as json_file:
                 json.dump(outputs, json_file, indent=4)
@@ -248,9 +248,11 @@ class DataController(BaseController[EfficiencyTransaction]):
         transaction = data_repository.get_by_unique_id(unique_id)
         mainFormula = VariableFormula(outputs)
         transaction_records = []
-        
+
         data_repository.update_thermoflow_status(False)
-        transaction.status = "Done"
+        # transaction.status = "Done"
+        data_repository.update({"status": "Done"})
+        data_repository.session.commit()
         redis.delete("flask_cache_get_data_paginated")
 
         excel = excel_repository.get_all()[0]
@@ -270,15 +272,14 @@ class DataController(BaseController[EfficiencyTransaction]):
 
         # Iterate over the output data
         for variable_name, variable_data in variable_mappings.items():
-            
-            output_var =  outputs.get(variable_name)
+
+            output_var = outputs.get(variable_name)
             variable_id = variable_data.get("id")
             web_id = variable_data.get("web_id")
             formula = variable_data.get("formula")
 
             value_float, value_string = None, None
 
-            
             if web_id and is_connected_to_pi:
                 # Get Data from PI
                 try:
@@ -290,16 +291,15 @@ class DataController(BaseController[EfficiencyTransaction]):
             elif formula:
                 # Calculate the output value based on the formula
                 formulaFunc = getattr(mainFormula, formula)
-    
+
                 if callable(formulaFunc):
                     value_float = formulaFunc()
             elif output_var:
                 try:
                     value_float = float(output_var)
                 except ValueError:
-                    value_string = output_var            
+                    value_string = output_var
 
-            
             # Create a new transaction record with the output value and associated variable ID
             transaction_records.append(
                 EfficiencyDataDetail(
@@ -344,7 +344,6 @@ class DataController(BaseController[EfficiencyTransaction]):
     @Transactional(propagation=Propagation.REQUIRED)
     def update_data(self, transaction_id, user_id, inputs, name):
         transaction = data_repository.get_by_uuid(transaction_id)
-        
 
         if not transaction:
             raise exceptions.NotFound("Data not found")
