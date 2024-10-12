@@ -248,6 +248,10 @@ class DataController(BaseController[EfficiencyTransaction]):
         transaction = data_repository.get_by_unique_id(unique_id)
         mainFormula = VariableFormula(outputs)
         transaction_records = []
+        
+        data_repository.update_thermoflow_status(False)
+        transaction.status = "Done"
+        redis.delete("flask_cache_get_data_paginated")
 
         excel = excel_repository.get_all()[0]
 
@@ -311,10 +315,6 @@ class DataController(BaseController[EfficiencyTransaction]):
 
         # Bulk create the transaction records
         data_repository.create_bulk(transaction_records)
-        data_repository.update_thermoflow_status(False)
-        transaction.status = "Done"
-        
-        redis.delete("flask_cache_get_data_paginated")
 
         sse.publish({"message": "Output has been processed", "status": True}, type="data_outputs")
 
