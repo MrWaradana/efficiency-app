@@ -28,7 +28,11 @@ class DataRepository(BaseRepository[EfficiencyTransaction]):
 
     def get_newest_data(self):
         query = self.model_class.query
-        query = query.filter(EfficiencyTransaction.jenis_parameter == "current")
+        query = query.filter(
+            and_(
+                EfficiencyTransaction.jenis_parameter == "current",
+                EfficiencyTransaction.status == "Done"
+            ))
         query = query.order_by(EfficiencyTransaction.created_at.desc())
         return query.first()
 
@@ -140,7 +144,7 @@ class DataRepository(BaseRepository[EfficiencyTransaction]):
         return query.first() if is_unique else query.all()
 
     def update_thermoflow_status(self, status: bool):
-        ## Delete Cache
+        # Delete Cache
         redis.set("thermoflow_status", int(status))
         thermoflow_status = ThermoflowStatus.query.first()
         thermoflow_status.is_running = status
@@ -161,9 +165,9 @@ class DataRepository(BaseRepository[EfficiencyTransaction]):
 
         # Create an alias for the joined table to use in the contains_eager
         # First, get the latest transaction IDs for each test weight
-# This code snippet is performing a query to retrieve the latest transaction IDs for each unique
-# `performance_test_weight` value in the `EfficiencyTransaction` table. It then uses these IDs to
-# fetch all the details for these transactions, specifically for the `variable_ids` provided.
+        # This code snippet is performing a query to retrieve the latest transaction IDs for each unique
+        # `performance_test_weight` value in the `EfficiencyTransaction` table. It then uses these IDs to
+        # fetch all the details for these transactions, specifically for the `variable_ids` provided.
         latest_transaction_subquery = (
             self.session.query(
                 EfficiencyTransaction.id,
@@ -184,7 +188,7 @@ class DataRepository(BaseRepository[EfficiencyTransaction]):
         query = (
             self.session.query(EfficiencyTransaction)
             .join(latest_transaction_subquery,
-                EfficiencyTransaction.id == latest_transaction_subquery.c.id)
+                  EfficiencyTransaction.id == latest_transaction_subquery.c.id)
             .join(
                 efficiency_details,
                 and_(

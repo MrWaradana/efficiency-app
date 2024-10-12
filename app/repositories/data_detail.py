@@ -8,7 +8,7 @@ from digital_twin_migration.models.efficiency_app import (
     EfficiencyDataDetail, EfficiencyDataDetailRootCause, EfficiencyTransaction,
     Variable)
 from sqlalchemy import Select, and_, case, func, select, or_, union_all
-from sqlalchemy.orm import joinedload
+from sqlalchemy.orm import joinedload, aliased
 
 from core.repository import BaseRepository
 from core.config import config
@@ -104,49 +104,116 @@ class DataDetailRepository(BaseRepository[EfficiencyDataDetail]):
 
     #     return paired_data
 
+    # def get_data_pareto(self, data_id: str, is_uncategorized: bool = False):
+    #     query = (
+    #         db.session.query(EfficiencyDataDetail, EfficiencyDataDetail.total_cost())
+    #         .join(EfficiencyTransaction)
+    #         .join(Variable)
+    #     )
+
+    #     current_query = query.filter(
+    #         and_(
+    #             EfficiencyDataDetail.efficiency_transaction_id == data_id,
+    #             Variable.in_out == "out",
+
+    #         ),
+    #         or_(
+    #             Variable.is_pareto.is_(True),
+    #             Variable.category.isnot(None)
+    #         )
+    #     ).all()
+
+    #     target = EfficiencyTransaction.query.filter_by(jenis_parameter="Commision").first()
+
+    #     target_query = query.filter(
+    #         and_(
+    #             EfficiencyDataDetail.efficiency_transaction_id == target.id,
+    #             Variable.in_out == "out",
+    #         ),
+    #         or_(
+    #             Variable.is_pareto.is_(True),
+    #             Variable.category.isnot(None)
+    #         )
+    #     ).all()
+
+    #     if not target_query:
+    #         raise exceptions.NotFound("Target data not found")
+
+    #     target_mapping = {item.variable_id: item for item, total_cost in target_query}
+
+    #     paired_data = []
+    #     for current_item, total_cost in current_query:
+    #         if current_item.variable_id in target_mapping:
+    #             paired_data.append(
+    #                 (current_item, target_mapping[current_item.variable_id], total_cost)
+    #             )
+
+    #     return paired_data
+    
     def get_data_pareto(self, data_id: str, is_uncategorized: bool = False):
-        query = (
-            db.session.query(EfficiencyDataDetail, EfficiencyDataDetail.total_cost())
-            .join(EfficiencyTransaction)
-            .join(Variable)
+        # Subquery for total cost
+        total_cost_subq = (
+            db.session.query(
+                EfficiencyDataDetail.id,
+                EfficiencyDataDetail.total_cost()
+            )
+            .group_by(EfficiencyDataDetail.id)
+            .subquery()
         )
 
-        current_query = query.filter(
-            and_(
-                EfficiencyDataDetail.efficiency_transaction_id == data_id,
+        # Base query
+        query = (
+            db.session.query(EfficiencyDataDetail, total_cost_subq.c.total_cost)
+            .join(total_cost_subq, EfficiencyDataDetail.id == total_cost_subq.c.id)
+            .join(EfficiencyTransaction)
+            .join(Variable)
+            .filter(
                 Variable.in_out == "out",
-
-            ),
-            or_(
-                Variable.is_pareto.is_(True),
-                Variable.category.isnot(None)
-            )
-        ).all()
-
-        target = EfficiencyTransaction.query.filter_by(jenis_parameter="Commision").first()
-
-        target_query = query.filter(
-            and_(
-                EfficiencyDataDetail.efficiency_transaction_id == target.id,
-                Variable.in_out == "out",
-            ),
-            or_(
-                Variable.is_pareto.is_(True),
-                Variable.category.isnot(None)
-            )
-        ).all()
-
-        if not target_query:
-            raise exceptions.NotFound("Target data not found")
-
-        target_mapping = {item.variable_id: item for item, total_cost in target_query}
-
-        paired_data = []
-        for current_item, total_cost in current_query:
-            if current_item.variable_id in target_mapping:
-                paired_data.append(
-                    (current_item, target_mapping[current_item.variable_id], total_cost)
+                or_(
+                    Variable.is_pareto.is_(True),
+                    Variable.category.isnot(None)
                 )
+            )
+        )
+        
+        # raise Exception("here", query)
+
+        # Current data query
+        current_query = query.filter(EfficiencyDataDetail.efficiency_transaction_id == data_id)
+
+        # Target data query
+        EfficiencyTransactionAlias = aliased(EfficiencyTransaction)
+        target_query = (
+            query
+            .join(EfficiencyTransactionAlias, EfficiencyDataDetail.efficiency_transaction_id == EfficiencyTransactionAlias.id)
+            .filter(EfficiencyTransactionAlias.jenis_parameter == "Commision")
+        )
+        
+        # raise Exception("here", target_query)
+
+        current_results = current_query.all()
+        target_results = target_query.all()
+        
+        # raise Exception(target_query)
+
+        if not target_results:
+            raise exceptions.NotFound("Target data not found")
+        
+        # raise Exception("here", current_results)
+
+        # Create mapping for target data
+        target_mapping = {item.variable_id: item for item, total_cost in target_results}
+        
+        # raise Exception(target_mapping)
+
+        # Pair the data
+        paired_data = [
+            (current_item, target_mapping[current_item.variable_id], current_total_cost)
+            for current_item, current_total_cost in current_results
+            if current_item.variable_id in target_mapping
+        ]
+        
+        # raise Exception(paired_data)
 
         return paired_data
 
