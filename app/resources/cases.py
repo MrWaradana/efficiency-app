@@ -38,14 +38,14 @@ class CasesResource(Resource):
         )
 
     @token_required
-    @parse_params(Argument("name", location="json", required=True), Argument("nphr", location="json", default=0, type=int))
-    def post(self, name: str, user_id: str, nphr: int) -> Response:
+    @parse_params(Argument("name", location="json", required=True), Argument("nphr_value", location="json", default=0, type=int))
+    def post(self, name: str, user_id: str, nphr_value: int) -> Response:
         is_case = case_repository.get_by_name(name)
 
         if is_case:
             return response(409, False, "Case already exists")
 
-        case = case_repository.create({"name": name, "nphr": nphr})
+        case = case_repository.create({"name": name, "nphr_value": nphr_value})
         return response(201, True, "Case created successfully", case_schema.dump(case))
 
 
@@ -75,7 +75,7 @@ class CaseResource(Resource):
 
     @token_required
     @Transactional(propagation=Propagation.REQUIRED)
-    @parse_params(Argument("name", location="json", required=False, default=None))
+    @parse_params(Argument("name", location="json", required=False, default=None), Argument("nphr_value", location="json", default=0, type=int))
     def put(self, case_id, user_id, **attributes):
         """
         Update a specific case by id

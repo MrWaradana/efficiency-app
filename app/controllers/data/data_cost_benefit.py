@@ -56,16 +56,20 @@ class DataCostBenefit(BaseController):
                 nilai_losses = (persen_losses / 100) * 1000
 
                 hasCause = True if current_data.variable.causes else False
+                
+                category = current_data.variable.category
 
                 # Static Data
                 netto = 1000
 
                 cost_benefit = calculate_cost_benefit(netto, nphr, nilai_losses)
-
-                aggregated['persen_losses'] += persen_losses or 0
-                aggregated['total_biaya'] += total_cost or 0
-                aggregated['cost_benefit'] += cost_benefit or 0
-                aggregated['nilai_losses'] += nilai_losses or 0
+                
+                if category is not None:
+                    aggregated['persen_losses'] += persen_losses or 0
+                    aggregated['total_biaya'] += total_cost or 0
+                    aggregated['cost_benefit'] += cost_benefit or 0
+                    aggregated['nilai_losses'] += nilai_losses or 0
+                
 
                 payload = {
                     "id": str(current_data.id),
@@ -84,7 +88,7 @@ class DataCostBenefit(BaseController):
                     "is_pareto" : current_data.variable.is_pareto
                 }
 
-                result.append(payload)
+                result.append(payload) if category is not None else None
 
             return result, aggregated
 
