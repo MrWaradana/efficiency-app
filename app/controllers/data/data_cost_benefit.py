@@ -55,7 +55,7 @@ class DataCostBenefit(BaseController):
                 )
                 nilai_losses = (persen_losses / 100) * 1000
 
-                hasCause = True if current_data.variable.causes else False
+                hasCause = True
                 
                 category = current_data.variable.category
 
