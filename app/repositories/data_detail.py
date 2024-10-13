@@ -26,6 +26,7 @@ class DataDetailRepository(BaseRepository[EfficiencyDataDetail]):
             )
         )
         query = query.options(joinedload(EfficiencyDataDetail.variable))
+        query = query.options(joinedload(EfficiencyDataDetail.efficiency_transaction))
         return self._all_unique(query)
 
     def get_by_uuid(self, uuid: str, join_: set[str] | None = None):
