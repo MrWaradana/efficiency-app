@@ -21,12 +21,13 @@ class DataListCostBenefit(Resource):
         # Get newest transaction id
         data = data_controller.get_newest_data()
         
-        result, persen, nilai, total_biaya, total_cost_benefit = data_cost_benefit_controller.get_cost_benefit_data(data.id, cost_threshold)
+        result, persen, nilai, total_biaya, total_cost_benefit, cost_threshold = data_cost_benefit_controller.get_cost_benefit_data(data.id, cost_threshold)
 
         return response(200, True, "Data retrieved successfully", {
             "cost_benefit_result": result,
             "total_cost_benefit": total_cost_benefit,
             "total_biaya": total_biaya,
             "total_persen": persen,
-            "total_nilai": nilai
+            "total_nilai": nilai,
+            "cost_threshold": cost_threshold
         })

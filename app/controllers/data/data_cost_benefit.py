@@ -127,7 +127,7 @@ class DataCostBenefit(BaseController):
         # Add all items with unknown costs
         result.extend(sorted_unknown_cost_items)
 
-        return result, aggregated['persen_losses'], aggregated['nilai_losses'], aggregated['total_biaya'], aggregated['cost_benefit'],
+        return result, aggregated['persen_losses'], aggregated['nilai_losses'], aggregated['total_biaya'], aggregated['cost_benefit'], cost_threshold
 
 
 data_cost_benefit_controller = DataCostBenefit()
