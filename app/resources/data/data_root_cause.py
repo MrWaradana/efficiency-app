@@ -75,7 +75,7 @@ class DataRootCausesActionResource(Resource):
         Argument("data_actions", location="json", type=list, required=True)
     )
     def post(self, user_id, data_actions, detail_id, transaction_id):
-        data = data_detail_root_cause_controller.create_data_detail_root_cause_actions(user_id, data_actions)
+        data = data_detail_root_cause_controller.create_data_detail_root_cause_actions(user_id, data_actions, detail_id)
         cache_flask.delete(f"data_pareto_{transaction_id}")
 
         return response(200, True, "Data root cause actions created successfully")
