@@ -88,7 +88,7 @@ class DataParetoController(BaseController[EfficiencyDataDetail]):
 
                 category = current_data.variable.category
 
-                hasCause = True if current_data.variable.causes else False
+                hasCause = True
 
                 # Static Data
                 netto = 1000
