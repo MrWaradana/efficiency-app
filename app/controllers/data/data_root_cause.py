@@ -105,25 +105,20 @@ class DataDetailRootCauseController(BaseController[EfficiencyDataDetailRootCause
         return None
 
     @Transactional(propagation=Propagation.REQUIRED)
-    def create_data_detail_root_cause_actions(self, user_id, data_actions):
+    def create_data_detail_root_cause_actions(self, user_id, data_actions, detail_id):
 
         if not data_actions:
             return exc.BadRequest("Data actions must be provided")
-
-        # Extract root parent IDs once
-        root_parent_ids = [action["parent_id"] for action in data_actions]
         
-        # Get all roots in one query
-        data_roots = {
-            str(root.parent_cause_id): root 
-            for root in self.data_detail_root_cause_repository.get_by_root_ids(root_parent_ids)
-        }
+        data_roots = {str(root.parent_cause_id): root for root in self.data_detail_root_cause_repository.get_by_detail_id(detail_id)}
+        
 
         root_cause_actions = []
         
         for data_action in data_actions:
             parent_id = data_action["parent_id"]
             data_root = data_roots.get(parent_id)
+            
             
             if not data_root:
                 return exc.BadRequest(f"Root cause not found for parent_id: {parent_id}")
