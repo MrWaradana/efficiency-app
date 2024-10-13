@@ -20,7 +20,6 @@ class DataDetailRootCauseRepository(BaseRepository[EfficiencyDataDetailRootCause
         query = query.options(selectinload(EfficiencyDataDetailRootCause.members))
         query = query.options(selectinload(EfficiencyDataDetailRootCause.actions))
         
-        
         return self._all_unique(query)
 
     def get_by_detail_id_parent_ids(self, parent_ids: list, detail_id: str):

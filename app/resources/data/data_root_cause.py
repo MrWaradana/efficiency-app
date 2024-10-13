@@ -25,7 +25,7 @@ from core.factory import variable_factory, data_detail_root_cause_factory
 from core.cache import Cache, cache_flask
 
 variable_schema = variable_factory.variable_schema
-data_detail_root_cause_schema_actions = data_detail_root_cause_factory.exclude_schema(["members"])
+data_detail_root_cause_schema_actions = data_detail_root_cause_factory.data_detail_root_cause_schema
 data_detail_root_cause_schema_members = data_detail_root_cause_factory.exclude_schema(["actions"])
 
 
