@@ -13,12 +13,15 @@ data_details_schema = data_detail_factory.data_detail_schema
 class DataListCostBenefit(Resource):
 
     @token_required
-    def get(self, user_id):
+    @parse_params(
+        Argument("cost_threshold", location="args", default=0, type=int)
+    )
+    def get(self, user_id, cost_threshold):
 
         # Get newest transaction id
         data = data_controller.get_newest_data()
         
-        result, persen, nilai, total_biaya, total_cost_benefit = data_cost_benefit_controller.get_cost_benefit_data(data.id)
+        result, persen, nilai, total_biaya, total_cost_benefit = data_cost_benefit_controller.get_cost_benefit_data(data.id, cost_threshold)
 
         return response(200, True, "Data retrieved successfully", {
             "cost_benefit_result": result,

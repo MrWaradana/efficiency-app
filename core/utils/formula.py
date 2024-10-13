@@ -196,7 +196,7 @@ class VariableFormula():
     def calculate_ttd_hph_7(self):
         "(T feedwater out - T saturated)"
         t_feedwater_out_pi = "F1DPw1kUu10ziUaXEx2rIyo4pAZA0AAAS1RKQi1LSTAwLVBJMVxUSkIzLkhQIEZXIEhUUiA3IE9VVEwgRlcgVEVNUA"
-        t_saturated = self.current_data_details.get("Feedwater Heater [16] - HPH-6: Saturation temperature", None)
+        t_saturated = self.current_data_details.get("Feedwater Heater [16] - HPH-7: Saturation temperature", None)
         username = 'tjb.piwebapi'
         password = 'PLNJepara@2024'
 
@@ -216,7 +216,7 @@ class VariableFormula():
     def calculate_ttd_hph_6(self):
         "(T feedwater out - T saturated)"
         t_feedwater_out_pi = "F1DPw1kUu10ziUaXEx2rIyo4pAWg0AAAS1RKQi1LSTAwLVBJMVxUSkIzLkhQIEZXIEhUUiA2IE9VVEwgRlcgVEVNUA"
-        t_saturated = self.current_data_details.get("Feedwater Heater [15] - HPH-5: Saturation temperature", None)
+        t_saturated = self.current_data_details.get("Feedwater Heater [15] - HPH-6: Saturation temperature", None)
 
         username = 'tjb.piwebapi'
         password = 'PLNJepara@2024'
@@ -237,7 +237,7 @@ class VariableFormula():
     def calculate_ttd_hph_5(self):
         "(T feedwater out - T saturated)"
         t_feedwater_out_pi = "F1DPw1kUu10ziUaXEx2rIyo4pAUQ0AAAS1RKQi1LSTAwLVBJMVxUSkIzLkhQIEZXIEhUUiA1IE9VVEwgRlcgVEVNUA"
-        t_saturated = self.current_data_details.get("Feedwater Heater [14] - HPH-4: Saturation temperature", None)
+        t_saturated = self.current_data_details.get("Feedwater Heater [14] - HPH-5: Saturation temperature", None)
 
         username = 'tjb.piwebapi'
         password = 'PLNJepara@2024'

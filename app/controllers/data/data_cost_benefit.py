@@ -15,13 +15,14 @@ data_detail_repository = data_detail_factory.data_detail_repository
 data_repository = data_factory.data_repository
 variable_schema = variable_factory.variable_schema
 
+
 class DataCostBenefit(BaseController):
 
     def __init__(self, data_detail_repository=data_detail_repository):
         super().__init__(model=EfficiencyDataDetail, repository=data_detail_repository)
         self.data_detail_repository = data_detail_repository
 
-    def get_cost_benefit_data(self, transaction_id):
+    def get_cost_benefit_data(self, transaction_id, cost_threshold=None):
         result_pareto = []
         total_persen = 0
         total_biaya = 0
@@ -91,9 +92,38 @@ class DataCostBenefit(BaseController):
             data_future = executor.submit(batch_process_data, categorized_data)
             results, aggregated = data_future.result()
 
-        sorted_result = sorted(results, key=lambda x: x['cost_benefit'], reverse=True)
+        def calc_ratio(item):
+            cost = item.get('total_biaya')
+            if cost is None or cost == 0:
+                return float('inf') if item['cost_benefit'] > 0 else 0
+            return item['cost_benefit'] / cost
 
-        return sorted_result, aggregated['persen_losses'], aggregated['nilai_losses'], aggregated['total_biaya'], aggregated['cost_benefit'],
+        known_cost_items = [item for item in results if item.get('total_biaya') > 0]
+        unknown_cost_items = [item for item in results if item.get('total_biaya') == 0]
+
+        # Sort items with known costs by ratio
+        sorted_known_cost_items = sorted(known_cost_items, key=calc_ratio, reverse=True)
+
+        # Sort items with unknown costs by potential benefit
+        sorted_unknown_cost_items = sorted(unknown_cost_items, key=lambda x: x['cost_benefit'], reverse=True)
+
+        result = []
+        cumulative_cost = 0
+
+        # Add items with known costs up to the threshold
+        for item in sorted_known_cost_items:
+            if (cost_threshold > 0) and (cumulative_cost + item['total_biaya'] <= cost_threshold):
+                result.append(item)
+                cumulative_cost += item['total_biaya']
+            else:
+                if cost_threshold == 0:
+                    result.append(item)
+                break
+
+        # Add all items with unknown costs
+        result.extend(sorted_unknown_cost_items)
+
+        return result, aggregated['persen_losses'], aggregated['nilai_losses'], aggregated['total_biaya'], aggregated['cost_benefit'],
 
 
 data_cost_benefit_controller = DataCostBenefit()

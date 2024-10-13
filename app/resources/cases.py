@@ -38,14 +38,14 @@ class CasesResource(Resource):
         )
 
     @token_required
-    @parse_params(Argument("name", location="json", required=True))
-    def post(self, name: str, user_id: str) -> Response:
+    @parse_params(Argument("name", location="json", required=True), Argument("nphr", location="json", default=0, type=int))
+    def post(self, name: str, user_id: str, nphr: int) -> Response:
         is_case = case_repository.get_by_name(name)
 
         if is_case:
             return response(409, False, "Case already exists")
 
-        case = case_repository.create({"name": name})
+        case = case_repository.create({"name": name, "nphr": nphr})
         return response(201, True, "Case created successfully", case_schema.dump(case))
 
 
