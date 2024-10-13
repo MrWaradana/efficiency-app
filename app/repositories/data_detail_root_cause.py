@@ -48,7 +48,7 @@ class DataDetailRootCauseRepository(BaseRepository[EfficiencyDataDetailRootCause
         return self._all_unique(query)
 
     def get_by_root_ids(self, root_ids: list):
-        query = self._query({'actions'})
+        query = self._query()
         query = query.filter(EfficiencyDataDetailRootCause.parent_cause_id.in_(root_ids))
         
         query = query.options(selectinload(EfficiencyDataDetailRootCause.actions))
