@@ -84,6 +84,6 @@ class DataRootCausesActionResource(Resource):
     def get(self, user_id, detail_id, transaction_id):
         data = data_detail_root_cause_controller.get_by_detail_id(detail_id)
         
-        raise Exception(data[0].actions)
+        
 
         return response(200, True, "Data root cause actions retrieved successfully", data_detail_root_cause_schema_actions.dump(data, many=True))
