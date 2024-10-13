@@ -153,7 +153,7 @@ class DataResource(Resource):
             200,
             True,
             "Transaction retrieved successfully",
-            data_schema_with_rel.dump(transaction),
+            data_schema.dump(transaction),
         )
 
     @token_required

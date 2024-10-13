@@ -94,8 +94,9 @@ class VariableCauseController(BaseController[VariableCause]):
         @cache_flask.cached(key_prefix=f"variable_actions_{detail_id}")
         def get_data():
             # Fetch the data
-            data = variable_cause_repository.get_by_variable_id(variable_id, {"children", "actions"})
+            data = variable_cause_repository.get_by_variable_id(variable_id, {"children", "actions", "root_cause_members"})
             root_ids = [str(root.id) for root in data_detail_root_cause_controller.data_detail_root_cause_repository.get_by_detail_id(detail_id)]
+
             
             filtered_data = variable_cause_schema.dump(data, many=True)
             

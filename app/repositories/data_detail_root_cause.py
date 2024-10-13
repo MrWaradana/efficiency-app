@@ -6,7 +6,7 @@ from digital_twin_migration.models.efficiency_app import (
     EfficiencyDataDetail, EfficiencyDataDetailRootCause, EfficiencyTransaction,
     Variable, EfficiencyDataDetailRootCauseMember)
 from sqlalchemy import Select, and_, func, select
-from sqlalchemy.orm import joinedload
+from sqlalchemy.orm import joinedload,selectinload
 
 from core.repository import BaseRepository
 
@@ -14,8 +14,13 @@ from core.repository import BaseRepository
 class DataDetailRootCauseRepository(BaseRepository[EfficiencyDataDetailRootCause]):
 
     def get_by_detail_id(self, detail_id: str, is_repair: bool = False):
-        query = self._query({'members', 'actions'})
+        query = self._query()
         query = query.filter(EfficiencyDataDetailRootCause.data_detail_id == detail_id)
+        
+        query = query.options(selectinload(EfficiencyDataDetailRootCause.members))
+        query = query.options(selectinload(EfficiencyDataDetailRootCause.actions))
+        
+        
         return self._all_unique(query)
 
     def get_by_detail_id_parent_ids(self, parent_ids: list, detail_id: str):
@@ -34,6 +39,10 @@ class DataDetailRootCauseRepository(BaseRepository[EfficiencyDataDetailRootCause
                 EfficiencyDataDetailRootCause.parent_cause_id.in_(parent_ids),
             )
         )
+        
+        query = query.options(selectinload(EfficiencyDataDetailRootCause.members))
+        query = query.options(selectinload(EfficiencyDataDetailRootCause.actions))
+        query = query.options(selectinload(EfficiencyDataDetailRootCause.parent_cause))
 
         # Retrieve unique records (assuming _all_unique applies distinct or similar)
         return self._all_unique(query)
@@ -41,6 +50,8 @@ class DataDetailRootCauseRepository(BaseRepository[EfficiencyDataDetailRootCause
     def get_by_root_ids(self, root_ids: list):
         query = self._query({'actions'})
         query = query.filter(EfficiencyDataDetailRootCause.parent_cause_id.in_(root_ids))
+        
+        query = query.options(selectinload(EfficiencyDataDetailRootCause.actions))
         return self._all_unique(query)
 
 
@@ -52,6 +63,11 @@ class DataDetailRootCauseRepository(BaseRepository[EfficiencyDataDetailRootCause
                 EfficiencyDataDetailRootCause.data_detail_id == detail_id,
             )
         )
+
+        query = query.options(selectinload(EfficiencyDataDetailRootCause.members))
+        query = query.options(selectinload(EfficiencyDataDetailRootCause.actions))
+        query = query.options(selectinload(EfficiencyDataDetailRootCause.parent_cause))
+        
         return self._first(query)
 
     def _join_members(self, query: Select) -> Select:

@@ -5,7 +5,7 @@ from digital_twin_migration.models.efficiency_app import (
     EfficiencyDataDetail, EfficiencyDataDetailRootCause, VariableCause, VariableCauseAction)
 from sqlalchemy import Select, select
 from sqlalchemy.orm import aliased, selectinload
-from sqlalchemy.orm import contains_eager, joinedload
+from sqlalchemy.orm import contains_eager, joinedload, subqueryload
 
 from core.repository import BaseRepository
 
@@ -45,6 +45,9 @@ class CausesRepository(BaseRepository[VariableCause]):
 
         # Use selectinload to eagerly load children
         query = query.options(selectinload(VariableCause.children))
+        query = query.options(selectinload(VariableCause.root_cause_members))
+        query = query.options(selectinload(VariableCause.actions))
+        query = query.options(selectinload(VariableCause.root_causes))
 
         # Execute the query
         result = self.session.execute(query).scalars().unique().all()
@@ -55,16 +58,19 @@ class CausesRepository(BaseRepository[VariableCause]):
         return tree
 
     def _join_variable(self, query: Select) -> Select:
-        return query.options(joinedload(VariableCause.variable))
+        return query.join(VariableCause.variable)
 
     def _join_children(self, query: Select) -> Select:
-        return query.options(joinedload(VariableCause.children))
+        return query.join(VariableCause.children)
 
     def _join_root_causes(self, query: Select) -> Select:
-        return query.options(joinedload(VariableCause.root_causes))
+        return query.join(VariableCause.root_causes)
+    
+    def _join_root_cause_members(self, query: Select) -> Select:
+        return query.join(VariableCause.root_cause_members)
 
     def _join_actions(self, query: Select) -> Select:
-        return query.options(joinedload(VariableCause.actions))
+        return query.join(VariableCause.actions)
 
     def get_by_uuid(self, uuid: str, join_: set[str] | None = None):
         query = self._query(join_)

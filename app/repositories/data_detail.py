@@ -8,7 +8,7 @@ from digital_twin_migration.models.efficiency_app import (
     EfficiencyDataDetail, EfficiencyDataDetailRootCause, EfficiencyTransaction,
     Variable)
 from sqlalchemy import Select, and_, case, func, select, or_, union_all
-from sqlalchemy.orm import joinedload, aliased
+from sqlalchemy.orm import joinedload, aliased, selectinload
 
 from core.repository import BaseRepository
 from core.config import config
@@ -25,6 +25,7 @@ class DataDetailRepository(BaseRepository[EfficiencyDataDetail]):
                 Variable.in_out == type,
             )
         )
+        query = query.options(joinedload(EfficiencyDataDetail.variable))
         return self._all_unique(query)
 
     def get_by_uuid(self, uuid: str, join_: set[str] | None = None):
@@ -176,6 +177,9 @@ class DataDetailRepository(BaseRepository[EfficiencyDataDetail]):
             )
         )
         
+        query = query.options(selectinload(EfficiencyDataDetail.efficiency_transaction))
+        query = query.options(selectinload(EfficiencyDataDetail.variable))
+        
         # raise Exception("here", query)
 
         # Current data query
@@ -236,6 +240,9 @@ class DataDetailRepository(BaseRepository[EfficiencyDataDetail]):
                     Variable.excel_variable_name == nphr_input_name,
                 )
             )
+            
+        query = query.options(selectinload(EfficiencyDataDetail.efficiency_transaction))
+        query = query.options(selectinload(EfficiencyDataDetail.variable))
 
         return self._one_or_none(query)
 
@@ -268,6 +275,9 @@ class DataDetailRepository(BaseRepository[EfficiencyDataDetail]):
                 )
             )
         )
+        
+        combined_query = combined_query.options(selectinload(EfficiencyDataDetail.efficiency_transaction))
+        combined_query = combined_query.options(selectinload(EfficiencyDataDetail.variable))
         
 
         # Execute query and process results
