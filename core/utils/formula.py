@@ -363,7 +363,7 @@ class VariableFormula():
         else:
             AHE = ((PA3 + SA3)(AVGout - AVGin) / (FG3)(stream_100 - AVGin))
 
-        return AHE
+        return AHE * 100
 
     def calculate_air_heater_leakage(self):
         # 90*( ( [Stream [100] - Gas outlet of Economiser [71] - ECO -> Flue gas inlet of Rotary Air Heater [67] - ROTARY AH: Mole percent of CO2] - [Stream [91] - Flue gas outlet of Rotary Air Heater [67] - ROTARY AH -> Inlet of Electrostatic Precipitator [68] - ESP: Mole percent of CO2] ) / [Stream [91] - Flue gas outlet of Rotary Air Heater [67] - ROTARY AH -> Inlet of Electrostatic Precipitator [68] - ESP: Mole percent of CO2] )
