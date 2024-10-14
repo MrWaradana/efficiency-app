@@ -2,8 +2,8 @@
 
 from digital_twin_migration.database import Propagation, Transactional
 from digital_twin_migration.models.efficiency_app import (
-    EfficiencyDataDetail, EfficiencyDataDetailRootCause, VariableCause, VariableCauseAction)
-from sqlalchemy import Select, select
+    EfficiencyDataDetail, EfficiencyDataDetailRootCause, VariableCause, VariableCauseAction, Variable)
+from sqlalchemy import Select, func, select
 from sqlalchemy.orm import aliased, selectinload
 from sqlalchemy.orm import contains_eager, joinedload, subqueryload
 
@@ -56,6 +56,20 @@ class CausesRepository(BaseRepository[VariableCause]):
         tree = [vc for vc in result if vc.parent_id is None]
         
         return tree
+    
+    def get_count_by_variable_ids(self, variable_ids):
+        varc = aliased(VariableCause)
+        
+        query = (
+        self.session.query(
+            varc.variable_id.label('variable_id'),
+            func.count(varc.id).label('variable_cause_count')
+        )
+        .filter(varc.variable_id.in_(variable_ids))
+        .group_by(varc.variable_id)
+    )
+        
+        return query.all()
 
     def _join_variable(self, query: Select) -> Select:
         return query.join(VariableCause.variable)

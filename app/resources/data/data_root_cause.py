@@ -87,3 +87,13 @@ class DataRootCausesActionResource(Resource):
         
 
         return response(200, True, "Data root cause actions retrieved successfully", data_detail_root_cause_schema_actions.dump(data, many=True))
+
+
+class DataRootCauseCountResource(Resource):
+    
+    @token_required
+    def get(self, user_id, transaction_id):
+        data = data_detail_root_cause_controller.check_root_cause(transaction_id)
+        
+        
+        return response(200, True, "Data root cause notification retrieved successfully", data)

@@ -17,7 +17,7 @@ from werkzeug import exceptions
 
 class DataDetailRepository(BaseRepository[EfficiencyDataDetail]):
 
-    def get_by_data_id_and_variable_type(self, data_id: str, type: str):
+    def get_by_data_id_and_variable_type(self, data_id: str, type: str, is_categorized: bool = False):
         query = self._query({"variable"})
         query = query.filter(
             and_(
@@ -25,6 +25,12 @@ class DataDetailRepository(BaseRepository[EfficiencyDataDetail]):
                 Variable.in_out == type,
             )
         )
+
+        if is_categorized:
+            query = query.filter(
+                Variable.category.isnot(None)
+            )
+
         query = query.options(joinedload(EfficiencyDataDetail.variable))
         query = query.options(joinedload(EfficiencyDataDetail.efficiency_transaction))
         return self._all_unique(query)
@@ -151,7 +157,7 @@ class DataDetailRepository(BaseRepository[EfficiencyDataDetail]):
     #             )
 
     #     return paired_data
-    
+
     def get_data_pareto(self, data_id: str, is_uncategorized: bool = False):
         # Subquery for total cost
         total_cost_subq = (
@@ -177,10 +183,10 @@ class DataDetailRepository(BaseRepository[EfficiencyDataDetail]):
                 )
             )
         )
-        
+
         query = query.options(selectinload(EfficiencyDataDetail.efficiency_transaction))
         query = query.options(selectinload(EfficiencyDataDetail.variable))
-        
+
         # raise Exception("here", query)
 
         # Current data query
@@ -193,22 +199,22 @@ class DataDetailRepository(BaseRepository[EfficiencyDataDetail]):
             .join(EfficiencyTransactionAlias, EfficiencyDataDetail.efficiency_transaction_id == EfficiencyTransactionAlias.id)
             .filter(EfficiencyTransactionAlias.jenis_parameter == "Commision")
         )
-        
+
         # raise Exception("here", target_query)
 
         current_results = current_query.all()
         target_results = target_query.all()
-        
+
         # raise Exception(target_query)
 
         if not target_results:
             raise exceptions.NotFound("Target data not found")
-        
+
         # raise Exception("here", current_results)
 
         # Create mapping for target data
         target_mapping = {item.variable_id: item for item, total_cost in target_results}
-        
+
         # raise Exception(target_mapping)
 
         # Pair the data
@@ -217,7 +223,7 @@ class DataDetailRepository(BaseRepository[EfficiencyDataDetail]):
             for current_item, current_total_cost in current_results
             if current_item.variable_id in target_mapping
         ]
-        
+
         # raise Exception(paired_data)
 
         return paired_data
@@ -241,7 +247,7 @@ class DataDetailRepository(BaseRepository[EfficiencyDataDetail]):
                     Variable.excel_variable_name == nphr_input_name,
                 )
             )
-            
+
         query = query.options(selectinload(EfficiencyDataDetail.efficiency_transaction))
         query = query.options(selectinload(EfficiencyDataDetail.variable))
 
@@ -256,7 +262,6 @@ class DataDetailRepository(BaseRepository[EfficiencyDataDetail]):
 
         # Create base query with common joins and conditions
         base_query = self.model_class.query.join(EfficiencyDataDetail.variable).join(EfficiencyDataDetail.efficiency_transaction).filter(Variable.excel_variable_name == nphr_input_name)
-
 
         # Create case statements to identify each type
         type_case = case(
@@ -276,10 +281,9 @@ class DataDetailRepository(BaseRepository[EfficiencyDataDetail]):
                 )
             )
         )
-        
+
         combined_query = combined_query.options(selectinload(EfficiencyDataDetail.efficiency_transaction))
         combined_query = combined_query.options(selectinload(EfficiencyDataDetail.variable))
-        
 
         # Execute query and process results
         results = combined_query.all()

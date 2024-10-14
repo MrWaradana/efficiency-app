@@ -461,6 +461,9 @@ class DataController(BaseController[EfficiencyTransaction]):
 
     def get_newest_data(self):
         return self.data_repository.get_newest_data()
+    
+    def get_by_id(self, id):
+        return self.data_repository.get_by_uuid(id)
 
     def get_performance_test_chart_data(self):
 

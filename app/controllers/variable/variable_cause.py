@@ -6,7 +6,6 @@ from app.schemas.variable_cause import VariableCauseSchema
 from core.controller.base import BaseController
 from digital_twin_migration.models.efficiency_app import Variable, VariableCause, VariableCauseAction
 from core.factory import variable_factory
-from app.controllers.data.data_root_cause import data_detail_root_cause_controller
 from core.utils import response
 from app.controllers.excels import excel_repository
 from werkzeug import exceptions
@@ -14,9 +13,12 @@ from worker import fetch_variable_data
 from typing import Dict, List, Optional
 import copy
 from core.cache import Cache, cache_flask
+from core.factory.data import data_detail_root_cause_factory
 
 variable_cause_schema = VariableCauseSchema()
 variable_cause_repository = CausesRepository(VariableCause)
+data_detail_root_cause_repository = data_detail_root_cause_factory.data_detail_root_cause_repository
+
 
 class VariableCauseController(BaseController[VariableCause]):
     def __init__(self, variable_cause_repository: VariablesRepository = variable_cause_repository):
@@ -95,7 +97,7 @@ class VariableCauseController(BaseController[VariableCause]):
         def get_data():
             # Fetch the data
             data = variable_cause_repository.get_by_variable_id(variable_id, {"children", "actions", "root_cause_members"})
-            root_ids = [str(root.id) for root in data_detail_root_cause_controller.data_detail_root_cause_repository.get_by_detail_id(detail_id)]
+            root_ids = [str(root.id) for root in data_detail_root_cause_repository.get_by_detail_id(detail_id)]
 
             
             filtered_data = variable_cause_schema.dump(data, many=True)
@@ -110,5 +112,10 @@ class VariableCauseController(BaseController[VariableCause]):
             return filtered_nodes
 
         return get_data()
+    
+    def get_cause_count(self, variable_ids):
+        data = self.variable_cause_repository.get_count_by_variable_ids(variable_ids)
+        
+        return data
         
 variable_cause_controller = VariableCauseController()

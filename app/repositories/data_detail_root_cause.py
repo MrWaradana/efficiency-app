@@ -6,7 +6,7 @@ from digital_twin_migration.models.efficiency_app import (
     EfficiencyDataDetail, EfficiencyDataDetailRootCause, EfficiencyTransaction,
     Variable, EfficiencyDataDetailRootCauseMember)
 from sqlalchemy import Select, and_, func, select
-from sqlalchemy.orm import joinedload,selectinload
+from sqlalchemy.orm import joinedload,selectinload, aliased
 
 from core.repository import BaseRepository
 
@@ -45,7 +45,29 @@ class DataDetailRootCauseRepository(BaseRepository[EfficiencyDataDetailRootCause
 
         # Retrieve unique records (assuming _all_unique applies distinct or similar)
         return self._all_unique(query)
+    
+    def get_total_root_cause_by_detail_ids(self, details_ids:list):
+        dd = aliased(EfficiencyDataDetail)
+        rc = aliased(EfficiencyDataDetailRootCause)
+        rcm = aliased(EfficiencyDataDetailRootCauseMember)
 
+        # Query to count related DataRootCause entries for each DataDetails id
+        query = (
+            self.session.query(
+                dd.id.label('data_details_id'),
+                dd.variable_id.label('variable_id'),
+                func.count(rcm.id).label('root_cause_member_count')
+            )
+            .outerjoin(rc, dd.root_causes)  # Adjust this join based on your actual relationship
+            .outerjoin(rcm, rc.members)    # Adjust this join based on your actual relationship
+            .filter(dd.id.in_(details_ids))
+            .group_by(dd.id)
+        )
+
+        # Execute the query and return the results
+        return query.all()
+    
+    
     def get_by_root_ids(self, root_ids: list):
         query = self._query()
         query = query.filter(EfficiencyDataDetailRootCause.parent_cause_id.in_(root_ids))

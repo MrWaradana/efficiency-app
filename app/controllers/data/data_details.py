@@ -6,7 +6,6 @@ from digital_twin_migration.models.efficiency_app import (
 from flask_restful import Resource
 from flask_restful.reqparse import Argument
 
-from app.controllers.data.data import data_repository
 from app.repositories.data_detail import DataDetailRepository
 from app.schemas import EfficiencyDataDetailSchema, VariableSchema
 from core.cache import Cache, cache_flask
@@ -29,11 +28,11 @@ class DataDetailController(BaseController[EfficiencyDataDetail]):
         super().__init__(model=EfficiencyTransaction, repository=data_detail_repository)
         self.data_detail_repository = data_detail_repository
 
-    def get_data_details(self, transaction_id: str, type: str):
-        # @cache_flask.cached(key_prefix=f"data_details_{transaction_id}_{type}")
+    def get_data_details(self, transaction_id: str, type: str, is_categorized:bool = False):
+        @cache_flask.cached(key_prefix=f"data_details_{transaction_id}_{type}_{is_categorized}")
         def fetch_data_details():
             data_details = self.data_detail_repository.get_by_data_id_and_variable_type(
-                transaction_id, type
+                transaction_id, type, is_categorized
             )
 
             return data_details
@@ -51,6 +50,7 @@ class DataDetailController(BaseController[EfficiencyDataDetail]):
             return data_detail
 
         return fetch_data_detail()
+
 
 
 data_detail_controller = DataDetailController()
