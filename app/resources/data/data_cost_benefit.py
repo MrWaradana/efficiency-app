@@ -14,7 +14,7 @@ class DataListCostBenefit(Resource):
 
     @token_required
     @parse_params(
-        Argument("cost_threshold", location="args", default=0, type=int)
+        Argument("cost_threshold", location="args", type=int)
     )
     def get(self, user_id, cost_threshold):
 
