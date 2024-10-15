@@ -192,7 +192,7 @@ class DataController(BaseController[EfficiencyTransaction]):
 
         data_repository.create_bulk(transaction_records)
 
-        send_thermolink_request.delay(transaction_parent, unique_id, input_data)
+        send_thermolink_request.delay(str(transaction_parent.id), unique_id, input_data)
 
         # # Send the input data to the Windows Efficiency API
         # try:
@@ -244,13 +244,6 @@ class DataController(BaseController[EfficiencyTransaction]):
 
     @Transactional(propagation=Propagation.REQUIRED)
     def create_data_output(self, outputs: dict, unique_id):
-        # Write
-        try:
-            with open("/app/output.json", 'w') as json_file:
-                json.dump(outputs, json_file, indent=4)
-        except Exception as e:
-            print(f"An error occurred: {e}")
-
         username = 'tjb.piwebapi'
         password = 'PLNJepara@2024'
 
@@ -267,11 +260,6 @@ class DataController(BaseController[EfficiencyTransaction]):
         transaction = data_repository.get_by_unique_id(unique_id)
         mainFormula = VariableFormula(outputs)
         transaction_records = []
-
-        # transaction.status = "Done"
-        transaction.status = "Done"
-        data_repository.session.commit()
-        redis.delete("flask_cache_get_data_paginated")
 
         excel = excel_repository.get_all()[0]
 
@@ -336,6 +324,11 @@ class DataController(BaseController[EfficiencyTransaction]):
         data_repository.create_bulk(transaction_records)
 
         data_repository.update_thermoflow_status(False)
+        # transaction.status = "Done"
+        transaction.status = "Done"
+        data_repository.session.commit()
+        redis.delete("flask_cache_get_data_paginated")
+        redis.delete('excel_processing')
         sse.publish({"message": "Output has been processed", "status": True}, type="data_outputs")
 
         return transaction.id
