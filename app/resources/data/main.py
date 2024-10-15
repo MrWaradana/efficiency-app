@@ -46,7 +46,7 @@ class DataListResource(Resource):
     )
     def get(self, user_id, page, size, all, start_date, end_date, is_performance_test):
         # Get Thermoflow status
-        status = ThermoflowStatus.query.first().is_running
+        # status = ThermoflowStatus.query.first().is_running
 
         # Apply pagination
         data = (
@@ -62,7 +62,7 @@ class DataListResource(Resource):
             True,
             "Transactions retrieved successfully.",
             {
-                "thermo_status": status,
+                "thermo_status": False,
                 ** data[0],
                 "transactions": [
                     {

@@ -84,7 +84,7 @@ class DataParetoController(BaseController[EfficiencyDataDetail]):
                 persen_losses = calculate_persen_losses(
                     gap, target_data.deviasi, current_data.persen_hr
                 )
-                nilai_losses = (persen_losses / 100) * 1000
+                nilai_losses = (persen_losses / 100) * nphr
 
                 category = current_data.variable.category
 
