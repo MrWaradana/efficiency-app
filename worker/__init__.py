@@ -77,7 +77,7 @@ class ExcelTask(celery_app.Task):
 
 
 @celery_app.task(bind=True, base=ExcelTask)
-def send_thermolink_request(data, unique_id, input_data):
+def send_thermolink_request(self, data, unique_id, input_data):
 
     try:
         res = requests.post(
@@ -93,3 +93,4 @@ def send_thermolink_request(data, unique_id, input_data):
     except requests.exceptions.RequestException as e:
         # Handle error, e.g., logging or retry mechanism
         print(f"API request failed: {e}")
+        self.retry(exc=e, countdown=5)  # Retry on failure
