@@ -26,7 +26,7 @@ class VariableController(BaseController[Variable]):
     def get(self, id):
         return self.model.get(id)
 
-    def get_all(self, excel_id, type):
+    def get_all(self, excel_id, type, parameter, end_date = None):
 
         is_connected_to_pi = False
 
@@ -60,9 +60,12 @@ class VariableController(BaseController[Variable]):
             base_case = variable.konstanta if variable.konstanta is not None else "N/A"
 
             if not variable.konstanta and is_connected_to_pi and variable.web_id and variable.web_id != "Not used" and variable.web_id != "Konstanta":
-                url = F"https://10.47.0.54/piwebapi/streams/{variable.web_id}/value"
+                if parameter == "current":
+                    url = F"https://10.47.0.54/piwebapi/streams/{variable.web_id}/value"
+                else:
+                    url = f"https://10.47.0.54/piwebapi/streams/{variable.web_id}/summary?startTime={end_date}-30d&endTime={end_date}&summaryType=Average"
                 # Submit task to Celery
-                task = fetch_variable_data.delay(url, username, password)
+                task = fetch_variable_data.delay(url, username, password, parameter)
                 task_results.append((task, variable))  # Store the task along with the variable
             else:
                 variables_base_case.append({**variable_schema.dump(variable), "base_case": base_case})

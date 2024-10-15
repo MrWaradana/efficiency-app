@@ -22,7 +22,7 @@ celery_app.conf.update(task_track_started=True)
 
 
 @celery_app.task(bind=True)
-def fetch_variable_data(self, url, username, password):
+def fetch_variable_data(self, url, username, password, parameter):
     try:
 
         if url == "https://10.47.0.54/piwebapi/streams/F1DPw1kUu10ziUaXEx2rIyo4pA2xgAAAS1RKQi1LSTAwLVBJMVxUSkIzLjFSWSBBSVIgRkxPVyAoTUlMTCBJTkxFVCk/value":
@@ -45,7 +45,18 @@ def fetch_variable_data(self, url, username, password):
             return 'N/A'
 
         response.raise_for_status()  # Raise an exception for HTTP errors (e.g., 404)
-        return response.json().get('Value', 'N/A')
+        if parameter == "current":
+            return response.json().get('Value', 'N/A') 
+        else:
+            # Extract the Value as a float using get()
+            items = response.json().get("Items", [])
+            if items:
+                first_item = items[0]
+                value_dict = first_item.get("Value", {})
+                value = float(value_dict.get("Value", 0.0)) if value_dict else "N/A"
+                return value
+            else:
+                return "N/A"
 
     except requests.exceptions.RequestException as e:
         self.retry(exc=e, countdown=5)  # Retry on failure

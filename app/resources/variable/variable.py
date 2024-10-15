@@ -36,11 +36,13 @@ class VariablesResource(Resource):
             help="Excel Id is required",
         ),
         Argument("type", location="args", required=False, type=str, default="in"),
+        Argument("parameter", location="args", required=False, type=str, default="current"),
+        Argument("end_date", location="args", required=False, type=str)
     )
-    def get(self, excel_id: str, type: str, user_id) -> Response:
+    def get(self, excel_id: str, type: str, user_id, parameter, end_date) -> Response:
         """Retrieve all variable from API based on EXCEL NAME"""
 
-        data = variable_controller.get_all(excel_id, type)
+        data = variable_controller.get_all(excel_id, type, parameter, end_date)
         
         return response(
             200,
