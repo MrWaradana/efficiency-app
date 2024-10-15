@@ -69,7 +69,7 @@ class ExcelTask(celery_app.Task):
         # Check if we can process the task
         if redis.get('excel_processing'):
             # If a task is being processed, re-queue this task
-            self.retry(countdown=40, max_retries=None)
+            self.retry(countdown=60, max_retries=2)
         else:
             # Set the processing flag and proceed with the task
             redis.set('excel_processing', '1')
@@ -84,12 +84,7 @@ def send_thermolink_request(self, data_id, unique_id, input_data):
             f"{config.WINDOWS_EFFICIENCY_APP_API}/excels/{unique_id}",
             json={"inputs": input_data},
         )
-        res.raise_for_status()  # Raise an error if the API request fails
-
-        if res.ok :
-            data = data_repository.get_by_uuid(data_id)
-            data.status = "Processing"
-            data_repository.session.commit()
+        res.raise_for_status()  # Raise an error if the API request fail
 
     except requests.exceptions.RequestException as e:
         # Handle error, e.g., logging or retry mechanism
