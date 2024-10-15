@@ -198,6 +198,6 @@ class DataPerformanceResource(Resource):
 class DataStatusThermoflow(Resource):
 
     def get(self):
-        status = ThermoflowStatus.query.first().is_running
+        # status = ThermoflowStatus.query.first().is_running
 
-        return response(200, True, "Data retrieved successfully", {"thermo_status": status})
+        return response(200, True, "Data retrieved successfully", {"thermo_status": False})
