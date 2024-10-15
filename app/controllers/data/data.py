@@ -21,6 +21,7 @@ from core.utils.formula import calculate_pareto
 from core.factory import data_factory, variable_factory
 from werkzeug import exceptions
 from core.utils.formula import VariableFormula
+from worker import send_thermolink_request
 
 from flask_sse import sse
 
@@ -102,7 +103,7 @@ class DataController(BaseController[EfficiencyTransaction]):
     @Transactional(propagation=Propagation.REQUIRED)
     def create_data(self, jenis_parameter, excel_id, inputs, user_id, name: str, is_performance_test, performance_test_weight):
         data_repository.update_thermoflow_status(True)
-        
+
         # Check connection to Excel Server
         try:
             res = requests.get(f"{config.WINDOWS_EFFICIENCY_APP_API}", timeout=2)
@@ -123,7 +124,6 @@ class DataController(BaseController[EfficiencyTransaction]):
 
         except requests.exceptions.RequestException:
             raise exceptions.InternalServerError("Failed to connect to Excel Server")
-
 
         excel = excel_repository.get_by_uuid(excel_id)
 
@@ -158,6 +158,7 @@ class DataController(BaseController[EfficiencyTransaction]):
                 "performance_test_weight": performance_test_weight,
                 "unique_id": unique_id,
                 "condensor_value": condensor_value,
+                "status": "Pending"
             }
         )
 
@@ -191,18 +192,20 @@ class DataController(BaseController[EfficiencyTransaction]):
 
         data_repository.create_bulk(transaction_records)
 
-        # Send the input data to the Windows Efficiency API
-        try:
-            res = requests.post(
-                f"{config.WINDOWS_EFFICIENCY_APP_API}/excels/{unique_id}",
-                json={"inputs": input_data},
-            )
-            res.raise_for_status()  # Raise an error if the API request fails
-        except requests.exceptions.RequestException as e:
-            # Handle error, e.g., logging or retry mechanism
-            print(f"API request failed: {e}")
-            data_repository.update_thermoflow_status(False)
-            return response(500, False, "Failed to create transaction")
+        send_thermolink_request.delay(transaction_parent, unique_id, input_data)
+
+        # # Send the input data to the Windows Efficiency API
+        # try:
+        #     res = requests.post(
+        #         f"{config.WINDOWS_EFFICIENCY_APP_API}/excels/{unique_id}",
+        #         json={"inputs": input_data},
+        #     )
+        #     res.raise_for_status()  # Raise an error if the API request fails
+        # except requests.exceptions.RequestException as e:
+        #     # Handle error, e.g., logging or retry mechanism
+        #     print(f"API request failed: {e}")
+        #     data_repository.update_thermoflow_status(False)
+        #     return response(500, False, "Failed to create transaction")
 
         # # Get the output data from the API response
         # outputs = res.json()
@@ -461,7 +464,7 @@ class DataController(BaseController[EfficiencyTransaction]):
 
     def get_newest_data(self):
         return self.data_repository.get_newest_data()
-    
+
     def get_by_id(self, id):
         return self.data_repository.get_by_uuid(id)
 
