@@ -39,6 +39,8 @@ class DataCostBenefit(BaseController):
         categorized_data, current_nphr, target_nphr = get_data(transaction_id)
         
         actions_all_detail = data_detail_root_cause_controller.check_root_cause(transaction_id)
+    
+    
         
         if categorized_data is None:
             raise exceptions.NotFound("Data not found")
@@ -62,7 +64,7 @@ class DataCostBenefit(BaseController):
                 
                 category = current_data.variable.category
                 
-                actions = actions_all_detail.get(current_data.id, [])
+                actions = actions_all_detail[str(current_data.id)]
 
                 # Static Data
                 netto = 1000
@@ -91,7 +93,7 @@ class DataCostBenefit(BaseController):
                     "symptoms": "Higher" if gap > 0 else "Lower",
                     "has_cause" : hasCause,
                     "is_pareto" : current_data.variable.is_pareto,
-                    "action_menutup_gap": actions
+                    "action_menutup_gap": actions['actions']
                 }
 
                 result.append(payload) if category is not None else None

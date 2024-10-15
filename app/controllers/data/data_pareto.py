@@ -9,6 +9,7 @@ from digital_twin_migration.models.efficiency_app import (
     EfficiencyDataDetail, EfficiencyTransaction)
 
 from app.controllers.data.data import data_repository
+from app.controllers.data.data_root_cause import data_detail_root_cause_controller
 from app.repositories.data_detail import DataDetailRepository
 from core.controller.base import BaseController
 from core.security import token_required
@@ -66,6 +67,8 @@ class DataParetoController(BaseController[EfficiencyDataDetail]):
 
         categorized_data, current_nphr, target_nphr = get_data(transaction_id)
         
+        actions_all_detail = data_detail_root_cause_controller.check_root_cause(transaction_id)
+        
 
         if categorized_data is None:
             raise exceptions.NotFound("Data not found")
@@ -87,6 +90,8 @@ class DataParetoController(BaseController[EfficiencyDataDetail]):
                 nilai_losses = (persen_losses / 100) * target_nphr.nilai
 
                 category = current_data.variable.category
+                
+                actions = actions_all_detail[str(current_data.id)]
 
                 hasCause = True
 
@@ -115,7 +120,8 @@ class DataParetoController(BaseController[EfficiencyDataDetail]):
                     "total_biaya": total_cost,
                     "symptoms": "Higher" if gap > 0 else "Lower",
                     "has_cause" : hasCause,
-                    "is_pareto" : current_data.variable.is_pareto
+                    "is_pareto" : current_data.variable.is_pareto,
+                    "action_menutup_gap": actions['actions']
                 }
 
                 categorized[category].append(payload) if category is not None else uncategorized.append(payload)
