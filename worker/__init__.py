@@ -1,3 +1,4 @@
+import time
 from celery import Celery
 import requests
 from core.config import config
@@ -54,37 +55,45 @@ def fetch_variable_data(self, url, username, password):
         return 'N/A'
 
 
-class ExcelTask(celery_app.Task):
-    abstract = True
-
-    def delay(self, *args, **kwargs):
-        # Always queue the task
-        return super().delay(*args, **kwargs)
-
-    def apply_async(self, args=None, kwargs=None, **options):
-        # Always queue the task
-        return super().apply_async(args=args, kwargs=kwargs, **options)
-
-    def __call__(self, *args, **kwargs):
-        # Check if we can process the task
-        if bool(redis.get('excel_processing')):
-            # If a task is being processed, re-queue this task
-            self.retry(countdown=60, max_retries=5)
-        else:
-            # Set the processing flag and proceed with the task
-            redis.set('excel_processing', '1')
-            return super().__call__(*args, **kwargs)
+LOCK_NAME = 'exceling_thermoflow_process'
+LOCK_TIMEOUT = 300  # 1 hour, adjust based on your longest expected process time
 
 
-@celery_app.task(bind=True, base=ExcelTask)
+@celery_app.task(bind=True)
 def send_thermolink_request(self, data_id, unique_id, input_data):
 
+    lock = redis.lock(LOCK_NAME, timeout=LOCK_TIMEOUT)
+
+    have_lock = False
+
     try:
-        res = requests.post(
-            f"{config.WINDOWS_EFFICIENCY_APP_API}/excels/{unique_id}",
-            json={"inputs": input_data},
-        )
-        res.raise_for_status()  # Raise an error if the API request fail
+
+        have_lock = lock.acquire(blocking=False)
+
+        if have_lock:
+            res = requests.post(
+                f"{config.WINDOWS_EFFICIENCY_APP_API}/excels/{unique_id}",
+                json={"inputs": input_data},
+            )
+            res.raise_for_status()  # Raise an error if the API request fail
+
+            if res.ok:
+                redis.hmset(f"process:{unique_id}", {
+                    'data_id': data_id,
+                    'lock_name': LOCK_NAME,
+                    'status': 'Processing'
+                })
+
+            # Wait for the process to complete
+            while True:
+                status = redis.hget(f'process:{unique_id}', 'status')
+                if status == b'Done':
+                    return "Process completed successfully"
+                elif status == b'Failed':
+                    raise Exception("Process failed")
+                time.sleep(10)  # Wait for 10 seconds before checking again
+        else:
+            self.retry(countdown=60)
 
     except requests.exceptions.RequestException as e:
         # Handle error, e.g., logging or retry mechanism

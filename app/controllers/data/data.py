@@ -260,6 +260,7 @@ class DataController(BaseController[EfficiencyTransaction]):
         transaction = data_repository.get_by_unique_id(unique_id)
         mainFormula = VariableFormula(outputs)
         transaction_records = []
+        process_info = redis.hgetall(f'process:{unique_id}')
 
         excel = excel_repository.get_all()[0]
 
@@ -322,13 +323,20 @@ class DataController(BaseController[EfficiencyTransaction]):
 
         # Bulk create the transaction records
         data_repository.create_bulk(transaction_records)
+        
+        # Update the status
+        redis.hset(f'process:{unique_id}', 'status', "Done")
+        
+        # Release the lock
+        if process_info and process_info.get(b'lock_name'):
+            lock = redis.lock(process_info[b'lock_name'].decode(), timeout=300)
+            lock.release()
 
         data_repository.update_thermoflow_status(False)
         # transaction.status = "Done"
         transaction.status = "Done"
         data_repository.session.commit()
         redis.delete("flask_cache_get_data_paginated")
-        redis.delete('excel_processing')
         sse.publish({"message": "Output has been processed", "status": True}, type="data_outputs")
 
         return transaction.id
