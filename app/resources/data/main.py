@@ -56,7 +56,6 @@ class DataListResource(Resource):
                 page, size, start_date, end_date
             )
         )
-        
 
         return response(
             200,
@@ -68,6 +67,7 @@ class DataListResource(Resource):
                 "transactions": [
                     {
                         **data_schema.dump(item),
+                        "status": redis.hget(f'process:{item.unique_id}', 'status') if redis.hget(f'process:{item.unique_id}', 'status') else item.status,
                         "periode": f"{item.periode.strftime('%Y-%m-%d')} | {item.sequence}",
                     }
                     for item in data[1]

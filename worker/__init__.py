@@ -82,6 +82,8 @@ def send_thermolink_request(self, data_id, unique_id, input_data, url):
                     'lock_name': LOCK_NAME,
                     'status': 'Processing'
                 })
+                
+                redis.expire(f"process:{unique_id}", 300)
 
             # Wait for the process to complete
             while True:
@@ -92,7 +94,7 @@ def send_thermolink_request(self, data_id, unique_id, input_data, url):
                     raise Exception("Process failed")
                 time.sleep(10)  # Wait for 10 seconds before checking again
         else:
-            self.retry(countdown=60)
+            self.retry(countdown=20)
 
     except requests.exceptions.RequestException as e:
         # Handle error, e.g., logging or retry mechanism
