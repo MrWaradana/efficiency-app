@@ -67,7 +67,7 @@ class DataListResource(Resource):
                 "transactions": [
                     {
                         **data_schema.dump(item),
-                        "status": redis.hget(f'process:{item.unique_id}', 'status') if redis.hget(f'process:{item.unique_id}', 'status') else item.status,
+                        "status": redis.hget(f'process:{item.unique_id}', 'status').decode('utf-8') if redis.hget(f'process:{item.unique_id}', 'status') else item.status,
                         "periode": f"{item.periode.strftime('%Y-%m-%d')} | {item.sequence}",
                     }
                     for item in data[1]
