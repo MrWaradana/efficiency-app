@@ -3,7 +3,7 @@
 from digital_twin_migration.database import Propagation, Transactional
 from digital_twin_migration.models.efficiency_app import (
     EfficiencyDataDetail, EfficiencyDataDetailRootCause, VariableCause, VariableCauseAction, Variable)
-from sqlalchemy import Select, func, select
+from sqlalchemy import Select, func, literal, select, text
 from sqlalchemy.orm import aliased, selectinload
 from sqlalchemy.orm import contains_eager, joinedload, subqueryload
 
@@ -96,3 +96,26 @@ class CausesRepository(BaseRepository[VariableCause]):
             return self._all_unique(query)
 
         return self._one_or_none(query)
+    
+    def get_with_parent(self, uuid):
+        # Define the recursive CTE
+        raw_query = text("""
+        WITH RECURSIVE parent_hierarchy AS (
+            SELECT id, parent_id, name, 1 AS level
+            FROM hl_ms_excel_variables_cause
+            WHERE id = :start_id
+            
+            UNION ALL
+            
+            SELECT yt.id, yt.parent_id, yt.name, ph.level + 1 AS level
+            FROM hl_ms_excel_variables_cause yt
+            INNER JOIN parent_hierarchy ph ON yt.id = ph.parent_id
+        )
+        SELECT STRING_AGG(name, ' | ' ORDER BY level DESC) AS name_hierarchy
+        FROM parent_hierarchy;
+        """)
+        
+        
+        result = self.session.execute(raw_query, {'start_id': uuid}).scalar()
+        
+        return result

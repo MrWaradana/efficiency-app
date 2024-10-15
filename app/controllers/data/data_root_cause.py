@@ -158,7 +158,7 @@ class DataDetailRootCauseController(BaseController[EfficiencyDataDetailRootCause
         # variable_causes_count = dict(variable_cause_repository.get_count_by_variable_ids(list(data_details.keys())))
 
         results = defaultdict(lambda: {
-            "root_causes": [],
+            "done": 0,
             "actions": [],
             "variable_id": ""
         })
@@ -171,10 +171,12 @@ class DataDetailRootCauseController(BaseController[EfficiencyDataDetailRootCause
             actions = []
             if is_repair:
                 variable_cause = variable_cause_repository.get_by_uuid(variable_cause_id, {"actions"})[0]
-                actions = [action.name for action in variable_cause.actions]
+                variable_cause_parent = variable_cause_repository.get_with_parent(variable_cause.id)
+                
+                actions = [f"{variable_cause_parent} | {action.name}" for action in variable_cause.actions]
         
 
-            results[data_detail_id]["root_causes"].append(variable_cause_name)
+            results[data_detail_id]["done"] += 1
             results[data_detail_id]["actions"].extend(actions)
             results[data_detail_id]["variable_id"] = var_id
         
