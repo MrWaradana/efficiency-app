@@ -72,8 +72,8 @@ def send_thermolink_request(self, data_id, unique_id, input_data, url):
 
         if have_lock:
             res = requests.post(url,
-                json={"inputs": input_data},
-            )
+                                json={"inputs": input_data},
+                                )
             res.raise_for_status()  # Raise an error if the API request fail
 
             if res.ok:
@@ -98,3 +98,9 @@ def send_thermolink_request(self, data_id, unique_id, input_data, url):
         # Handle error, e.g., logging or retry mechanism
         print(f"API request failed: {e}")
         self.retry(exc=e, countdown=5)  # Retry on failure
+
+    finally:
+        if have_lock:
+            # Only release the lock if the process hasn't completed
+            # (if it has completed, the lock was released by the callback)
+            lock.release()

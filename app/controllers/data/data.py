@@ -328,19 +328,11 @@ class DataController(BaseController[EfficiencyTransaction]):
         
         # Update the status
         redis.hset(f'process:{unique_id}', 'status', "Done")
-        
-        # Release the lock
-        if process_info and process_info.get(b'lock_name'):
-            lock = redis.lock(process_info[b'lock_name'].decode(), timeout=300)
-            lock.release()
-
         data_repository.update_thermoflow_status(False)
-        # transaction.status = "Done"
         transaction.status = "Done"
-        data_repository.session.commit()
         redis.delete("flask_cache_get_data_paginated")
         sse.publish({"message": "Output has been processed", "status": True}, type="data_outputs")
-
+        
         return transaction.id
 
     def error_on_thermoflow(self, unique_id, message):
