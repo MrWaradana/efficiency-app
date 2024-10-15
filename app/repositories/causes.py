@@ -91,6 +91,8 @@ class CausesRepository(BaseRepository[VariableCause]):
         query = query.filter(VariableCause.id == uuid)
 
         if join_ is not None:
+            query = query.options(selectinload(VariableCause.actions))
+            query = query.options(selectinload(VariableCause.children))
             return self._all_unique(query)
 
         return self._one_or_none(query)

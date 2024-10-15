@@ -8,7 +8,7 @@ from digital_twin_migration.models.efficiency_app import (
     EfficiencyDataDetail, EfficiencyDataDetailRootCause, EfficiencyTransaction,
     Variable)
 from sqlalchemy import Select, and_, case, func, select, or_, union_all
-from sqlalchemy.orm import joinedload, aliased, selectinload
+from sqlalchemy.orm import joinedload, aliased, selectinload,subqueryload
 
 from core.repository import BaseRepository
 from core.config import config
@@ -33,6 +33,8 @@ class DataDetailRepository(BaseRepository[EfficiencyDataDetail]):
 
         query = query.options(joinedload(EfficiencyDataDetail.variable))
         query = query.options(joinedload(EfficiencyDataDetail.efficiency_transaction))
+        
+
         return self._all_unique(query)
 
     def get_by_uuid(self, uuid: str, join_: set[str] | None = None):

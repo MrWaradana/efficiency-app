@@ -61,11 +61,11 @@ class DataParetoController(BaseController[EfficiencyDataDetail]):
         @cache_flask.cached(key_prefix=f"data_pareto_{transaction_id}")
         def get_data(transaction_id):
             categorized_data = data_detail_repository.get_data_pareto(transaction_id)
-            nphr = data_detail_repository.get_data_nphr(transaction_id).nilai
+            current_nphr, target_nphr, kpi_nphr = data_detail_repository.get_all_nphr_data(transaction_id)
+            return categorized_data, current_nphr, target_nphr
 
-            return categorized_data, nphr
-
-        categorized_data, nphr = get_data(transaction_id)
+        categorized_data, current_nphr, target_nphr = get_data(transaction_id)
+        
 
         if categorized_data is None:
             raise exceptions.NotFound("Data not found")
@@ -84,7 +84,7 @@ class DataParetoController(BaseController[EfficiencyDataDetail]):
                 persen_losses = calculate_persen_losses(
                     gap, target_data.deviasi, current_data.persen_hr
                 )
-                nilai_losses = (persen_losses / 100) * nphr
+                nilai_losses = (persen_losses / 100) * target_nphr.nilai
 
                 category = current_data.variable.category
 
@@ -93,7 +93,7 @@ class DataParetoController(BaseController[EfficiencyDataDetail]):
                 # Static Data
                 netto = 1000
 
-                cost_benefit = calculate_cost_benefit(netto, nphr, nilai_losses)
+                cost_benefit = calculate_cost_benefit(netto, current_nphr.nilai, nilai_losses)
 
                 if category is not None:
 

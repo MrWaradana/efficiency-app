@@ -11,6 +11,8 @@ from werkzeug import exceptions
 from core.factory import data_factory, variable_factory
 from core.utils.formula import calculate_cost_benefit, calculate_gap, calculate_persen_losses
 
+from app.controllers.data.data_root_cause import data_detail_root_cause_controller
+
 data_detail_repository = data_detail_factory.data_detail_repository
 data_repository = data_factory.data_repository
 variable_schema = variable_factory.variable_schema
@@ -36,7 +38,9 @@ class DataCostBenefit(BaseController):
             return categorized_data, nphr
 
         categorized_data, nphr = get_data(transaction_id)
-
+        
+        actions_all_detail = data_detail_root_cause_controller.check_root_cause(transaction_id)
+        
         if categorized_data is None:
             raise exceptions.NotFound("Data not found")
 
@@ -58,6 +62,8 @@ class DataCostBenefit(BaseController):
                 hasCause = True
                 
                 category = current_data.variable.category
+                
+                actions = actions_all_detail.get(current_data.id, [])
 
                 # Static Data
                 netto = 1000
@@ -85,7 +91,8 @@ class DataCostBenefit(BaseController):
                     "total_biaya": total_cost,
                     "symptoms": "Higher" if gap > 0 else "Lower",
                     "has_cause" : hasCause,
-                    "is_pareto" : current_data.variable.is_pareto
+                    "is_pareto" : current_data.variable.is_pareto,
+                    "action_menutup_gap": actions
                 }
 
                 result.append(payload) if category is not None else None
