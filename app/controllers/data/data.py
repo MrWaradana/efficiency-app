@@ -191,8 +191,10 @@ class DataController(BaseController[EfficiencyTransaction]):
                 )
 
         data_repository.create_bulk(transaction_records)
+        
+        req_excel_url = f"{config.WINDOWS_EFFICIENCY_APP_API}/excels/{unique_id}"
 
-        send_thermolink_request.delay(str(transaction_parent.id), unique_id, input_data)
+        send_thermolink_request.delay(str(transaction_parent.id), unique_id, input_data, req_excel_url)
 
         # # Send the input data to the Windows Efficiency API
         # try:

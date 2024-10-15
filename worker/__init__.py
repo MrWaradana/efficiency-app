@@ -60,7 +60,7 @@ LOCK_TIMEOUT = 300  # 1 hour, adjust based on your longest expected process time
 
 
 @celery_app.task(bind=True)
-def send_thermolink_request(self, data_id, unique_id, input_data):
+def send_thermolink_request(self, data_id, unique_id, input_data, url):
 
     lock = redis.lock(LOCK_NAME, timeout=LOCK_TIMEOUT)
 
@@ -71,8 +71,7 @@ def send_thermolink_request(self, data_id, unique_id, input_data):
         have_lock = lock.acquire(blocking=False)
 
         if have_lock:
-            res = requests.post(
-                f"{config.WINDOWS_EFFICIENCY_APP_API}/excels/{unique_id}",
+            res = requests.post(url,
                 json={"inputs": input_data},
             )
             res.raise_for_status()  # Raise an error if the API request fail
