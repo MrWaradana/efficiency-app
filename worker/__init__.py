@@ -67,9 +67,9 @@ class ExcelTask(celery_app.Task):
 
     def __call__(self, *args, **kwargs):
         # Check if we can process the task
-        if redis.get('excel_processing'):
+        if bool(redis.get('excel_processing')):
             # If a task is being processed, re-queue this task
-            self.retry(countdown=60, max_retries=2)
+            self.retry(countdown=60, max_retries=5)
         else:
             # Set the processing flag and proceed with the task
             redis.set('excel_processing', '1')
