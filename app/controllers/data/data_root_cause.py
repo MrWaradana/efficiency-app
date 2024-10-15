@@ -1,6 +1,5 @@
 
 
-from collections import defaultdict
 from core.controller.base import BaseController
 from digital_twin_migration.models.efficiency_app import EfficiencyDataDetailRootCause, EfficiencyDataDetailRootCauseMember, EfficiencyDataDetailRootCauseAction
 from core.factory import data_detail_root_cause_factory
@@ -152,27 +151,18 @@ class DataDetailRootCauseController(BaseController[EfficiencyDataDetailRootCause
         data_details = {data_detail.variable_id: data_detail.id for data_detail in data_detail_controller.get_data_details(data_id, "out", True)}
 
         root_cause_count = self.data_detail_root_cause_repository.get_total_root_cause_by_detail_ids(list(data_details.values()))
-        # variable_causes_count = dict(variable_cause_repository.get_count_by_variable_ids(list(data_details.keys())))
+        variable_causes_count = dict(variable_cause_repository.get_count_by_variable_ids(list(data_details.keys())))
 
-        results = defaultdict(lambda: {
-            "root_causes": [],
-            "actions": [],
-            "variable_id": ""
-        })
+        results = []
 
-        for data_detail_id, var_id, is_repair, is_checked, variable_cause_name , variable_cause_id in root_cause_count:
-            if not is_checked:
-                continue
-            
-            data_detail_id = str(data_detail_id)
-            actions = []
-            if is_repair:
-                variable_cause = variable_cause_repository.get_by_uuid(variable_cause_id, {"actions"})[0]
-                actions = [action.name for action in variable_cause.actions]
+        for data_detail_id, var_id, root_count in root_cause_count:
+            variable_cause_count = variable_causes_count.get(var_id, 0)
 
-            results[data_detail_id]["root_causes"].append(variable_cause_name)
-            results[data_detail_id]["actions"].extend(actions)
-            results[data_detail_id]["variable_id"] = var_id
+            results.append({
+                "id": data_detail_id,
+                "done": root_count,
+                "total": variable_cause_count,
+            })
 
         return results
 

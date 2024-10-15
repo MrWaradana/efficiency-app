@@ -4,7 +4,7 @@ from digital_twin_migration.database import Propagation, Transactional
 from digital_twin_migration.models import db
 from digital_twin_migration.models.efficiency_app import (
     EfficiencyDataDetail, EfficiencyDataDetailRootCause, EfficiencyTransaction,
-    Variable, EfficiencyDataDetailRootCauseMember, VariableCause)
+    Variable, EfficiencyDataDetailRootCauseMember)
 from sqlalchemy import Select, and_, func, select
 from sqlalchemy.orm import joinedload,selectinload, aliased
 
@@ -50,21 +50,18 @@ class DataDetailRootCauseRepository(BaseRepository[EfficiencyDataDetailRootCause
         dd = aliased(EfficiencyDataDetail)
         rc = aliased(EfficiencyDataDetailRootCause)
         rcm = aliased(EfficiencyDataDetailRootCauseMember)
-        vc = aliased(VariableCause)
-        
+
+        # Query to count related DataRootCause entries for each DataDetails id
         query = (
             self.session.query(
                 dd.id.label('data_details_id'),
                 dd.variable_id.label('variable_id'),
-                rcm.is_repair.label('is_repair'),
-                rcm.is_checked.label('is_checked'),
-                vc.name.label("variable_cause_name"),
-                vc.id.label("variable_cause_id"),
+                func.count(rcm.id).label('root_cause_member_count')
             )
-            .join(rc, dd.root_causes)
-            .join(rcm, and_(rc.id == rcm.root_cause_id, rc.data_detail_id == dd.id))
-            .join(vc, rcm.cause_id == vc.id)
+            .outerjoin(rc, dd.root_causes)  # Adjust this join based on your actual relationship
+            .outerjoin(rcm, rc.members)    # Adjust this join based on your actual relationship
             .filter(dd.id.in_(details_ids))
+            .group_by(dd.id)
         )
 
         # Execute the query and return the results
