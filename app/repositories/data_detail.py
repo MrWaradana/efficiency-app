@@ -8,7 +8,7 @@ from digital_twin_migration.models.efficiency_app import (
     EfficiencyDataDetail, EfficiencyDataDetailRootCause, EfficiencyTransaction,
     Variable)
 from sqlalchemy import Select, and_, case, func, select, or_, union_all
-from sqlalchemy.orm import joinedload, aliased, selectinload
+from sqlalchemy.orm import joinedload, aliased, selectinload, subqueryload
 
 from core.repository import BaseRepository
 from core.config import config
@@ -186,6 +186,10 @@ class DataDetailRepository(BaseRepository[EfficiencyDataDetail]):
 
         query = query.options(selectinload(EfficiencyDataDetail.efficiency_transaction))
         query = query.options(selectinload(EfficiencyDataDetail.variable))
+        query = query.options(
+            subqueryload(EfficiencyDataDetail.root_causes)
+            .subqueryload(EfficiencyDataDetailRootCause.members)
+        )
 
         # raise Exception("here", query)
 

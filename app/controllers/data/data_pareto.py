@@ -62,10 +62,11 @@ class DataParetoController(BaseController[EfficiencyDataDetail]):
         def get_data(transaction_id):
             categorized_data = data_detail_repository.get_data_pareto(transaction_id)
             nphr = data_detail_repository.get_data_nphr(transaction_id).nilai
+            nphr_commision = data_detail_repository.get_data_nphr(transaction_id, is_target=True).nilai
 
-            return categorized_data, nphr
+            return categorized_data, nphr, nphr_commision
 
-        categorized_data, nphr = get_data(transaction_id)
+        categorized_data, nphr, nphr_commision = get_data(transaction_id)
 
         if categorized_data is None:
             raise exceptions.NotFound("Data not found")
@@ -84,7 +85,7 @@ class DataParetoController(BaseController[EfficiencyDataDetail]):
                 persen_losses = calculate_persen_losses(
                     gap, target_data.deviasi, current_data.persen_hr
                 )
-                nilai_losses = (persen_losses / 100) * nphr
+                nilai_losses = (persen_losses / 100) * nphr_commision
 
                 category = current_data.variable.category
 
@@ -115,7 +116,8 @@ class DataParetoController(BaseController[EfficiencyDataDetail]):
                     "total_biaya": total_cost,
                     "symptoms": "Higher" if gap > 0 else "Lower",
                     "has_cause" : hasCause,
-                    "is_pareto" : current_data.variable.is_pareto
+                    "is_pareto" : current_data.variable.is_pareto,
+                    "good_indicator": current_data.variable.good_indicator
                 }
 
                 categorized[category].append(payload) if category is not None else uncategorized.append(payload)

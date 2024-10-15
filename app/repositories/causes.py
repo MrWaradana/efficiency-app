@@ -57,13 +57,12 @@ class CausesRepository(BaseRepository[VariableCause]):
         
         return tree
     
-    def get_count_by_variable_ids(self, variable_ids):
+    def get_by_variable_ids(self, variable_ids):
         varc = aliased(VariableCause)
         
         query = (
         self.session.query(
             varc.variable_id.label('variable_id'),
-            func.count(varc.id).label('variable_cause_count')
         )
         .filter(varc.variable_id.in_(variable_ids))
         .group_by(varc.variable_id)
@@ -91,6 +90,7 @@ class CausesRepository(BaseRepository[VariableCause]):
         query = query.filter(VariableCause.id == uuid)
 
         if join_ is not None:
+            query = query.options(selectinload(VariableCause.actions))
             return self._all_unique(query)
 
         return self._one_or_none(query)
