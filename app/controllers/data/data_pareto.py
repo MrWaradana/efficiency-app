@@ -44,6 +44,7 @@ class DataParetoController(BaseController[EfficiencyDataDetail]):
         result_pareto = []
         total_persen = 0
         total_biaya = 0
+        total_nilai = 0
         total_cost_benefit = 0
 
         is_cost_benefit = percent_threshold is None
@@ -66,9 +67,8 @@ class DataParetoController(BaseController[EfficiencyDataDetail]):
             return categorized_data, current_nphr, target_nphr
 
         categorized_data, current_nphr, target_nphr = get_data(transaction_id)
-        
+
         actions_all_detail = data_detail_root_cause_controller.check_root_cause(transaction_id)
-        
 
         if categorized_data is None:
             raise exceptions.NotFound("Data not found")
@@ -78,6 +78,7 @@ class DataParetoController(BaseController[EfficiencyDataDetail]):
             uncategorized = []
             aggregated = defaultdict(lambda: {
                 'persen_losses': 0,
+                'nilai_losses': 0,
                 'total_biaya': 0,
                 'cost_benefit': 0
             })
@@ -90,7 +91,7 @@ class DataParetoController(BaseController[EfficiencyDataDetail]):
                 nilai_losses = (persen_losses / 100) * target_nphr.nilai
 
                 category = current_data.variable.category
-                
+
                 actions = actions_all_detail[str(current_data.id)]
 
                 hasCause = True
@@ -101,8 +102,8 @@ class DataParetoController(BaseController[EfficiencyDataDetail]):
                 cost_benefit = calculate_cost_benefit(netto, current_nphr.nilai, nilai_losses)
 
                 if category is not None:
-
                     aggregated[category]['persen_losses'] += persen_losses or 0
+                    aggregated[category]['nilai_losses'] += nilai_losses or 0
                     aggregated[category]['total_biaya'] += total_cost or 0
                     aggregated[category]['cost_benefit'] += cost_benefit or 0
 
@@ -121,7 +122,8 @@ class DataParetoController(BaseController[EfficiencyDataDetail]):
                     "symptoms": "Higher" if gap > 0 else "Lower",
                     "has_cause" : hasCause,
                     "is_pareto" : current_data.variable.is_pareto,
-                    "action_menutup_gap": actions['actions']
+                    "action_menutup_gap": actions['actions'],
+                    "good_indicator": current_data.variable.good_indicator
                 }
 
                 categorized[category].append(payload) if category is not None else uncategorized.append(payload)
@@ -139,11 +141,11 @@ class DataParetoController(BaseController[EfficiencyDataDetail]):
         result_chart = [{"category": category, "total_persen_losses": value['persen_losses'], "total_nilai_losses": (value['persen_losses'] / 100) * 1000} for category, value in sorted_aggregated_value.items()]
 
         for category, value in sorted_aggregated_value.items():
-            total_persen += value['persen_losses']
-            if (percent_threshold and total_persen >= percent_threshold) and not is_nphr:
-                total_persen -= value['persen_losses']
+            if (percent_threshold and total_persen + value['persen_losses']  >= percent_threshold) and not is_nphr:
                 break
-
+            
+            total_persen += value['persen_losses']
+            total_nilai += value['nilai_losses']
             total_biaya += value['total_biaya']
             total_cost_benefit += value['cost_benefit']
 
@@ -156,7 +158,7 @@ class DataParetoController(BaseController[EfficiencyDataDetail]):
             payload = {
                 "category": category,
                 "total_persen_losses": value['persen_losses'],
-                "total_nilai_losses": (value['persen_losses'] / 100) * 1000,
+                "total_nilai_losses": value['nilai_losses'],
                 "total_cost_gap": value['total_biaya'],
                 "total_cost_benefit": value['cost_benefit'],
                 "data": sorted_calculated_data,
@@ -171,9 +173,7 @@ class DataParetoController(BaseController[EfficiencyDataDetail]):
         if not is_cost_benefit:
             transaction_data.persen_threshold = percent_threshold
 
-        total_losses = (total_persen / 100) * 1000
-
-        return result_pareto, result_chart, total_persen, total_losses, total_biaya, total_cost_benefit, calculated_data_uncategorized
+        return result_pareto, result_chart, total_persen, total_nilai, total_biaya, total_cost_benefit, calculated_data_uncategorized
 
     @Transactional(propagation=Propagation.REQUIRED)
     def update_pareto(self, user_id, transaction_id, is_bulk, pareto_data, **inputs):

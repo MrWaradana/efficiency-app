@@ -93,7 +93,8 @@ class DataCostBenefit(BaseController):
                     "symptoms": "Higher" if gap > 0 else "Lower",
                     "has_cause" : hasCause,
                     "is_pareto" : current_data.variable.is_pareto,
-                    "action_menutup_gap": actions['actions']
+                    "action_menutup_gap": actions['actions'],
+                    "good_indicator": current_data.variable.good_indicator
                 }
 
                 result.append(payload) if category is not None else None
@@ -126,9 +127,7 @@ class DataCostBenefit(BaseController):
             cost_threshold = aggregated['total_biaya']
 
         # Add items with known costs up to the threshold
-        for item in sorted_known_cost_items:
-
-            
+        for item in sorted_known_cost_items:            
             if (cost_threshold > 0) and (cumulative_cost + item['total_biaya'] <= cost_threshold):
                 result.append(item)
                 cumulative_cost += item['total_biaya']
