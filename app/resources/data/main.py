@@ -56,6 +56,8 @@ class DataListResource(Resource):
                 page, size, start_date, end_date
             )
         )
+        
+        selected_data = redis.get("selected_data")
 
         return response(
             200,
@@ -69,6 +71,7 @@ class DataListResource(Resource):
                         **data_schema.dump(item),
                         "status": redis.hget(f'process:{item.unique_id}', 'status').decode('utf-8') if redis.hget(f'process:{item.unique_id}', 'status') else item.status,
                         "periode": f"{item.periode.strftime('%Y-%m-%d')} | {item.sequence}",
+                        "is_selected": str(item.id) == selected_data
                     }
                     for item in data[1]
                 ],
@@ -154,6 +157,26 @@ class DataResource(Resource):
             True,
             "Transaction retrieved successfully",
             data_schema.dump(transaction),
+        )
+    
+    def post(self, transaction_id, user_id):
+        if not transaction_id:
+            return response(400, False, "Transaction ID is required")
+        
+        transaction = data_repository.get_by_uuid(transaction_id)
+        # If the transaction is not found in the database, return a response with a 404 status code
+        # and an error message.
+        if not transaction:
+            return response(404, False, "Data transaction not found")
+        
+        # Save selected transaction id to redis
+        
+        redis.set("selected_data", transaction_id)
+        
+        return response(
+            200,
+            True, 
+            "Selected Transaction saved successfully"
         )
 
     @token_required
